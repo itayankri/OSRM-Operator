@@ -1,0 +1,20 @@
+# permissions for end users to view osrmclusters.
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: osrmcluster-viewer-role
+rules:
+- apiGroups:
+  - osrm.ankri.io
+  resources:
+  - osrmclusters
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - osrm.ankri.io
+  resources:
+  - osrmclusters/status
+  verbs:
+  - get

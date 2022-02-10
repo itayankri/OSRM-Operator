@@ -1,0 +1,6 @@
+apiVersion: osrm.ankri.io/v1alpha1
+kind: OSRMCluster
+metadata:
+  name: osrmcluster-sample
+spec:
+  # TODO(user): Add fields here

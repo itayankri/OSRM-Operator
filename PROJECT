@@ -6,4 +6,14 @@ plugins:
   scorecard.sdk.operatorframework.io/v2: {}
 projectName: osrm-opeator
 repo: github.com/itayankri/OSRM-Opeator
+resources:
+- api:
+    crdVersion: v1
+    namespaced: true
+  controller: true
+  domain: ankri.io
+  group: osrm
+  kind: OSRMCluster
+  path: github.com/itayankri/OSRM-Opeator/api/v1alpha1
+  version: v1alpha1
 version: "3"

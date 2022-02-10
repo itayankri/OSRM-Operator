@@ -1,0 +1,24 @@
+# permissions for end users to edit osrmclusters.
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: osrmcluster-editor-role
+rules:
+- apiGroups:
+  - osrm.ankri.io
+  resources:
+  - osrmclusters
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - osrm.ankri.io
+  resources:
+  - osrmclusters/status
+  verbs:
+  - get
