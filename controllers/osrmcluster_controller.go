@@ -19,10 +19,12 @@ package controllers
 import (
 	"context"
 
+	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/log"
+	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 
 	osrmv1alpha1 "github.com/itayankri/OSRM-Opeator/api/v1alpha1"
 )
@@ -47,9 +49,31 @@ type OSRMClusterReconciler struct {
 // For more details, check Reconcile and its Result here:
 // - https://pkg.go.dev/sigs.k8s.io/controller-runtime@v0.10.0/pkg/reconcile
 func (r *OSRMClusterReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
-	_ = log.FromContext(ctx)
+	logger := log.FromContext(ctx)
+	logger.Info("Reconciling OSRMCluster")
 
 	// TODO(user): your logic here
+	instance := &osrmv1alpha1.OSRMCluster{}
+	err := r.Client.Get(ctx, req.NamespacedName, instance)
+	if err != nil {
+		if errors.IsNotFound(err) {
+			// No need to requeue if the resource no longer exists
+			return reconcile.Result{}, nil
+		}
+		return reconcile.Result{}, err
+	}
+
+	if !instance.ObjectMeta.DeletionTimestamp.IsZero() {
+		logger.Info("Deleting")
+		return ctrl.Result{}, r.prepareForDeletion(ctx, instance)
+	}
+
+	// Ensure the resource have a deletion marker
+	if err := r.addFinalizerIfNeeded(ctx, instance); err != nil {
+		return ctrl.Result{}, err
+	}
+
+	logger.Info("Finished reconciling")
 
 	return ctrl.Result{}, nil
 }
@@ -59,4 +83,12 @@ func (r *OSRMClusterReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&osrmv1alpha1.OSRMCluster{}).
 		Complete(r)
+}
+
+func (r *OSRMClusterReconciler) prepareForDeletion(ctx context.Context, instance *osrmv1alpha1.OSRMCluster) error {
+	return nil
+}
+
+func (r *OSRMClusterReconciler) addFinalizerIfNeeded(ctx context.Context, instance *osrmv1alpha1.OSRMCluster) error {
+	return nil
 }

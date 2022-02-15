@@ -27,11 +27,10 @@ import (
 type OSRMClusterSpec struct {
 	// INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
 	// Important: Run "make" to regenerate code after modifying this file
-	PBF_URI               string `json:"pbfUrl,omitempty"`
-	OSRM_GraphProfile     string `json:"osrmGraphProfile,omitempty"`
+	PBFURI                string `json:"pbfUrl,omitempty"`
 	ServiceAccountKeyPath string `json:"serviceAccountKeyPath,omitempty"`
 	Bucket                string `json:"gcsBucket,omitempty"`
-	GCP_ProjectId         string `json:"gcpProjectId,omitempty"`
+	GCPProjectId          string `json:"gcpProjectId,omitempty"`
 }
 
 // OSRMClusterStatus defines the observed state of OSRMCluster
