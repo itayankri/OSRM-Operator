@@ -27,7 +27,7 @@ import (
 type OSRMClusterSpec struct {
 	// INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
 	// Important: Run "make" to regenerate code after modifying this file
-	PBFURI                string `json:"pbfUrl,omitempty"`
+	PBFURL                string `json:"pbfUrl,omitempty"`
 	ServiceAccountKeyPath string `json:"serviceAccountKeyPath,omitempty"`
 	Bucket                string `json:"gcsBucket,omitempty"`
 	GCPProjectId          string `json:"gcpProjectId,omitempty"`

@@ -21,13 +21,19 @@ import (
 
 	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/types"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 
 	osrmv1alpha1 "github.com/itayankri/OSRM-Opeator/api/v1alpha1"
+	appsv1 "k8s.io/api/apps/v1"
+	corev1 "k8s.io/api/core/v1"
+	rbacv1 "k8s.io/api/rbac/v1"
 )
+
+const pauseReconciliationLabel = "ankri.io/pauseReconciliation"
 
 // OSRMClusterReconciler reconciles a OSRMCluster object
 type OSRMClusterReconciler struct {
@@ -35,9 +41,17 @@ type OSRMClusterReconciler struct {
 	Scheme *runtime.Scheme
 }
 
-//+kubebuilder:rbac:groups=osrm.ankri.io,resources=osrmclusters,verbs=get;list;watch;create;update;patch;delete
-//+kubebuilder:rbac:groups=osrm.ankri.io,resources=osrmclusters/status,verbs=get;update;patch
-//+kubebuilder:rbac:groups=osrm.ankri.io,resources=osrmclusters/finalizers,verbs=update
+// the rbac rule requires an empty row at the end to render
+// +kubebuilder:rbac:groups="",resources=pods/exec,verbs=create
+// +kubebuilder:rbac:groups="",resources=pods,verbs=update;get;list;watch
+// +kubebuilder:rbac:groups="",resources=services,verbs=get;list;watch;create;update
+// +kubebuilder:rbac:groups="",resources=endpoints,verbs=get;watch;list
+// +kubebuilder:rbac:groups=osrm.ankri.io,resources=osrmclusters,verbs=get;list;watch;create;update;patch;delete
+// +kubebuilder:rbac:groups=osrm.ankri.io,resources=osrmclusters/status,verbs=get;update;patch
+// +kubebuilder:rbac:groups=osrm.ankri.io,resources=osrmclusters/finalizers,verbs=update
+// +kubebuilder:rbac:groups="",resources=persistentvolumeclaims,verbs=get;list;watch;create;update
+// +kubebuilder:rbac:groups="rbac.authorization.k8s.io",resources=roles,verbs=get;list;watch;create;update
+// +kubebuilder:rbac:groups="rbac.authorization.k8s.io",resources=rolebindings,verbs=get;list;watch;create;update
 
 // Reconcile is part of the main kubernetes reconciliation loop which aims to
 // move the current state of the cluster closer to the desired state.
@@ -50,11 +64,8 @@ type OSRMClusterReconciler struct {
 // - https://pkg.go.dev/sigs.k8s.io/controller-runtime@v0.10.0/pkg/reconcile
 func (r *OSRMClusterReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	logger := log.FromContext(ctx)
-	logger.Info("Reconciling OSRMCluster")
 
-	// TODO(user): your logic here
-	instance := &osrmv1alpha1.OSRMCluster{}
-	err := r.Client.Get(ctx, req.NamespacedName, instance)
+	instance, err := r.getOSRMCluster(ctx, req.NamespacedName)
 	if err != nil {
 		if errors.IsNotFound(err) {
 			// No need to requeue if the resource no longer exists
@@ -68,20 +79,27 @@ func (r *OSRMClusterReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 		return ctrl.Result{}, r.prepareForDeletion(ctx, instance)
 	}
 
-	// Ensure the resource have a deletion marker
-	if err := r.addFinalizerIfNeeded(ctx, instance); err != nil {
-		return ctrl.Result{}, err
-	}
+	logger.Info("Reconciling OSRMCluster")
 
 	logger.Info("Finished reconciling")
 
 	return ctrl.Result{}, nil
 }
 
+func (r *OSRMClusterReconciler) getOSRMCluster(ctx context.Context, namespacedName types.NamespacedName) (*osrmv1alpha1.OSRMCluster, error) {
+	instance := &osrmv1alpha1.OSRMCluster{}
+	err := r.Client.Get(ctx, namespacedName, instance)
+	return instance, err
+}
+
 // SetupWithManager sets up the controller with the Manager.
 func (r *OSRMClusterReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&osrmv1alpha1.OSRMCluster{}).
+		Owns(&appsv1.Deployment{}).
+		Owns(&corev1.Service{}).
+		Owns(&rbacv1.Role{}).
+		Owns(&rbacv1.RoleBinding{}).
 		Complete(r)
 }
 
