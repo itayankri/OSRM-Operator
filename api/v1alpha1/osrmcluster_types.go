@@ -27,10 +27,24 @@ import (
 type OSRMClusterSpec struct {
 	// INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
 	// Important: Run "make" to regenerate code after modifying this file
-	PBFURL                string `json:"pbfUrl,omitempty"`
-	ServiceAccountKeyPath string `json:"serviceAccountKeyPath,omitempty"`
-	Bucket                string `json:"gcsBucket,omitempty"`
-	GCPProjectId          string `json:"gcpProjectId,omitempty"`
+	PBFURL   string       `json:"pbfUrl,omitempty"`
+	Profiles ProfilesSpec `json:"profiles,omitempty"`
+	Ingress  IngressSpec  `json:"ingress,omitempty"`
+}
+
+type ProfilesSpec struct {
+	Driving ProfileSpec `json:"driving,omitempty"`
+	Cycling ProfileSpec `json:"cycling,omitempty"`
+	Foot    ProfileSpec `json:"foot,omitempty"`
+}
+
+type ProfileSpec struct {
+	MinReplicas int `json:"minReplicas,omitempty"`
+	MaxReplicas int `json:"maxReplicas,omitempty"`
+}
+
+type IngressSpec struct {
+	IPName string `json:"ipName,omitempty"`
 }
 
 // OSRMClusterStatus defines the observed state of OSRMCluster
