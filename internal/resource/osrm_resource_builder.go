@@ -21,6 +21,9 @@ func (builder *OSRMResourceBuilder) ResourceBuilders() []ResourceBuilder {
 		builder.Service(),
 		builder.PersistentVolumeClaim(),
 		builder.Deployment(),
+		builder.HorizontalPodAutoscaler(),
+		builder.PodDisruptionBudget(),
+		builder.Ingress(),
 	}
 	return builders
 }
