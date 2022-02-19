@@ -29,23 +29,33 @@ type BaseBuilder struct {
 }
 
 func (builder *OSRMResourceBuilder) ResourceBuilders() []ResourceBuilder {
-	builders := []ResourceBuilder{
-		builder.Service(DrivingProfile),
-		builder.PersistentVolumeClaim(DrivingProfile),
-		builder.Deployment(DrivingProfile),
-		builder.HorizontalPodAutoscaler(DrivingProfile),
+	profilesToBuild := []OSRMProfile{}
+	builders := []ResourceBuilder{}
 
-		builder.Service(CyclingProfile),
-		builder.PersistentVolumeClaim(CyclingProfile),
-		builder.Deployment(CyclingProfile),
-		builder.HorizontalPodAutoscaler(CyclingProfile),
-
-		builder.Service(FootProfile),
-		builder.PersistentVolumeClaim(FootProfile),
-		builder.Deployment(FootProfile),
-		builder.HorizontalPodAutoscaler(FootProfile),
-
-		builder.Ingress(),
+	if builder.Instance.Spec.Profiles.Driving != nil {
+		profilesToBuild = append(profilesToBuild, DrivingProfile)
 	}
+
+	if builder.Instance.Spec.Profiles.Cycling != nil {
+		profilesToBuild = append(profilesToBuild, CyclingProfile)
+	}
+
+	if builder.Instance.Spec.Profiles.Foot != nil {
+		profilesToBuild = append(profilesToBuild, FootProfile)
+	}
+
+	for _, profile := range profilesToBuild {
+		builders = append(builders, []ResourceBuilder{
+			builder.Service(profile),
+			builder.PersistentVolumeClaim(profile),
+			builder.Deployment(profile),
+			builder.HorizontalPodAutoscaler(profile),
+		}...)
+	}
+
+	if len(builders) > 0 {
+		builders = append(builders, builder.Ingress(profilesToBuild))
+	}
+
 	return builders
 }

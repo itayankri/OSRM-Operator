@@ -35,9 +35,9 @@ type OSRMClusterSpec struct {
 }
 
 type ProfilesSpec struct {
-	Driving ProfileSpec `json:"driving,omitempty"`
-	Cycling ProfileSpec `json:"cycling,omitempty"`
-	Foot    ProfileSpec `json:"foot,omitempty"`
+	Driving *ProfileSpec `json:"driving,omitempty"`
+	Cycling *ProfileSpec `json:"cycling,omitempty"`
+	Foot    *ProfileSpec `json:"foot,omitempty"`
 }
 
 type ProfileSpec struct {
