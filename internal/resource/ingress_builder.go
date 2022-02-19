@@ -6,7 +6,7 @@ type IngressBuilder struct {
 	*OSRMResourceBuilder
 }
 
-func (builder *OSRMResourceBuilder) Ingress() *IngressBuilder {
+func (builder *OSRMResourceBuilder) Ingress(profiles []OSRMProfile) *IngressBuilder {
 	return &IngressBuilder{builder}
 }
 
