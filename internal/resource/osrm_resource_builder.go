@@ -6,6 +6,14 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
+const (
+	DrivingProfile OSRMProfile = "driving"
+	CyclingProfile OSRMProfile = "cycling"
+	FootProfile    OSRMProfile = "foot"
+)
+
+type OSRMProfile string
+
 type ResourceBuilder interface {
 	Build() (client.Object, error)
 	Update(client.Object) error
@@ -16,13 +24,27 @@ type OSRMResourceBuilder struct {
 	Scheme   *runtime.Scheme
 }
 
+type BaseBuilder struct {
+	profile OSRMProfile
+}
+
 func (builder *OSRMResourceBuilder) ResourceBuilders() []ResourceBuilder {
 	builders := []ResourceBuilder{
-		builder.Service(),
-		builder.PersistentVolumeClaim(),
-		builder.Deployment(),
-		builder.HorizontalPodAutoscaler(),
-		builder.PodDisruptionBudget(),
+		builder.Service(DrivingProfile),
+		builder.PersistentVolumeClaim(DrivingProfile),
+		builder.Deployment(DrivingProfile),
+		builder.HorizontalPodAutoscaler(DrivingProfile),
+
+		builder.Service(CyclingProfile),
+		builder.PersistentVolumeClaim(CyclingProfile),
+		builder.Deployment(CyclingProfile),
+		builder.HorizontalPodAutoscaler(CyclingProfile),
+
+		builder.Service(FootProfile),
+		builder.PersistentVolumeClaim(FootProfile),
+		builder.Deployment(FootProfile),
+		builder.HorizontalPodAutoscaler(FootProfile),
+
 		builder.Ingress(),
 	}
 	return builders

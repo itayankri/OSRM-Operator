@@ -54,7 +54,7 @@ type OSRMClusterStatus struct {
 	// INSERT ADDITIONAL STATUS FIELD - define observed state of cluster
 	// Important: Run "make" to regenerate code after modifying this file
 
-	Condiitions map[status.OSRMClusterConditionType]status.OSRMClusterCondition
+	Condiitions []metav1.Condition
 }
 
 func (clusterStatus *OSRMClusterStatus) SetCondition(
@@ -63,10 +63,7 @@ func (clusterStatus *OSRMClusterStatus) SetCondition(
 	reason string,
 	messages ...string,
 ) {
-	if condition, ok := clusterStatus.Condiitions[conditionType]; ok {
-		condition.UpdateState(conditionStatus)
-		condition.UpdateReason(reason, messages...)
-	}
+
 }
 
 //+kubebuilder:object:root=true
