@@ -17,6 +17,8 @@ limitations under the License.
 package v1alpha1
 
 import (
+	"github.com/itayankri/OSRM-Operator/internal/status"
+	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -51,6 +53,20 @@ type IngressSpec struct {
 type OSRMClusterStatus struct {
 	// INSERT ADDITIONAL STATUS FIELD - define observed state of cluster
 	// Important: Run "make" to regenerate code after modifying this file
+
+	Condiitions map[status.OSRMClusterConditionType]status.OSRMClusterCondition
+}
+
+func (clusterStatus *OSRMClusterStatus) SetCondition(
+	conditionType status.OSRMClusterConditionType,
+	conditionStatus corev1.ConditionStatus,
+	reason string,
+	messages ...string,
+) {
+	if condition, ok := clusterStatus.Condiitions[conditionType]; ok {
+		condition.UpdateState(conditionStatus)
+		condition.UpdateReason(reason, messages...)
+	}
 }
 
 //+kubebuilder:object:root=true

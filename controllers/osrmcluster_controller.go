@@ -18,6 +18,8 @@ package controllers
 
 import (
 	"context"
+	"encoding/json"
+	"fmt"
 
 	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -27,10 +29,17 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 
+	"github.com/go-logr/logr"
 	osrmv1alpha1 "github.com/itayankri/OSRM-Opeator/api/v1alpha1"
+	"github.com/itayankri/OSRM-Opeator/internal/resource"
+	"github.com/itayankri/OSRM-Operator/internal/status"
 	appsv1 "k8s.io/api/apps/v1"
+	autoscalingv2 "k8s.io/api/autoscaling/v2"
 	corev1 "k8s.io/api/core/v1"
-	rbacv1 "k8s.io/api/rbac/v1"
+	networkingv1 "k8s.io/api/networking/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	clientretry "k8s.io/client-go/util/retry"
+	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 )
 
 const pauseReconciliationLabel = "ankri.io/pauseReconciliation"
@@ -38,7 +47,8 @@ const pauseReconciliationLabel = "ankri.io/pauseReconciliation"
 // OSRMClusterReconciler reconciles a OSRMCluster object
 type OSRMClusterReconciler struct {
 	client.Client
-	Scheme *runtime.Scheme
+	Scheme           *runtime.Scheme
+	DefaultOSRMImage string
 }
 
 // the rbac rule requires an empty row at the end to render
@@ -79,8 +89,42 @@ func (r *OSRMClusterReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 		return ctrl.Result{}, r.prepareForDeletion(ctx, instance)
 	}
 
-	logger.Info("Reconciling OSRMCluster")
+	rawInstanceSpec, err := json.Marshal(instance.Spec)
+	if err != nil {
+		logger.Error(err, "Failed to marshal cluster spec")
+	}
 
+	logger.Info("Reconciling OSRMCluster", "spec", string(rawInstanceSpec))
+
+	resourceBuilder := resource.OSRMResourceBuilder{
+		Instance: instance,
+		Scheme:   r.Scheme,
+	}
+
+	builders := resourceBuilder.ResourceBuilders()
+
+	for _, builder := range builders {
+		resource, err := builder.Build()
+		if err != nil {
+			return ctrl.Result{}, err
+		}
+
+		var operationResult controllerutil.OperationResult
+		err = clientretry.RetryOnConflict(clientretry.DefaultRetry, func() error {
+			var apiError error
+			operationResult, apiError = controllerutil.CreateOrUpdate(ctx, r.Client, resource, func() error {
+				return builder.Update(resource)
+			})
+			return apiError
+		})
+		r.logAndRecordOperationResult(logger, instance, resource, operationResult, err)
+		if err != nil {
+			r.setReconcileSuccess(ctx, instance, corev1.ConditionFalse, "Error", err.Error())
+			return ctrl.Result{}, err
+		}
+	}
+
+	r.setReconcileSuccess(ctx, instance, corev1.ConditionTrue, "Success", "Reconciliation completed")
 	logger.Info("Finished reconciling")
 
 	return ctrl.Result{}, nil
@@ -92,14 +136,54 @@ func (r *OSRMClusterReconciler) getOSRMCluster(ctx context.Context, namespacedNa
 	return instance, err
 }
 
+// logAndRecordOperationResult - helper function to log and record events with message and error
+// it logs and records 'updated' and 'created' OperationResult, and ignores OperationResult 'unchanged'
+func (r *OSRMClusterReconciler) logAndRecordOperationResult(logger logr.Logger, rmq runtime.Object, resource runtime.Object, operationResult controllerutil.OperationResult, err error) {
+	if operationResult == controllerutil.OperationResultNone && err == nil {
+		return
+	}
+
+	var operation string
+	if operationResult == controllerutil.OperationResultCreated {
+		operation = "create"
+	}
+	if operationResult == controllerutil.OperationResultUpdated {
+		operation = "update"
+	}
+
+	if err == nil {
+		msg := fmt.Sprintf("%sd resource %s of Type %T", operation, resource.(metav1.Object).GetName(), resource.(metav1.Object))
+		logger.Info(msg)
+	}
+
+	if err != nil {
+		msg := fmt.Sprintf("failed to %s resource %s of Type %T", operation, resource.(metav1.Object).GetName(), resource.(metav1.Object))
+		logger.Error(err, msg)
+	}
+}
+
+func (r *OSRMClusterReconciler) setReconcileSuccess(
+	ctx context.Context,
+	rabbitmqCluster *osrmv1alpha1.OSRMCluster,
+	condition corev1.ConditionStatus,
+	reason, msg string,
+) {
+	rabbitmqCluster.Status.SetCondition(status.ReconcileSuccess, condition, reason, msg)
+	if writerErr := r.Status().Update(ctx, rabbitmqCluster); writerErr != nil {
+		ctrl.LoggerFrom(ctx).Error(writerErr, "Failed to update Custom Resource status",
+			"namespace", rabbitmqCluster.Namespace,
+			"name", rabbitmqCluster.Name)
+	}
+}
+
 // SetupWithManager sets up the controller with the Manager.
 func (r *OSRMClusterReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&osrmv1alpha1.OSRMCluster{}).
 		Owns(&appsv1.Deployment{}).
 		Owns(&corev1.Service{}).
-		Owns(&rbacv1.Role{}).
-		Owns(&rbacv1.RoleBinding{}).
+		Owns(&networkingv1.Ingress{}).
+		Owns(&autoscalingv2.HorizontalPodAutoscaler{}).
 		Complete(r)
 }
 
