@@ -3,11 +3,15 @@ package resource
 import "sigs.k8s.io/controller-runtime/pkg/client"
 
 type PersistentVolumeClaimBuilder struct {
+	BaseBuilder
 	*OSRMResourceBuilder
 }
 
-func (builder *OSRMResourceBuilder) PersistentVolumeClaim() *PersistentVolumeClaimBuilder {
-	return &PersistentVolumeClaimBuilder{builder}
+func (builder *OSRMResourceBuilder) PersistentVolumeClaim(profile OSRMProfile) *PersistentVolumeClaimBuilder {
+	return &PersistentVolumeClaimBuilder{
+		BaseBuilder{profile},
+		builder,
+	}
 }
 
 func (builder *PersistentVolumeClaimBuilder) Build() (client.Object, error) {
