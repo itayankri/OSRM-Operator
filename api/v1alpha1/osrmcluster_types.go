@@ -54,7 +54,7 @@ type OSRMClusterStatus struct {
 	// INSERT ADDITIONAL STATUS FIELD - define observed state of cluster
 	// Important: Run "make" to regenerate code after modifying this file
 
-	Condiitions []metav1.Condition
+	Condiitions []metav1.Condition `json:"conditions,omitempty"`
 }
 
 func (clusterStatus *OSRMClusterStatus) SetCondition(
