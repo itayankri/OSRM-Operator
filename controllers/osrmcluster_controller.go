@@ -138,7 +138,13 @@ func (r *OSRMClusterReconciler) getOSRMCluster(ctx context.Context, namespacedNa
 
 // logAndRecordOperationResult - helper function to log and record events with message and error
 // it logs and records 'updated' and 'created' OperationResult, and ignores OperationResult 'unchanged'
-func (r *OSRMClusterReconciler) logAndRecordOperationResult(logger logr.Logger, o runtime.Object, resource runtime.Object, operationResult controllerutil.OperationResult, err error) {
+func (r *OSRMClusterReconciler) logAndRecordOperationResult(
+	logger logr.Logger,
+	ro runtime.Object,
+	resource runtime.Object,
+	operationResult controllerutil.OperationResult,
+	err error,
+) {
 	if operationResult == controllerutil.OperationResultNone && err == nil {
 		return
 	}
