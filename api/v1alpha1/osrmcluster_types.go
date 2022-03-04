@@ -32,6 +32,7 @@ type OSRMClusterSpec struct {
 	PBFURL   string       `json:"pbfUrl,omitempty"`
 	Profiles ProfilesSpec `json:"profiles,omitempty"`
 	Ingress  IngressSpec  `json:"ingress,omitempty"`
+	Image    *string      `json:"image,omitempty"`
 }
 
 type ProfilesSpec struct {
@@ -41,8 +42,8 @@ type ProfilesSpec struct {
 }
 
 type ProfileSpec struct {
-	MinReplicas int `json:"minReplicas,omitempty"`
-	MaxReplicas int `json:"maxReplicas,omitempty"`
+	MinReplicas *int32 `json:"minReplicas,omitempty"`
+	MaxReplicas *int32 `json:"maxReplicas,omitempty"`
 }
 
 type IngressSpec struct {

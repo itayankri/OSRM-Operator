@@ -33,23 +33,22 @@ func (builder *ServiceBuilder) Build() (client.Object, error) {
 
 func (builder *ServiceBuilder) Update(object client.Object) error {
 	name := fmt.Sprintf("%s-%s", builder.Instance.Name, builder.profile)
+
 	service := object.(*corev1.Service)
-	service.Spec = corev1.ServiceSpec{
-		Type: corev1.ServiceTypeClusterIP,
-		Ports: []corev1.ServicePort{
-			{
-				Name:     fmt.Sprintf("%s-port", name),
-				Protocol: corev1.ProtocolTCP,
-				Port:     80,
-				TargetPort: intstr.IntOrString{
-					Type:   intstr.Int,
-					IntVal: 5000,
-				},
+	service.Spec.Type = corev1.ServiceTypeClusterIP
+	service.Spec.Ports = []corev1.ServicePort{
+		{
+			Name:     fmt.Sprintf("%s-port", name),
+			Protocol: corev1.ProtocolTCP,
+			Port:     80,
+			TargetPort: intstr.IntOrString{
+				Type:   intstr.Int,
+				IntVal: 5000,
 			},
 		},
-		Selector: map[string]string{
-			"app.kubernetes.io": name,
-		},
+	}
+	service.Spec.Selector = map[string]string{
+		"app.kubernetes.io": name,
 	}
 
 	if err := controllerutil.SetControllerReference(builder.Instance, service, builder.Scheme); err != nil {
