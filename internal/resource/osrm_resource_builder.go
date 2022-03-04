@@ -1,7 +1,7 @@
 package resource
 
 import (
-	osrmv1alpha1 "github.com/itayankri/OSRM-Opeator/api/v1alpha1"
+	osrmv1alpha1 "github.com/itayankri/OSRM-Operator/api/v1alpha1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )

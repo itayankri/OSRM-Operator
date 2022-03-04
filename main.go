@@ -32,8 +32,8 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/healthz"
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 
-	osrmv1alpha1 "github.com/itayankri/OSRM-Opeator/api/v1alpha1"
-	"github.com/itayankri/OSRM-Opeator/controllers"
+	osrmv1alpha1 "github.com/itayankri/OSRM-Operator/api/v1alpha1"
+	"github.com/itayankri/OSRM-Operator/controllers"
 	//+kubebuilder:scaffold:imports
 )
 
