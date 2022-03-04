@@ -6,7 +6,7 @@ import (
 	osrmv1alpha1 "github.com/itayankri/OSRM-Operator/api/v1alpha1"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
-	k8sresource "k8s.io/apimachinery/pkg/api/resource"
+	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
@@ -73,11 +73,13 @@ func (builder *DeploymentBuilder) Update(object client.Object) error {
 							},
 						},
 						Resources: corev1.ResourceRequirements{
-							Requests: corev1.ResourceList{
-								corev1.ResourceCPU:    k8sresource.Quantity{Format: "1"},
-								corev1.ResourceMemory: k8sresource.Quantity{Format: "1Gi"},
+							Requests: map[corev1.ResourceName]resource.Quantity{
+								"memory": resource.MustParse("100Mi"),
+								"cpu":    resource.MustParse("1"),
 							},
 						},
+						Command: []string{"osrm-routed", "--algorithm", "mld"},
+						Args:    []string{"/data/berlin-latest.osrm"},
 					},
 				},
 			},
