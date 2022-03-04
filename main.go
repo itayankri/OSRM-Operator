@@ -37,8 +37,6 @@ import (
 	//+kubebuilder:scaffold:imports
 )
 
-const defaultOSRMImage = "TODO: put here image after it is ready"
-
 var (
 	scheme   = runtime.NewScheme()
 	setupLog = ctrl.Log.WithName("setup")
@@ -82,9 +80,8 @@ func main() {
 	}
 
 	if err = (&controllers.OSRMClusterReconciler{
-		Client:           mgr.GetClient(),
-		Scheme:           mgr.GetScheme(),
-		DefaultOSRMImage: defaultOSRMImage,
+		Client: mgr.GetClient(),
+		Scheme: mgr.GetScheme(),
 	}).SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "OSRMCluster")
 		os.Exit(1)
