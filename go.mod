@@ -1,4 +1,4 @@
-module github.com/itayankri/OSRM-Opeator
+module github.com/itayankri/OSRM-Operator
 
 go 1.16
 

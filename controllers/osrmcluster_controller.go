@@ -30,9 +30,9 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 
 	"github.com/go-logr/logr"
-	osrmv1alpha1 "github.com/itayankri/OSRM-Opeator/api/v1alpha1"
-	"github.com/itayankri/OSRM-Opeator/internal/resource"
-	"github.com/itayankri/OSRM-Opeator/internal/status"
+	osrmv1alpha1 "github.com/itayankri/OSRM-Operator/api/v1alpha1"
+	"github.com/itayankri/OSRM-Operator/internal/resource"
+	"github.com/itayankri/OSRM-Operator/internal/status"
 	appsv1 "k8s.io/api/apps/v1"
 	autoscalingv1 "k8s.io/api/autoscaling/v1"
 	corev1 "k8s.io/api/core/v1"
