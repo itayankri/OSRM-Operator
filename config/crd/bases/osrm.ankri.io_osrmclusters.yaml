@@ -36,6 +36,8 @@ spec:
           spec:
             description: OSRMClusterSpec defines the desired state of OSRMCluster
             properties:
+              image:
+                type: string
               ingress:
                 properties:
                   ipName:
@@ -50,22 +52,28 @@ spec:
                   cycling:
                     properties:
                       maxReplicas:
+                        format: int32
                         type: integer
                       minReplicas:
+                        format: int32
                         type: integer
                     type: object
                   driving:
                     properties:
                       maxReplicas:
+                        format: int32
                         type: integer
                       minReplicas:
+                        format: int32
                         type: integer
                     type: object
                   foot:
                     properties:
                       maxReplicas:
+                        format: int32
                         type: integer
                       minReplicas:
+                        format: int32
                         type: integer
                     type: object
                 type: object
