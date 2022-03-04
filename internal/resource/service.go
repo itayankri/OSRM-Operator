@@ -7,6 +7,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 )
 
 type ServiceBuilder struct {
@@ -50,5 +51,10 @@ func (builder *ServiceBuilder) Update(object client.Object) error {
 			"app.kubernetes.io": name,
 		},
 	}
+
+	if err := controllerutil.SetControllerReference(builder.Instance, service, builder.Scheme); err != nil {
+		return fmt.Errorf("failed setting controller reference: %v", err)
+	}
+
 	return nil
 }
