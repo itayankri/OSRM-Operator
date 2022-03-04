@@ -13,6 +13,7 @@ import (
 
 const osrmContainerName = "osrm-backend"
 const defaultImage = "osrm/osrm-backend"
+const finalizer = "ankri.io/osrm-operator"
 
 type DeploymentBuilder struct {
 	BaseBuilder
@@ -40,6 +41,7 @@ func (builder *DeploymentBuilder) Update(object client.Object) error {
 	deployment := object.(*appsv1.Deployment)
 
 	profileSpec := builder.getProfileSpec()
+	ownerReferenceController := true
 
 	deployment.Spec = appsv1.DeploymentSpec{
 		Replicas: profileSpec.MinReplicas,
@@ -49,6 +51,17 @@ func (builder *DeploymentBuilder) Update(object client.Object) error {
 			},
 		},
 		Template: corev1.PodTemplateSpec{
+			ObjectMeta: metav1.ObjectMeta{
+				Labels: map[string]string{
+					"app": name,
+				},
+				OwnerReferences: []metav1.OwnerReference{
+					{
+						Controller: &ownerReferenceController,
+					},
+				},
+				Finalizers: []string{finalizer},
+			},
 			Spec: corev1.PodSpec{
 				Containers: []corev1.Container{
 					{
