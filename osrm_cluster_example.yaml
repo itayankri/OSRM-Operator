@@ -1,0 +1,12 @@
+apiVersion: osrm.ankri.io/v1alpha1
+kind: OSRMCluster
+metadata:
+  name: test-cluster
+spec:
+  pbfUrl: https://download.geofabrik.de/asia/israel-and-palestine-latest.osm.pbf
+  profiles:
+    driving:
+      minReplicas: 2
+      maxReplicas: 4
+  ingress:
+    ipName: test-cluster-ip
