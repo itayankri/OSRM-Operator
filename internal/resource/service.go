@@ -11,13 +11,13 @@ import (
 )
 
 type ServiceBuilder struct {
-	BaseBuilder
+	ProfileScopedBuilder
 	*OSRMResourceBuilder
 }
 
 func (builder *OSRMResourceBuilder) Service(profile OSRMProfile) *ServiceBuilder {
 	return &ServiceBuilder{
-		BaseBuilder{profile},
+		ProfileScopedBuilder{profile},
 		builder,
 	}
 }
