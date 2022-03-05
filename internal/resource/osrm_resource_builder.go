@@ -53,7 +53,7 @@ func (builder *OSRMResourceBuilder) ResourceBuilders() []ResourceBuilder {
 			builder.Service(profile),
 			builder.Deployment(profile),
 			builder.HorizontalPodAutoscaler(profile),
-			//builder.PersistentVolumeClaim(profile),
+			builder.PersistentVolumeClaim(profile),
 		}...)
 	}
 
