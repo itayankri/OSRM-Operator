@@ -19,6 +19,7 @@ package v1alpha1
 import (
 	"github.com/itayankri/OSRM-Operator/internal/status"
 	corev1 "k8s.io/api/core/v1"
+	resource "k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -29,10 +30,11 @@ import (
 type OSRMClusterSpec struct {
 	// INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
 	// Important: Run "make" to regenerate code after modifying this file
-	PBFURL   string       `json:"pbfUrl,omitempty"`
-	Profiles ProfilesSpec `json:"profiles,omitempty"`
-	Ingress  IngressSpec  `json:"ingress,omitempty"`
-	Image    *string      `json:"image,omitempty"`
+	PBFURL      string          `json:"pbfUrl,omitempty"`
+	Profiles    ProfilesSpec    `json:"profiles,omitempty"`
+	Ingress     IngressSpec     `json:"ingress,omitempty"`
+	Image       *string         `json:"image,omitempty"`
+	Persistence PersistenceSpec `json:"persistence,omitempty"`
 }
 
 type ProfilesSpec struct {
@@ -48,6 +50,11 @@ type ProfileSpec struct {
 
 type IngressSpec struct {
 	IPName string `json:"ipName,omitempty"`
+}
+
+type PersistenceSpec struct {
+	StorageClassName string             `json:"storageClassName,omitempty"`
+	Storage          *resource.Quantity `json:"storage,omitempty"`
 }
 
 // OSRMClusterStatus defines the observed state of OSRMCluster

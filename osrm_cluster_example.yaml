@@ -16,3 +16,6 @@ spec:
       maxReplicas: 2
   ingress:
     ipName: test-cluster-ip
+  persistence:
+    storage: "100Mi"
+    storageClassName: local-path

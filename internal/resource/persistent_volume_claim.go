@@ -24,7 +24,6 @@ func (builder *OSRMResourceBuilder) PersistentVolumeClaim(profile OSRMProfile) *
 
 func (builder *PersistentVolumeClaimBuilder) Build() (client.Object, error) {
 	name := fmt.Sprintf("%s-%s", builder.Instance.Name, builder.profile)
-	storageClassName := "local-path"
 	return &corev1.PersistentVolumeClaim{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      name,
@@ -34,11 +33,11 @@ func (builder *PersistentVolumeClaimBuilder) Build() (client.Object, error) {
 			AccessModes: []corev1.PersistentVolumeAccessMode{corev1.ReadWriteOnce},
 			Resources: corev1.ResourceRequirements{
 				Requests: map[corev1.ResourceName]resource.Quantity{
-					corev1.ResourceStorage: resource.MustParse("5Gi"),
+					corev1.ResourceStorage: *builder.Instance.Spec.Persistence.Storage,
 				},
 			},
 			VolumeName:       name,
-			StorageClassName: &storageClassName,
+			StorageClassName: &builder.Instance.Spec.Persistence.StorageClassName,
 		},
 	}, nil
 }
