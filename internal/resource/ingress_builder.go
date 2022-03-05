@@ -6,6 +6,7 @@ import (
 	networkingv1 "k8s.io/api/networking/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 )
 
 type IngressBuilder struct {
@@ -41,6 +42,10 @@ func (builder *IngressBuilder) Update(object client.Object) error {
 
 	ingress.Spec = networkingv1.IngressSpec{
 		Rules: rules,
+	}
+
+	if err := controllerutil.SetControllerReference(builder.Instance, ingress, builder.Scheme); err != nil {
+		return fmt.Errorf("failed setting controller reference: %v", err)
 	}
 
 	return nil
