@@ -60,8 +60,7 @@ func (builder *IngressBuilder) getIngressRule(profile OSRMProfile) *networkingv1
 							Service: &networkingv1.IngressServiceBackend{
 								Name: serviceName,
 								Port: networkingv1.ServiceBackendPort{
-									Name:   serviceName,
-									Number: int32(80),
+									Number: 80,
 								},
 							},
 						},
