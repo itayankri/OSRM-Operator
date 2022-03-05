@@ -9,6 +9,7 @@ import (
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 )
 
 const osrmContainerName = "osrm-backend"
@@ -41,7 +42,6 @@ func (builder *DeploymentBuilder) Update(object client.Object) error {
 	deployment := object.(*appsv1.Deployment)
 
 	profileSpec := builder.getProfileSpec()
-	ownerReferenceController := true
 
 	deployment.Spec = appsv1.DeploymentSpec{
 		Replicas: profileSpec.MinReplicas,
@@ -55,12 +55,6 @@ func (builder *DeploymentBuilder) Update(object client.Object) error {
 				Labels: map[string]string{
 					"app": name,
 				},
-				OwnerReferences: []metav1.OwnerReference{
-					{
-						Controller: &ownerReferenceController,
-					},
-				},
-				Finalizers: []string{finalizer},
 			},
 			Spec: corev1.PodSpec{
 				Containers: []corev1.Container{
@@ -84,6 +78,10 @@ func (builder *DeploymentBuilder) Update(object client.Object) error {
 				},
 			},
 		},
+	}
+
+	if err := controllerutil.SetControllerReference(builder.Instance, deployment, builder.Scheme); err != nil {
+		return fmt.Errorf("failed setting controller reference: %v", err)
 	}
 
 	return nil
