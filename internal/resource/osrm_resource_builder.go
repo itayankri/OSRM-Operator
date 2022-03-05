@@ -24,8 +24,12 @@ type OSRMResourceBuilder struct {
 	Scheme   *runtime.Scheme
 }
 
-type BaseBuilder struct {
+type ProfileScopedBuilder struct {
 	profile OSRMProfile
+}
+
+type ClusterScopedBuilder struct {
+	profiles []OSRMProfile
 }
 
 func (builder *OSRMResourceBuilder) ResourceBuilders() []ResourceBuilder {

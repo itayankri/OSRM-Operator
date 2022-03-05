@@ -3,7 +3,6 @@ package resource
 import (
 	"fmt"
 
-	osrmv1alpha1 "github.com/itayankri/OSRM-Operator/api/v1alpha1"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
@@ -17,13 +16,13 @@ const defaultImage = "osrm/osrm-backend"
 const finalizer = "ankri.io/osrm-operator"
 
 type DeploymentBuilder struct {
-	BaseBuilder
+	ProfileScopedBuilder
 	*OSRMResourceBuilder
 }
 
 func (builder *OSRMResourceBuilder) Deployment(profile OSRMProfile) *DeploymentBuilder {
 	return &DeploymentBuilder{
-		BaseBuilder{profile},
+		ProfileScopedBuilder{profile},
 		builder,
 	}
 }
@@ -41,7 +40,7 @@ func (builder *DeploymentBuilder) Update(object client.Object) error {
 	name := fmt.Sprintf("%s-%s", builder.Instance.Name, builder.profile)
 	deployment := object.(*appsv1.Deployment)
 
-	profileSpec := builder.getProfileSpec()
+	profileSpec := getProfileSpec(builder.profile, builder.Instance)
 
 	deployment.Spec = appsv1.DeploymentSpec{
 		Replicas: profileSpec.MinReplicas,
@@ -85,19 +84,6 @@ func (builder *DeploymentBuilder) Update(object client.Object) error {
 	}
 
 	return nil
-}
-
-func (builder *DeploymentBuilder) getProfileSpec() *osrmv1alpha1.ProfileSpec {
-	switch builder.BaseBuilder.profile {
-	case DrivingProfile:
-		return builder.Instance.Spec.Profiles.Driving
-	case CyclingProfile:
-		return builder.Instance.Spec.Profiles.Cycling
-	case FootProfile:
-		return builder.Instance.Spec.Profiles.Foot
-	default:
-		panic(fmt.Sprintf("Profile %s is not supported", builder.BaseBuilder.profile))
-	}
 }
 
 func (builder *DeploymentBuilder) getImage() string {

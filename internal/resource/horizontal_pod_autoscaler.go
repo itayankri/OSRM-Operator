@@ -3,7 +3,6 @@ package resource
 import (
 	"fmt"
 
-	osrmv1alpha1 "github.com/itayankri/OSRM-Operator/api/v1alpha1"
 	autoscalingv1 "k8s.io/api/autoscaling/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -11,13 +10,13 @@ import (
 )
 
 type HorizontalPodAutoscalerBuilder struct {
-	BaseBuilder
+	ProfileScopedBuilder
 	*OSRMResourceBuilder
 }
 
 func (builder *OSRMResourceBuilder) HorizontalPodAutoscaler(profile OSRMProfile) *HorizontalPodAutoscalerBuilder {
 	return &HorizontalPodAutoscalerBuilder{
-		BaseBuilder{profile},
+		ProfileScopedBuilder{profile},
 		builder,
 	}
 }
@@ -36,7 +35,7 @@ func (builder *HorizontalPodAutoscalerBuilder) Update(object client.Object) erro
 	hpa := object.(*autoscalingv1.HorizontalPodAutoscaler)
 
 	targetCPUUtilizationPercentage := int32(85)
-	profileSpec := builder.getProfileSpec()
+	profileSpec := getProfileSpec(builder.profile, builder.Instance)
 
 	hpa.Spec.ScaleTargetRef = autoscalingv1.CrossVersionObjectReference{
 		Kind:       "Deployment",
@@ -52,17 +51,4 @@ func (builder *HorizontalPodAutoscalerBuilder) Update(object client.Object) erro
 	}
 
 	return nil
-}
-
-func (builder *HorizontalPodAutoscalerBuilder) getProfileSpec() *osrmv1alpha1.ProfileSpec {
-	switch builder.BaseBuilder.profile {
-	case DrivingProfile:
-		return builder.Instance.Spec.Profiles.Driving
-	case CyclingProfile:
-		return builder.Instance.Spec.Profiles.Cycling
-	case FootProfile:
-		return builder.Instance.Spec.Profiles.Foot
-	default:
-		panic(fmt.Sprintf("Profile %s is not supported", builder.BaseBuilder.profile))
-	}
 }
