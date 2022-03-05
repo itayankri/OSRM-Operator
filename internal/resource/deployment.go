@@ -13,7 +13,8 @@ import (
 
 const osrmContainerName = "osrm-backend"
 const defaultImage = "osrm/osrm-backend"
-const finalizer = "ankri.io/osrm-operator"
+const osrmDataVolumeName = "osrm-data"
+const osrmDataPath = "/data"
 
 type DeploymentBuilder struct {
 	ProfileScopedBuilder
@@ -73,6 +74,23 @@ func (builder *DeploymentBuilder) Update(object client.Object) error {
 						},
 						Command: []string{"osrm-routed", "--algorithm", "mld"},
 						Args:    []string{"/data/berlin-latest.osrm"},
+						VolumeMounts: []corev1.VolumeMount{
+							{
+								Name:      osrmDataVolumeName,
+								MountPath: osrmDataPath,
+							},
+						},
+					},
+				},
+				Volumes: []corev1.Volume{
+					{
+						Name: osrmDataVolumeName,
+						VolumeSource: corev1.VolumeSource{
+							PersistentVolumeClaim: &corev1.PersistentVolumeClaimVolumeSource{
+								ClaimName: name,
+								ReadOnly:  true,
+							},
+						},
 					},
 				},
 			},
