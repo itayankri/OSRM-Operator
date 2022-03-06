@@ -1,0 +1,15 @@
+apiVersion: osrm.ankri.io/v1alpha1
+kind: OSRMCluster
+metadata:
+  name: single-profile-example
+spec:
+  pbfUrl: https://download.geofabrik.de/asia/israel-latest.osm.pbf
+  profiles:
+    foot:
+      minReplicas: 2
+      maxReplicas: 2
+  ingress:
+    ipName: test-cluster-ip
+  persistence:
+    storage: "100Mi"
+    storageClassName: local-path
