@@ -2,6 +2,7 @@ package resource
 
 import (
 	"fmt"
+	"strings"
 
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -40,7 +41,8 @@ func (builder *DeploymentBuilder) Build() (client.Object, error) {
 func (builder *DeploymentBuilder) Update(object client.Object) error {
 	name := fmt.Sprintf("%s-%s", builder.Instance.Name, builder.profile)
 	deployment := object.(*appsv1.Deployment)
-
+	pbfFileName := builder.Instance.Spec.GetPbfFileName()
+	osrmFileName := strings.ReplaceAll(pbfFileName, "osm.pbf", "osrm")
 	profileSpec := getProfileSpec(builder.profile, builder.Instance)
 
 	deployment.Spec = appsv1.DeploymentSpec{
@@ -68,12 +70,43 @@ func (builder *DeploymentBuilder) Update(object client.Object) error {
 						},
 						Resources: corev1.ResourceRequirements{
 							Requests: map[corev1.ResourceName]resource.Quantity{
-								"memory": resource.MustParse("100Mi"),
+								"memory": resource.MustParse("1Gi"),
 								"cpu":    resource.MustParse("1"),
 							},
 						},
-						Command: []string{"osrm-routed", "--algorithm", "mld"},
-						Args:    []string{"/data/berlin-latest.osrm"},
+						Command: []string{
+							"osrm-routed",
+							"--algorithm",
+							"mld",
+							fmt.Sprintf("%s/%s", osrmDataPath, osrmFileName),
+						},
+						VolumeMounts: []corev1.VolumeMount{
+							{
+								Name:      osrmDataVolumeName,
+								MountPath: osrmDataPath,
+							},
+						},
+					},
+				},
+				InitContainers: []corev1.Container{
+					{
+						Name:  "map-builder",
+						Image: builder.getImage(),
+						Resources: corev1.ResourceRequirements{
+							Requests: map[corev1.ResourceName]resource.Quantity{
+								"memory": resource.MustParse("1Gi"),
+								"cpu":    resource.MustParse("1"),
+							},
+						},
+						Command: []string{
+							fmt.Sprintf("[ \"$(ls -A %s\" ]", osrmDataPath), "&&",
+							"apt update", "&&",
+							"apt --assume-yes install wget", "&&",
+							fmt.Sprintf("wget %s", builder.Instance.Spec.PBFURL), "&&",
+							fmt.Sprintf("osrm-extract -p car.lua %s", pbfFileName), "&&",
+							fmt.Sprintf("osrm-partition %s", osrmFileName), "&&",
+							fmt.Sprintf("osrm-customize %s", osrmFileName),
+						},
 						VolumeMounts: []corev1.VolumeMount{
 							{
 								Name:      osrmDataVolumeName,
