@@ -17,6 +17,8 @@ limitations under the License.
 package v1alpha1
 
 import (
+	"strings"
+
 	"github.com/itayankri/OSRM-Operator/internal/status"
 	corev1 "k8s.io/api/core/v1"
 	resource "k8s.io/apimachinery/pkg/api/resource"
@@ -35,6 +37,11 @@ type OSRMClusterSpec struct {
 	Ingress     IngressSpec     `json:"ingress,omitempty"`
 	Image       *string         `json:"image,omitempty"`
 	Persistence PersistenceSpec `json:"persistence,omitempty"`
+}
+
+func (spec *OSRMClusterSpec) GetPbfFileName() string {
+	split := strings.Split(spec.PBFURL, "/")
+	return split[len(split)-1]
 }
 
 type ProfilesSpec struct {
