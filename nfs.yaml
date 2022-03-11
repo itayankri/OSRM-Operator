@@ -1,0 +1,40 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: nfs-server
+  namespace: default
+  labels: 
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: nfs-server
+  template:
+    metadata:
+      labels:
+        app: nfs-server
+    spec:
+      containers:
+      - name: server
+        image: itsthenetwork/nfs-server-alpine:latest
+        securityContext:
+          capabilities:
+            add:
+              - SYS_ADMIN
+        resources:
+          requests:
+            ephemeral-storage: "20Gi"
+        env:
+        - name: SHARED_DIRECTORY
+          value: "/data"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: nfs-server
+  namespace: default
+spec:
+  ports:
+  - name: "tcp-2049"
+    port: 2019
+    targetPort: 2049
