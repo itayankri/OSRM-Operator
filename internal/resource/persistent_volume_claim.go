@@ -3,6 +3,7 @@ package resource
 import (
 	"fmt"
 
+	"github.com/itayankri/OSRM-Operator/internal/metadata"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -28,6 +29,7 @@ func (builder *PersistentVolumeClaimBuilder) Build() (client.Object, error) {
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      name,
 			Namespace: builder.Instance.Namespace,
+			Labels:    metadata.GetLabels(builder.Instance.Name, builder.Instance.Labels),
 		},
 		Spec: corev1.PersistentVolumeClaimSpec{
 			AccessModes: []corev1.PersistentVolumeAccessMode{corev1.ReadWriteOnce},
