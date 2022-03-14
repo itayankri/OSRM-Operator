@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/itayankri/OSRM-Operator/internal/metadata"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
@@ -34,6 +35,7 @@ func (builder *DeploymentBuilder) Build() (client.Object, error) {
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      fmt.Sprintf("%s-%s", builder.Instance.Name, builder.profile),
 			Namespace: builder.Instance.Namespace,
+			Labels:    metadata.GetLabels(builder.Instance.Name, builder.Instance.Labels),
 		},
 	}, nil
 }

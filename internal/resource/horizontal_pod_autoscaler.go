@@ -3,6 +3,7 @@ package resource
 import (
 	"fmt"
 
+	"github.com/itayankri/OSRM-Operator/internal/metadata"
 	autoscalingv1 "k8s.io/api/autoscaling/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -26,6 +27,7 @@ func (builder *HorizontalPodAutoscalerBuilder) Build() (client.Object, error) {
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      fmt.Sprintf("%s-%s", builder.Instance.Name, builder.profile),
 			Namespace: builder.Instance.Namespace,
+			Labels:    metadata.GetLabels(builder.Instance.Name, builder.Instance.Labels),
 		},
 	}, nil
 }
