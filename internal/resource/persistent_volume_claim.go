@@ -38,7 +38,7 @@ func (builder *PersistentVolumeClaimBuilder) Build() (client.Object, error) {
 					corev1.ResourceStorage: *builder.Instance.Spec.Persistence.Storage,
 				},
 			},
-			VolumeName:       name,
+			VolumeName:       "",
 			StorageClassName: &builder.Instance.Spec.Persistence.StorageClassName,
 		},
 	}, nil
