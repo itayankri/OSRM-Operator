@@ -101,7 +101,7 @@ func (builder *DeploymentBuilder) Update(object client.Object) error {
 							},
 						},
 						Command: []string{
-							fmt.Sprintf("[ \"$(ls -A %s\" ]", osrmDataPath), "&&",
+							fmt.Sprintf("[ \"$(ls -A %s)\" ]", osrmDataPath), "&&",
 							"apt update", "&&",
 							"apt --assume-yes install wget", "&&",
 							fmt.Sprintf("wget %s", builder.Instance.Spec.PBFURL), "&&",
