@@ -3,7 +3,7 @@ kind: OSRMCluster
 metadata:
   name: multi-profile-example
 spec:
-  pbfUrl: https://download.geofabrik.de/asia/israel-latest.osm.pbf
+  pbfUrl: https://download.geofabrik.de/asia/israel-and-palestine-latest.osm.pbf
   profiles:
     driving:
       minReplicas: 2
@@ -18,4 +18,4 @@ spec:
     ipName: test-cluster-ip
   persistence:
     storage: "100Mi"
-    storageClassName: local-path
+    storageClassName: nfs-csi
