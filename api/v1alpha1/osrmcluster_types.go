@@ -25,6 +25,8 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
+const defaultImage = "osrm/osrm-backend"
+
 // EDIT THIS FILE!  THIS IS SCAFFOLDING FOR YOU TO OWN!
 // NOTE: json tags are required.  Any new fields you add must have json tags for the fields to be serialized.
 
@@ -37,6 +39,13 @@ type OSRMClusterSpec struct {
 	Ingress     IngressSpec     `json:"ingress,omitempty"`
 	Image       *string         `json:"image,omitempty"`
 	Persistence PersistenceSpec `json:"persistence,omitempty"`
+}
+
+func (spec *OSRMClusterSpec) GetImage() string {
+	if spec.Image != nil {
+		return *spec.Image
+	}
+	return defaultImage
 }
 
 func (spec *OSRMClusterSpec) GetPbfFileName() string {
