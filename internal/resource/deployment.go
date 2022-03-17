@@ -51,7 +51,9 @@ func (builder *DeploymentBuilder) Update(object client.Object) error {
 		},
 		Template: corev1.PodTemplateSpec{
 			ObjectMeta: metav1.ObjectMeta{
-				Labels: metadata.GetLabels(builder.Instance.Name, builder.Instance.Labels),
+				Labels: map[string]string{
+					"app": name,
+				},
 			},
 			Spec: corev1.PodSpec{
 				Containers: []corev1.Container{
