@@ -37,7 +37,7 @@ func (builder *IngressBuilder) Update(object client.Object) error {
 	rules := []networkingv1.IngressRule{}
 	services := []string{"route", "table"}
 
-	if builder.Instance.Spec.Ingress.ExposingServices != nil {
+	if builder.Instance.Spec.Ingress != nil && builder.Instance.Spec.Ingress.ExposingServices != nil {
 		services = builder.Instance.Spec.Ingress.ExposingServices
 	}
 
