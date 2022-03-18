@@ -72,10 +72,17 @@ func (builder *DeploymentBuilder) Update(object client.Object) error {
 							},
 						},
 						Command: []string{
-							"osrm-routed",
-							"--algorithm",
-							"mld",
-							fmt.Sprintf("%s/%s", osrmDataPath, osrmFileName),
+							"/bin/sh",
+							"-c",
+						},
+						Args: []string{
+							fmt.Sprintf(`
+								cd %s && \
+								osrm-routed %s --algorithm mld
+							`,
+								osrmDataPath,
+								osrmFileName,
+							),
 						},
 						VolumeMounts: []corev1.VolumeMount{
 							{

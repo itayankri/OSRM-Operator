@@ -10,6 +10,7 @@ import (
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 )
 
 type JobBuilder struct {
@@ -33,7 +34,7 @@ func (builder *OSRMResourceBuilder) Job(profile OSRMProfile) *JobBuilder {
 func (builder *JobBuilder) Build() (client.Object, error) {
 	return &batchv1.Job{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      fmt.Sprintf("%s-%s", builder.Instance.Name, builder.profile),
+			Name:      fmt.Sprintf("%s-%s-%s", builder.Instance.Name, builder.profile, "map-builder"),
 			Namespace: builder.Instance.Namespace,
 			Labels:    metadata.GetLabels(builder.Instance.Name, builder.Instance.Labels),
 		},
@@ -48,10 +49,8 @@ func (builder *JobBuilder) Update(object client.Object) error {
 
 	job.Spec = batchv1.JobSpec{
 		Template: corev1.PodTemplateSpec{
-			ObjectMeta: metav1.ObjectMeta{
-				Labels: metadata.GetLabels(builder.Instance.Name, builder.Instance.Labels),
-			},
 			Spec: corev1.PodSpec{
+				RestartPolicy: corev1.RestartPolicyOnFailure,
 				Containers: []corev1.Container{
 					{
 						Name:  fmt.Sprintf("%s-%s", name, "map-builder"),
@@ -68,6 +67,7 @@ func (builder *JobBuilder) Update(object client.Object) error {
 						},
 						Args: []string{
 							fmt.Sprintf(`
+								cd %s && \
 								apt update && \
 								apt --assume-yes install wget && \
 								wget %s && \
@@ -75,6 +75,7 @@ func (builder *JobBuilder) Update(object client.Object) error {
 								osrm-partition %s && \
 								osrm-customize %s
 							`,
+								osrmDataPath,
 								builder.Instance.Spec.PBFURL,
 								profilesMap[builder.profile],
 								pbfFileName,
@@ -86,6 +87,7 @@ func (builder *JobBuilder) Update(object client.Object) error {
 							{
 								Name:      osrmDataVolumeName,
 								MountPath: osrmDataPath,
+								ReadOnly:  false,
 							},
 						},
 					},
@@ -103,6 +105,10 @@ func (builder *JobBuilder) Update(object client.Object) error {
 				},
 			},
 		},
+	}
+
+	if err := controllerutil.SetControllerReference(builder.Instance, job, builder.Scheme); err != nil {
+		return fmt.Errorf("failed setting controller reference: %v", err)
 	}
 
 	return nil
