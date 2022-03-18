@@ -49,7 +49,8 @@ func (builder *IngressBuilder) Update(object client.Object) error {
 	}
 
 	ingress.Spec = networkingv1.IngressSpec{
-		Rules: rules,
+		IngressClassName: builder.Instance.Spec.Ingress.IngressClassName,
+		Rules:            rules,
 	}
 
 	if err := controllerutil.SetControllerReference(builder.Instance, ingress, builder.Scheme); err != nil {
@@ -61,14 +62,25 @@ func (builder *IngressBuilder) Update(object client.Object) error {
 
 func (builder *IngressBuilder) getIngressRule(profile OSRMProfile, service string) *networkingv1.IngressRule {
 	serviceName := fmt.Sprintf("%s-%s", builder.Instance.Name, profile)
-	pathType := networkingv1.PathTypeImplementationSpecific
+	var path string
+	var pathType networkingv1.PathType
+
+	if builder.Instance.Spec.Ingress != nil &&
+		builder.Instance.Spec.Ingress.IngressClassName != nil &&
+		*builder.Instance.Spec.Ingress.IngressClassName == "nginx" {
+		pathType = networkingv1.PathTypePrefix
+		path = fmt.Sprintf("/%s/v1/%s/.*", service, profile)
+	} else {
+		pathType = networkingv1.PathTypeImplementationSpecific
+		path = fmt.Sprintf("/%s/v1/%s/*", service, profile)
+	}
 
 	return &networkingv1.IngressRule{
 		IngressRuleValue: networkingv1.IngressRuleValue{
 			HTTP: &networkingv1.HTTPIngressRuleValue{
 				Paths: []networkingv1.HTTPIngressPath{
 					{
-						Path:     fmt.Sprintf("/%s/v1/%s/*", service, profile),
+						Path:     path,
 						PathType: &pathType,
 						Backend: networkingv1.IngressBackend{
 							Service: &networkingv1.IngressServiceBackend{
