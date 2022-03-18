@@ -6,13 +6,8 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-const (
-	DrivingProfile OSRMProfile = "driving"
-	CyclingProfile OSRMProfile = "cycling"
-	FootProfile    OSRMProfile = "foot"
-)
-
 type OSRMProfile string
+type OSRMService string
 
 type ResourceBuilder interface {
 	Build() (client.Object, error)
