@@ -30,7 +30,6 @@ func (builder *DeploymentBuilder) Build() (client.Object, error) {
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      fmt.Sprintf("%s-%s", builder.Instance.Name, builder.profile),
 			Namespace: builder.Instance.Namespace,
-			Labels:    metadata.GetLabels(builder.Instance.Name, builder.Instance.Labels),
 		},
 	}, nil
 }
@@ -41,6 +40,8 @@ func (builder *DeploymentBuilder) Update(object client.Object) error {
 	pbfFileName := builder.Instance.Spec.GetPbfFileName()
 	osrmFileName := strings.ReplaceAll(pbfFileName, "osm.pbf", "osrm")
 	profileSpec := getProfileSpec(builder.profile, builder.Instance)
+
+	deployment.Labels = metadata.GetLabels(builder.Instance.Name, builder.Instance.Labels)
 
 	deployment.Spec = appsv1.DeploymentSpec{
 		Replicas: profileSpec.MinReplicas,

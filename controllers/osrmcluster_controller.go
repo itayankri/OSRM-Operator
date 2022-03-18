@@ -175,15 +175,15 @@ func (r *OSRMClusterReconciler) logAndRecordOperationResult(
 
 func (r *OSRMClusterReconciler) setReconcileSuccess(
 	ctx context.Context,
-	rabbitmqCluster *osrmv1alpha1.OSRMCluster,
+	osrmCluster *osrmv1alpha1.OSRMCluster,
 	condition corev1.ConditionStatus,
 	reason, msg string,
 ) {
-	rabbitmqCluster.Status.SetCondition(status.ReconcileSuccess, condition, reason, msg)
-	if writerErr := r.Status().Update(ctx, rabbitmqCluster); writerErr != nil {
+	osrmCluster.Status.SetCondition(status.ReconcileSuccess, condition, reason, msg)
+	if writerErr := r.Status().Update(ctx, osrmCluster); writerErr != nil {
 		ctrl.LoggerFrom(ctx).Error(writerErr, "Failed to update Custom Resource status",
-			"namespace", rabbitmqCluster.Namespace,
-			"name", rabbitmqCluster.Name)
+			"namespace", osrmCluster.Namespace,
+			"name", osrmCluster.Name)
 	}
 }
 

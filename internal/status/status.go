@@ -28,7 +28,7 @@ type OSRMClusterCondition struct {
 	Message string `json:"message,omitempty"`
 }
 
-func newRabbitmqClusterCondition(conditionType OSRMClusterConditionType) OSRMClusterCondition {
+func newOSRMClusterCondition(conditionType OSRMClusterConditionType) OSRMClusterCondition {
 	return OSRMClusterCondition{
 		Type:               conditionType,
 		Status:             corev1.ConditionUnknown,

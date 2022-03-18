@@ -28,7 +28,6 @@ func (builder *ServiceBuilder) Build() (client.Object, error) {
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      fmt.Sprintf("%s-%s", builder.Instance.Name, builder.profile),
 			Namespace: builder.Instance.Namespace,
-			Labels:    metadata.GetLabels(builder.Instance.Name, builder.Instance.Labels),
 		},
 	}, nil
 }
@@ -37,6 +36,9 @@ func (builder *ServiceBuilder) Update(object client.Object) error {
 	name := fmt.Sprintf("%s-%s", builder.Instance.Name, builder.profile)
 
 	service := object.(*corev1.Service)
+
+	service.Labels = metadata.GetLabels(builder.Instance.Name, builder.Instance.Labels)
+
 	service.Spec.Type = corev1.ServiceTypeClusterIP
 	service.Spec.Ports = []corev1.ServicePort{
 		{

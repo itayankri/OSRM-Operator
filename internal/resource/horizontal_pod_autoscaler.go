@@ -27,7 +27,6 @@ func (builder *HorizontalPodAutoscalerBuilder) Build() (client.Object, error) {
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      fmt.Sprintf("%s-%s", builder.Instance.Name, builder.profile),
 			Namespace: builder.Instance.Namespace,
-			Labels:    metadata.GetLabels(builder.Instance.Name, builder.Instance.Labels),
 		},
 	}, nil
 }
@@ -35,6 +34,8 @@ func (builder *HorizontalPodAutoscalerBuilder) Build() (client.Object, error) {
 func (builder *HorizontalPodAutoscalerBuilder) Update(object client.Object) error {
 	name := fmt.Sprintf("%s-%s", builder.Instance.Name, builder.profile)
 	hpa := object.(*autoscalingv1.HorizontalPodAutoscaler)
+
+	hpa.Labels = metadata.GetLabels(builder.Instance.Name, builder.Instance.Labels)
 
 	targetCPUUtilizationPercentage := int32(85)
 	profileSpec := getProfileSpec(builder.profile, builder.Instance)
