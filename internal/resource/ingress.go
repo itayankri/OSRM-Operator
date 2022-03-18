@@ -27,7 +27,6 @@ func (builder *IngressBuilder) Build() (client.Object, error) {
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      builder.Instance.Name,
 			Namespace: builder.Instance.Namespace,
-			Labels:    metadata.GetLabels(builder.Instance.Name, builder.Instance.Labels),
 		},
 	}, nil
 }
@@ -47,6 +46,8 @@ func (builder *IngressBuilder) Update(object client.Object) error {
 			rules = append(rules, *rule)
 		}
 	}
+
+	ingress.Labels = metadata.GetLabels(builder.Instance.Name, builder.Instance.Labels)
 
 	ingress.Spec = networkingv1.IngressSpec{
 		IngressClassName: builder.Instance.Spec.Ingress.IngressClassName,

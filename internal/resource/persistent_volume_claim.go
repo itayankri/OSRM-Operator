@@ -29,7 +29,6 @@ func (builder *PersistentVolumeClaimBuilder) Build() (client.Object, error) {
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      name,
 			Namespace: builder.Instance.Namespace,
-			Labels:    metadata.GetLabels(builder.Instance.Name, builder.Instance.Labels),
 		},
 		Spec: corev1.PersistentVolumeClaimSpec{
 			AccessModes: []corev1.PersistentVolumeAccessMode{corev1.ReadWriteOnce},
@@ -46,6 +45,8 @@ func (builder *PersistentVolumeClaimBuilder) Build() (client.Object, error) {
 
 func (builder *PersistentVolumeClaimBuilder) Update(object client.Object) error {
 	pvc := object.(*corev1.PersistentVolumeClaim)
+
+	pvc.Labels = metadata.GetLabels(builder.Instance.Name, builder.Instance.Labels)
 
 	if err := controllerutil.SetControllerReference(builder.Instance, pvc, builder.Scheme); err != nil {
 		return fmt.Errorf("failed setting controller reference: %v", err)
