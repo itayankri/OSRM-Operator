@@ -40,6 +40,12 @@ spec:
                 type: string
               ingress:
                 properties:
+                  exposingServices:
+                    items:
+                      type: string
+                    type: array
+                  ingrssClassName:
+                    type: string
                   ipName:
                     type: string
                 type: object

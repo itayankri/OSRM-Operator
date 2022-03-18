@@ -34,12 +34,18 @@ func (builder *IngressBuilder) Build() (client.Object, error) {
 
 func (builder *IngressBuilder) Update(object client.Object) error {
 	ingress := object.(*networkingv1.Ingress)
-
 	rules := []networkingv1.IngressRule{}
+	services := []string{"route", "table"}
+
+	if builder.Instance.Spec.Ingress.ExposingServices != nil {
+		services = builder.Instance.Spec.Ingress.ExposingServices
+	}
 
 	for _, profile := range builder.profiles {
-		rule := builder.getIngressRule(profile)
-		rules = append(rules, *rule)
+		for _, service := range services {
+			rule := builder.getIngressRule(profile, service)
+			rules = append(rules, *rule)
+		}
 	}
 
 	ingress.Spec = networkingv1.IngressSpec{
@@ -53,15 +59,16 @@ func (builder *IngressBuilder) Update(object client.Object) error {
 	return nil
 }
 
-func (builder *IngressBuilder) getIngressRule(profile OSRMProfile) *networkingv1.IngressRule {
+func (builder *IngressBuilder) getIngressRule(profile OSRMProfile, service string) *networkingv1.IngressRule {
 	serviceName := fmt.Sprintf("%s-%s", builder.Instance.Name, profile)
 	pathType := networkingv1.PathTypeImplementationSpecific
+
 	return &networkingv1.IngressRule{
 		IngressRuleValue: networkingv1.IngressRuleValue{
 			HTTP: &networkingv1.HTTPIngressRuleValue{
 				Paths: []networkingv1.HTTPIngressPath{
 					{
-						Path:     fmt.Sprintf("/route/v1/%s/*", profile),
+						Path:     fmt.Sprintf("/%s/v1/%s/*", service, profile),
 						PathType: &pathType,
 						Backend: networkingv1.IngressBackend{
 							Service: &networkingv1.IngressServiceBackend{

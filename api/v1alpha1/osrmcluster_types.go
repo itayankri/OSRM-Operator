@@ -65,7 +65,9 @@ type ProfileSpec struct {
 }
 
 type IngressSpec struct {
-	IPName string `json:"ipName,omitempty"`
+	IngressClassName string   `json:"ingrssClassName,omitempty"`
+	IPName           string   `json:"ipName,omitempty"`
+	ExposingServices []string `json:"exposingServices,omitempty"`
 }
 
 type PersistenceSpec struct {
