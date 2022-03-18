@@ -10,6 +10,8 @@ spec:
       maxReplicas: 2
   ingress:
     ipName: test-cluster-ip
+    ingressClassName: nginx
+    exposingServices: ["route", "table", "match"]
   persistence:
     storage: "100Mi"
     storageClassName: nfs-csi

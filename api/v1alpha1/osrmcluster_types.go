@@ -36,7 +36,7 @@ type OSRMClusterSpec struct {
 	// Important: Run "make" to regenerate code after modifying this file
 	PBFURL      string          `json:"pbfUrl,omitempty"`
 	Profiles    ProfilesSpec    `json:"profiles,omitempty"`
-	Ingress     IngressSpec     `json:"ingress,omitempty"`
+	Ingress     *IngressSpec    `json:"ingress,omitempty"`
 	Image       *string         `json:"image,omitempty"`
 	Persistence PersistenceSpec `json:"persistence,omitempty"`
 }
@@ -65,7 +65,7 @@ type ProfileSpec struct {
 }
 
 type IngressSpec struct {
-	IngressClassName string   `json:"ingrssClassName,omitempty"`
+	IngressClassName *string  `json:"ingressClassName,omitempty"`
 	IPName           string   `json:"ipName,omitempty"`
 	ExposingServices []string `json:"exposingServices,omitempty"`
 }
