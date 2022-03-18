@@ -20,7 +20,7 @@ type JobBuilder struct {
 
 var profilesMap = map[OSRMProfile]string{
 	DrivingProfile: "car.lua",
-	CyclingProfile: "bycicling.lua",
+	CyclingProfile: "bicycle.lua",
 	FootProfile:    "foot.lua",
 }
 
@@ -71,7 +71,7 @@ func (builder *JobBuilder) Update(object client.Object) error {
 								apt update && \
 								apt --assume-yes install wget && \
 								wget %s && \
-								osrm-extract -p %s %s && \
+								osrm-extract -p /opt/%s %s && \
 								osrm-partition %s && \
 								osrm-customize %s
 							`,
@@ -87,7 +87,6 @@ func (builder *JobBuilder) Update(object client.Object) error {
 							{
 								Name:      osrmDataVolumeName,
 								MountPath: osrmDataPath,
-								ReadOnly:  false,
 							},
 						},
 					},
@@ -98,7 +97,7 @@ func (builder *JobBuilder) Update(object client.Object) error {
 						VolumeSource: corev1.VolumeSource{
 							PersistentVolumeClaim: &corev1.PersistentVolumeClaimVolumeSource{
 								ClaimName: name,
-								ReadOnly:  true,
+								ReadOnly:  false,
 							},
 						},
 					},
