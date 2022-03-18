@@ -11,4 +11,7 @@ helm install csi-driver-nfs csi-driver-nfs/csi-driver-nfs --namespace kube-syste
 
 # Adding a StorageClass
 kubectl create -f https://raw.githubusercontent.com/kubernetes-csi/csi-driver-nfs/master/deploy/example/storageclass-nfs.yaml
+
+# Installing an Nginx ingress controller
+kubectl apply -f https://raw.githubusercontent.com/kubernetes/ingress-nginx/main/deploy/static/provider/kind/deploy.yaml
 ```
