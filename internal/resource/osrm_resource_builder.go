@@ -53,7 +53,7 @@ func (builder *OSRMResourceBuilder) ResourceBuilders() []ResourceBuilder {
 		}...)
 	}
 
-	if len(builders) > 0 {
+	if len(builders) > 0 && builder.Instance.Spec.Ingress != nil {
 		builders = append(builders, builder.Ingress(profilesToBuild))
 	}
 

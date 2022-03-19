@@ -52,7 +52,7 @@ func (builder *ServiceBuilder) Update(object client.Object) error {
 		},
 	}
 	service.Spec.Selector = map[string]string{
-		"app.kubernetes.io": name,
+		"app": name,
 	}
 
 	if err := controllerutil.SetControllerReference(builder.Instance, service, builder.Scheme); err != nil {
