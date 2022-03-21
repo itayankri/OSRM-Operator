@@ -11,26 +11,28 @@ kind create cluster --name demo --config ./kind-config.yaml
 An OSRMCluster requires a volume that can be shared between multiple pods. In order to achieve that we are going to use an NFS server and a volume provisioner that will take advantage of this NFS server. Same as the previous step, you can skip this step if you already have a PersistentVolume provisioner installed on your cluster (if you are running in a cloud environment such as GCP for example).
 
 First, we will install the NFS server:
+
 ```bash
 kubectl create -f https://raw.githubusercontent.com/kubernetes-csi/csi-driver-nfs/master/deploy/example/nfs-provisioner/nfs-server.yaml
 ```
 
 Next, we will install the provisioner using helm, so please make you have [helm](https://helm.sh/docs/intro/install/) installed on your machine.
+
 ```bash
-# Add the relevant helm repo.
 helm repo add csi-driver-nfs https://raw.githubusercontent.com/kubernetes-csi/csi-driver-nfs/master/charts
 
-# Installing the csi-driver-nfs helm chart on your cluster.
 helm install csi-driver-nfs csi-driver-nfs/csi-driver-nfs --namespace kube-system --version v3.1.0
 ```
 
 Once you have a functional NFS server and an NFS volume provisioner you need create a new StorageClass on your cluster.
+
 ```bash
 kubectl create -f https://raw.githubusercontent.com/kubernetes-csi/csi-driver-nfs/master/deploy/example/storageclass-nfs.yaml
 ```
 
 ### Installing an Ingress controller
 This demo also create an ingress that will enable us access our OSRMCluster from outside the cluster. In this demo we will use Nginx ingress contoller (If you are running in GCP environment you can skip this step).
+
 ```bash
 kubectl apply -f https://raw.githubusercontent.com/kubernetes/ingress-nginx/main/deploy/static/provider/kind/deploy.yaml
 ```
@@ -47,6 +49,7 @@ This command will create a new CRD on your cluster called "osrmcluster" and a ne
 
 ### Creating a new OSRMCluster
 This directory contains two OSRMCluster resource examples - one for a single-profile osrm cluster and one for a multi-profile osrm cluster. You can create either on of them using kubectl.
+
 ```bash
 kubectl apply -f multi_profile_osrm_cluster.yaml
 ```
