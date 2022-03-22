@@ -19,8 +19,6 @@ package v1alpha1
 import (
 	"strings"
 
-	"github.com/itayankri/OSRM-Operator/internal/status"
-	corev1 "k8s.io/api/core/v1"
 	resource "k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
@@ -80,16 +78,26 @@ type OSRMClusterStatus struct {
 	// INSERT ADDITIONAL STATUS FIELD - define observed state of cluster
 	// Important: Run "make" to regenerate code after modifying this file
 
-	Condiitions []metav1.Condition `json:"conditions,omitempty"`
+	Conditions []metav1.Condition `json:"conditions,omitempty"`
 }
 
 func (clusterStatus *OSRMClusterStatus) SetCondition(
-	conditionType status.OSRMClusterConditionType,
-	conditionStatus corev1.ConditionStatus,
+	conditionType string,
+	conditionStatus metav1.ConditionStatus,
 	reason string,
 	messages ...string,
 ) {
-
+	for i := range clusterStatus.Conditions {
+		if clusterStatus.Conditions[i].Type == conditionType {
+			if clusterStatus.Conditions[i].Status != conditionStatus {
+				clusterStatus.Conditions[i].LastTransitionTime = metav1.Now()
+			}
+			clusterStatus.Conditions[i].Status = conditionStatus
+			clusterStatus.Conditions[i].Reason = reason
+			clusterStatus.Conditions[i].Message = strings.Join(messages, ". ")
+			break
+		}
+	}
 }
 
 //+kubebuilder:object:root=true
