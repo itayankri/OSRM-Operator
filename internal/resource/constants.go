@@ -1,12 +1,6 @@
 package resource
 
 const (
-	DrivingProfile OSRMProfile = "driving"
-	CyclingProfile OSRMProfile = "cycling"
-	FootProfile    OSRMProfile = "foot"
-)
-
-const (
 	NearestService OSRMService = "nearest"
 	RouteService   OSRMService = "route"
 	TableService   OSRMService = "table"

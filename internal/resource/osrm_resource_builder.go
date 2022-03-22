@@ -6,7 +6,6 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-type OSRMProfile string
 type OSRMService string
 
 type ResourceBuilder interface {
@@ -20,41 +19,30 @@ type OSRMResourceBuilder struct {
 }
 
 type ProfileScopedBuilder struct {
-	profile OSRMProfile
+	profile string
 }
 
 type ClusterScopedBuilder struct {
-	profiles []OSRMProfile
+	profiles []string
 }
 
 func (builder *OSRMResourceBuilder) ResourceBuilders() []ResourceBuilder {
-	profilesToBuild := []OSRMProfile{}
 	builders := []ResourceBuilder{}
+	profilesEndpoints := []string{}
 
-	if builder.Instance.Spec.Profiles.Driving != nil {
-		profilesToBuild = append(profilesToBuild, DrivingProfile)
-	}
-
-	if builder.Instance.Spec.Profiles.Cycling != nil {
-		profilesToBuild = append(profilesToBuild, CyclingProfile)
-	}
-
-	if builder.Instance.Spec.Profiles.Foot != nil {
-		profilesToBuild = append(profilesToBuild, FootProfile)
-	}
-
-	for _, profile := range profilesToBuild {
+	for _, profile := range builder.Instance.Spec.Profiles {
+		profilesEndpoints = append(profilesEndpoints, profile.EndpointName)
 		builders = append(builders, []ResourceBuilder{
-			builder.Service(profile),
-			builder.Deployment(profile),
-			builder.Job(profile),
-			builder.HorizontalPodAutoscaler(profile),
-			builder.PersistentVolumeClaim(profile),
+			builder.Service(profile.Name),
+			builder.Deployment(profile.Name),
+			builder.Job(profile.Name),
+			builder.HorizontalPodAutoscaler(profile.Name),
+			builder.PersistentVolumeClaim(profile.Name),
 		}...)
 	}
 
 	if len(builders) > 0 && builder.Instance.Spec.Ingress != nil {
-		builders = append(builders, builder.Ingress(profilesToBuild))
+		builders = append(builders, builder.Ingress(profilesEndpoints))
 	}
 
 	return builders
