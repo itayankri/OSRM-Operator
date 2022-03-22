@@ -5,9 +5,9 @@ metadata:
 spec:
   pbfUrl: https://download.geofabrik.de/asia/israel-and-palestine-latest.osm.pbf
   profiles:
-    foot:
-      minReplicas: 2
-      maxReplicas: 2
+  - name: foot
+    minReplicas: 2
+    maxReplicas: 2
   ingress:
     ipName: test-cluster-ip
     ingressClassName: nginx
