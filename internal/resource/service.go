@@ -16,7 +16,7 @@ type ServiceBuilder struct {
 	*OSRMResourceBuilder
 }
 
-func (builder *OSRMResourceBuilder) Service(profile OSRMProfile) *ServiceBuilder {
+func (builder *OSRMResourceBuilder) Service(profile string) *ServiceBuilder {
 	return &ServiceBuilder{
 		ProfileScopedBuilder{profile},
 		builder,
