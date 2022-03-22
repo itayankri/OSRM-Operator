@@ -88,10 +88,6 @@ func (r *OSRMClusterReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 		return reconcile.Result{}, err
 	}
 
-	if !instance.ObjectMeta.DeletionTimestamp.IsZero() {
-		logger.Info("Deleting")
-	}
-
 	rawInstanceSpec, err := json.Marshal(instance.Spec)
 	if err != nil {
 		logger.Error(err, "Failed to marshal cluster spec")
@@ -156,6 +152,7 @@ func (r *OSRMClusterReconciler) logAndRecordOperationResult(
 	if operationResult == controllerutil.OperationResultCreated {
 		operation = "create"
 	}
+
 	if operationResult == controllerutil.OperationResultUpdated {
 		operation = "update"
 	}

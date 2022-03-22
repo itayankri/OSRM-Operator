@@ -51,15 +51,13 @@ func (spec *OSRMClusterSpec) GetPbfFileName() string {
 	return split[len(split)-1]
 }
 
-type ProfilesSpec struct {
-	Driving *ProfileSpec `json:"driving,omitempty"`
-	Cycling *ProfileSpec `json:"cycling,omitempty"`
-	Foot    *ProfileSpec `json:"foot,omitempty"`
-}
+type ProfilesSpec []ProfileSpec
 
 type ProfileSpec struct {
-	MinReplicas *int32 `json:"minReplicas,omitempty"`
-	MaxReplicas *int32 `json:"maxReplicas,omitempty"`
+	Name         string `json:"name,omitempty"`
+	EndpointName string `json"endpointName,omitempty"`
+	MinReplicas  *int32 `json:"minReplicas,omitempty"`
+	MaxReplicas  *int32 `json:"maxReplicas,omitempty"`
 }
 
 type IngressSpec struct {

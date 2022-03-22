@@ -15,7 +15,7 @@ type HorizontalPodAutoscalerBuilder struct {
 	*OSRMResourceBuilder
 }
 
-func (builder *OSRMResourceBuilder) HorizontalPodAutoscaler(profile OSRMProfile) *HorizontalPodAutoscalerBuilder {
+func (builder *OSRMResourceBuilder) HorizontalPodAutoscaler(profile string) *HorizontalPodAutoscalerBuilder {
 	return &HorizontalPodAutoscalerBuilder{
 		ProfileScopedBuilder{profile},
 		builder,
