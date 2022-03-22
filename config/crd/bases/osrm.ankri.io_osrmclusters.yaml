@@ -65,35 +65,20 @@ spec:
                     type: string
                 type: object
               profiles:
-                properties:
-                  cycling:
-                    properties:
-                      maxReplicas:
-                        format: int32
-                        type: integer
-                      minReplicas:
-                        format: int32
-                        type: integer
-                    type: object
-                  driving:
-                    properties:
-                      maxReplicas:
-                        format: int32
-                        type: integer
-                      minReplicas:
-                        format: int32
-                        type: integer
-                    type: object
-                  foot:
-                    properties:
-                      maxReplicas:
-                        format: int32
-                        type: integer
-                      minReplicas:
-                        format: int32
-                        type: integer
-                    type: object
-                type: object
+                items:
+                  properties:
+                    endpointName:
+                      type: string
+                    maxReplicas:
+                      format: int32
+                      type: integer
+                    minReplicas:
+                      format: int32
+                      type: integer
+                    name:
+                      type: string
+                  type: object
+                type: array
             type: object
           status:
             description: OSRMClusterStatus defines the observed state of OSRMCluster

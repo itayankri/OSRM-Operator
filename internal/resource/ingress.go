@@ -16,7 +16,7 @@ type IngressBuilder struct {
 	*OSRMResourceBuilder
 }
 
-func (builder *OSRMResourceBuilder) Ingress(profiles []OSRMProfile) *IngressBuilder {
+func (builder *OSRMResourceBuilder) Ingress(profiles []string) *IngressBuilder {
 	return &IngressBuilder{
 		ClusterScopedBuilder{profiles},
 		builder,
@@ -71,7 +71,7 @@ func (builder *IngressBuilder) Update(object client.Object) error {
 	return nil
 }
 
-func (builder *IngressBuilder) getIngressRulePath(profile OSRMProfile, service string) networkingv1.HTTPIngressPath {
+func (builder *IngressBuilder) getIngressRulePath(profile string, service string) networkingv1.HTTPIngressPath {
 	serviceName := fmt.Sprintf("%s-%s", builder.Instance.Name, profile)
 
 	path, pathType := pathFactory(profile, service, builder.Instance.Spec.Ingress.IngressClassName)
@@ -90,7 +90,7 @@ func (builder *IngressBuilder) getIngressRulePath(profile OSRMProfile, service s
 	}
 }
 
-func pathFactory(profile OSRMProfile, service string, ingressClassName *string) (string, networkingv1.PathType) {
+func pathFactory(profile string, service string, ingressClassName *string) (string, networkingv1.PathType) {
 	if ingressClassName != nil {
 		if *ingressClassName == "nginx" {
 			return fmt.Sprintf("/%s/v1/%s/.*", service, profile), networkingv1.PathTypePrefix

@@ -18,7 +18,7 @@ type DeploymentBuilder struct {
 	*OSRMResourceBuilder
 }
 
-func (builder *OSRMResourceBuilder) Deployment(profile OSRMProfile) *DeploymentBuilder {
+func (builder *OSRMResourceBuilder) Deployment(profile string) *DeploymentBuilder {
 	return &DeploymentBuilder{
 		ProfileScopedBuilder{profile},
 		builder,

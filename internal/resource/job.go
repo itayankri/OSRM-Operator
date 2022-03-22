@@ -18,13 +18,7 @@ type JobBuilder struct {
 	*OSRMResourceBuilder
 }
 
-var profilesMap = map[OSRMProfile]string{
-	DrivingProfile: "car.lua",
-	CyclingProfile: "bicycle.lua",
-	FootProfile:    "foot.lua",
-}
-
-func (builder *OSRMResourceBuilder) Job(profile OSRMProfile) *JobBuilder {
+func (builder *OSRMResourceBuilder) Job(profile string) *JobBuilder {
 	return &JobBuilder{
 		ProfileScopedBuilder{profile},
 		builder,
@@ -72,13 +66,13 @@ func (builder *JobBuilder) Update(object client.Object) error {
 								apt update && \
 								apt --assume-yes install wget && \
 								wget %s && \
-								osrm-extract -p /opt/%s %s && \
+								osrm-extract -p /opt/%s.lua %s && \
 								osrm-partition %s && \
 								osrm-customize %s
 							`,
 								osrmDataPath,
 								builder.Instance.Spec.PBFURL,
-								profilesMap[builder.profile],
+								builder.profile,
 								pbfFileName,
 								osrmFileName,
 								osrmFileName,
