@@ -55,7 +55,7 @@ type ProfilesSpec []ProfileSpec
 
 type ProfileSpec struct {
 	Name         string `json:"name,omitempty"`
-	EndpointName string `json"endpointName,omitempty"`
+	EndpointName string `json:"endpointName,omitempty"`
 	MinReplicas  *int32 `json:"minReplicas,omitempty"`
 	MaxReplicas  *int32 `json:"maxReplicas,omitempty"`
 }
