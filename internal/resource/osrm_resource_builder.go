@@ -29,20 +29,26 @@ type ClusterScopedBuilder struct {
 func (builder *OSRMResourceBuilder) ResourceBuilders() []ResourceBuilder {
 	builders := []ResourceBuilder{}
 	profilesEndpoints := []string{}
+	profiles := []string{}
 
 	for _, profile := range builder.Instance.Spec.Profiles {
 		profilesEndpoints = append(profilesEndpoints, profile.EndpointName)
+		profiles = append(profilesEndpoints, profile.Name)
 		builders = append(builders, []ResourceBuilder{
-			builder.Service(profile.Name),
 			builder.Deployment(profile.Name),
+			builder.Service(profile.Name),
 			builder.Job(profile.Name),
 			builder.HorizontalPodAutoscaler(profile.Name),
 			builder.PersistentVolumeClaim(profile.Name),
 		}...)
 	}
 
-	if len(builders) > 0 && builder.Instance.Spec.Ingress != nil {
-		builders = append(builders, builder.Ingress(profilesEndpoints))
+	if len(builders) > 0 {
+		builders = append(builders, []ResourceBuilder{
+			builder.ConfigMap(profilesEndpoints),
+			builder.GatewayServiceBuilder(profiles),
+			builder.GatewayDeployment(profiles),
+		}...)
 	}
 
 	return builders

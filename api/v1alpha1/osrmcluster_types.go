@@ -34,7 +34,7 @@ type OSRMClusterSpec struct {
 	// Important: Run "make" to regenerate code after modifying this file
 	PBFURL      string          `json:"pbfUrl,omitempty"`
 	Profiles    ProfilesSpec    `json:"profiles,omitempty"`
-	Ingress     *IngressSpec    `json:"ingress,omitempty"`
+	Service     ServiceSpec     `json:"service,omitempty"`
 	Image       *string         `json:"image,omitempty"`
 	Persistence PersistenceSpec `json:"persistence,omitempty"`
 }
@@ -60,9 +60,7 @@ type ProfileSpec struct {
 	MaxReplicas  *int32 `json:"maxReplicas,omitempty"`
 }
 
-type IngressSpec struct {
-	IngressClassName *string  `json:"ingressClassName,omitempty"`
-	IPName           string   `json:"ipName,omitempty"`
+type ServiceSpec struct {
 	ExposingServices []string `json:"exposingServices,omitempty"`
 }
 

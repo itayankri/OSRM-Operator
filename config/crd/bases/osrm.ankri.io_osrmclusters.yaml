@@ -38,17 +38,6 @@ spec:
             properties:
               image:
                 type: string
-              ingress:
-                properties:
-                  exposingServices:
-                    items:
-                      type: string
-                    type: array
-                  ingressClassName:
-                    type: string
-                  ipName:
-                    type: string
-                type: object
               pbfUrl:
                 description: 'INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
                   Important: Run "make" to regenerate code after modifying this file'
@@ -79,6 +68,13 @@ spec:
                       type: string
                   type: object
                 type: array
+              service:
+                properties:
+                  exposingServices:
+                    items:
+                      type: string
+                    type: array
+                type: object
             type: object
           status:
             description: OSRMClusterStatus defines the observed state of OSRMCluster
