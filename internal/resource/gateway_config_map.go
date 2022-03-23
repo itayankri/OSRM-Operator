@@ -86,7 +86,7 @@ func getNginxUpstreams(instance *osrmv1alpha1.OSRMCluster, profiles []string) st
 
 func formatNginxUpstream(instance *osrmv1alpha1.OSRMCluster, profile string) string {
 	upstream := fmt.Sprintf("%s-%s", instance.Name, profile)
-	svc := fmt.Sprintf("%s.%s.svc", upstream, instance.Namespace)
+	svc := fmt.Sprintf("%s.%s.svc:80", upstream, instance.Namespace)
 	return fmt.Sprintf(`
 		upstream %s {
 			server %s;
@@ -107,10 +107,10 @@ func getNginxLocations(instance *osrmv1alpha1.OSRMCluster, profiles, osrmService
 }
 
 func formatNginxLocation(instance *osrmv1alpha1.OSRMCluster, profile, osrmService string) string {
-	path := fmt.Sprintf("%s/v1/%s/*", osrmService, profile)
+	path := fmt.Sprintf("%s/v1/%s/", osrmService, profile)
 	upstream := fmt.Sprintf("%s-%s", instance.Name, profile)
 	return fmt.Sprintf(`
 			location /%s {
-				proxy_pass http://%s/%s;
-			}`, path, upstream, path)
+				proxy_pass http://%s;
+			}`, path, upstream)
 }
