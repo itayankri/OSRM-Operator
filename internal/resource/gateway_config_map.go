@@ -14,19 +14,6 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-const baseNginxConfig = `
-events {
-
-}
-http {
-	server {
-		listen 80;
-		server_name _;
-		%s
-	}
-}
-`
-
 type ConfigMapBuilder struct {
 	ClusterScopedBuilder
 	*OSRMResourceBuilder
@@ -56,17 +43,55 @@ func (builder *ConfigMapBuilder) Update(object client.Object) error {
 		configMap.Data = make(map[string]string)
 	}
 
-	configMap.Data[nginxConfigurationFileName] = fmt.Sprintf(baseNginxConfig, getNginxLocations(
+	configMap.Data[nginxConfigurationFileName] = generateNginxConf(
 		builder.Instance,
 		builder.profiles,
 		builder.Instance.Spec.Service.ExposingServices,
-	))
+	)
 
 	if err := controllerutil.SetControllerReference(builder.Instance, configMap, builder.Scheme); err != nil {
 		return fmt.Errorf("failed setting controller reference: %v", err)
 	}
 
 	return nil
+}
+
+func generateNginxConf(instance *osrmv1alpha1.OSRMCluster, profiles, osrmServices []string) string {
+	config := `
+	events {
+	
+	}
+	http {
+		server {
+			listen 80;
+			server_name _;
+			%s
+		}
+		%s
+	}
+	`
+	locations := getNginxLocations(instance, profiles, osrmServices)
+	upstreams := getNginxUpstreams(instance, profiles)
+	return fmt.Sprintf(config, locations, upstreams)
+}
+
+func getNginxUpstreams(instance *osrmv1alpha1.OSRMCluster, profiles []string) string {
+	var upstreams strings.Builder
+	for _, profile := range profiles {
+		upstream := formatNginxUpstream(instance, profile)
+		upstreams.WriteString(upstream)
+	}
+	return upstreams.String()
+}
+
+func formatNginxUpstream(instance *osrmv1alpha1.OSRMCluster, profile string) string {
+	upstream := fmt.Sprintf("%s-%s", instance.Name, profile)
+	svc := fmt.Sprintf("%s.%s.svc", upstream, instance.Namespace)
+	return fmt.Sprintf(`
+		upstream %s {
+			server %s;
+		}
+	`, upstream, svc)
 }
 
 func getNginxLocations(instance *osrmv1alpha1.OSRMCluster, profiles, osrmServices []string) string {
@@ -83,9 +108,9 @@ func getNginxLocations(instance *osrmv1alpha1.OSRMCluster, profiles, osrmService
 
 func formatNginxLocation(instance *osrmv1alpha1.OSRMCluster, profile, osrmService string) string {
 	path := fmt.Sprintf("%s/v1/%s/*", osrmService, profile)
-	k8sService := fmt.Sprintf("%s-%s.%s.svc", instance.Name, profile, instance.Namespace)
+	upstream := fmt.Sprintf("%s-%s", instance.Name, profile)
 	return fmt.Sprintf(`
-		location /%s {
-			proxy_pass http://%s/%s;
-		}`, path, k8sService, path)
+			location /%s {
+				proxy_pass http://%s/%s;
+			}`, path, upstream, path)
 }
