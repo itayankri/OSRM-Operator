@@ -45,7 +45,7 @@ func (builder *GatewayServiceBuilder) Update(object client.Object) error {
 			Port:     80,
 			TargetPort: intstr.IntOrString{
 				Type:   intstr.Int,
-				IntVal: 5000,
+				IntVal: 80,
 			},
 		},
 	}
