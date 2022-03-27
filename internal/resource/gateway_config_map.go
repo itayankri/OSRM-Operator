@@ -106,9 +106,10 @@ func getNginxLocations(instance *osrmv1alpha1.OSRMCluster, profiles, osrmService
 
 func formatNginxLocation(instance *osrmv1alpha1.OSRMCluster, profile, osrmService string) string {
 	path := fmt.Sprintf("%s/v1/%s/", osrmService, profile)
-	svc := fmt.Sprintf("%s-%s.%s.svc", instance.Name, profile, instance.Namespace)
+	svc := fmt.Sprintf("%s-%s.%s.svc.cluster.local", instance.Name, profile, instance.Namespace)
 	return fmt.Sprintf(`
 			location /%s {
+				resolver 10.96.0.10;
 				set $backend %s;
 				proxy_pass http://$backend:80;
 			}`, path, svc)
