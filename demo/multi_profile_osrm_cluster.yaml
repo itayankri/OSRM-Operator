@@ -17,9 +17,7 @@ spec:
     endpointName: foot
     minReplicas: 1
     maxReplicas: 2
-  ingress:
-    ipName: test-cluster-ip
-    ingressClassName: nginx
+  service:
     exposingServices: ["route", "table", "match"]
   persistence:
     storage: "100Mi"
