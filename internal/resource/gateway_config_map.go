@@ -43,7 +43,7 @@ func (builder *ConfigMapBuilder) Update(object client.Object) error {
 		configMap.Data = make(map[string]string)
 	}
 
-	configMap.Data[nginxConfigurationFileName] = generateNginxConf(
+	configMap.Data[nginxConfigurationTemplateName] = generateNginxConf(
 		builder.Instance,
 		builder.profiles,
 		builder.Instance.Spec.Service.ExposingServices,
@@ -73,6 +73,7 @@ func generateNginxConf(instance *osrmv1alpha1.OSRMCluster, profiles, osrmService
 	return fmt.Sprintf(config, locations)
 }
 
+/*
 func getNginxUpstreams(instance *osrmv1alpha1.OSRMCluster, profiles []string) string {
 	var upstreams strings.Builder
 	for _, profile := range profiles {
@@ -84,13 +85,14 @@ func getNginxUpstreams(instance *osrmv1alpha1.OSRMCluster, profiles []string) st
 
 func formatNginxUpstream(instance *osrmv1alpha1.OSRMCluster, profile string) string {
 	upstream := fmt.Sprintf("%s-%s", instance.Name, profile)
-	svc := fmt.Sprintf("%s.%s.svc.cluster.local:80", upstream, instance.Namespace)
+	svc := fmt.Sprintf("%s.%s.svc:80", upstream, instance.Namespace)
 	return fmt.Sprintf(`
 		upstream %s {
 			server %s;
 		}
 	`, upstream, svc)
 }
+*/
 
 func getNginxLocations(instance *osrmv1alpha1.OSRMCluster, profiles, osrmServices []string) string {
 	var locations strings.Builder
@@ -106,11 +108,10 @@ func getNginxLocations(instance *osrmv1alpha1.OSRMCluster, profiles, osrmService
 
 func formatNginxLocation(instance *osrmv1alpha1.OSRMCluster, profile, osrmService string) string {
 	path := fmt.Sprintf("%s/v1/%s/", osrmService, profile)
-	svc := fmt.Sprintf("%s-%s.%s.svc.cluster.local", instance.Name, profile, instance.Namespace)
+	serviceName := fmt.Sprintf("%s-%s", instance.Name, profile)
+	envVar := serviceToEnvVariable(serviceName)
 	return fmt.Sprintf(`
 			location /%s {
-				resolver 10.96.0.10;
-				set $backend %s;
-				proxy_pass http://$backend:80;
-			}`, path, svc)
+				proxy_pass http://${%s};
+			}`, path, envVar)
 }
