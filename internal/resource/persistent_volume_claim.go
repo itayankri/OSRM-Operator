@@ -3,6 +3,7 @@ package resource
 import (
 	"fmt"
 
+	osrmv1alpha1 "github.com/itayankri/OSRM-Operator/api/v1alpha1"
 	"github.com/itayankri/OSRM-Operator/internal/metadata"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
@@ -16,7 +17,7 @@ type PersistentVolumeClaimBuilder struct {
 	*OSRMResourceBuilder
 }
 
-func (builder *OSRMResourceBuilder) PersistentVolumeClaim(profile string) *PersistentVolumeClaimBuilder {
+func (builder *OSRMResourceBuilder) PersistentVolumeClaim(profile *osrmv1alpha1.ProfileSpec) *PersistentVolumeClaimBuilder {
 	return &PersistentVolumeClaimBuilder{
 		ProfileScopedBuilder{profile},
 		builder,
@@ -24,7 +25,7 @@ func (builder *OSRMResourceBuilder) PersistentVolumeClaim(profile string) *Persi
 }
 
 func (builder *PersistentVolumeClaimBuilder) Build() (client.Object, error) {
-	name := fmt.Sprintf("%s-%s", builder.Instance.Name, builder.profile)
+	name := fmt.Sprintf("%s-%s", builder.Instance.Name, builder.profile.Name)
 	return &corev1.PersistentVolumeClaim{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      name,

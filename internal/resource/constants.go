@@ -14,6 +14,5 @@ const osrmDataVolumeName = "osrm-data"
 const osrmDataPath = "/data"
 
 const gatewayPostfix = "gateway"
-const nginxConfigurationFileName = "nginx.conf"
 const nginxConfigurationTemplateName = "nginx.tmpl"
 const gatewayImage = "nginx"
