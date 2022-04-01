@@ -3,6 +3,7 @@ package resource
 import (
 	"fmt"
 
+	osrmv1alpha1 "github.com/itayankri/OSRM-Operator/api/v1alpha1"
 	"github.com/itayankri/OSRM-Operator/internal/metadata"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -16,7 +17,7 @@ type ServiceBuilder struct {
 	*OSRMResourceBuilder
 }
 
-func (builder *OSRMResourceBuilder) Service(profile string) *ServiceBuilder {
+func (builder *OSRMResourceBuilder) Service(profile *osrmv1alpha1.ProfileSpec) *ServiceBuilder {
 	return &ServiceBuilder{
 		ProfileScopedBuilder{profile},
 		builder,
@@ -26,14 +27,14 @@ func (builder *OSRMResourceBuilder) Service(profile string) *ServiceBuilder {
 func (builder *ServiceBuilder) Build() (client.Object, error) {
 	return &corev1.Service{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      fmt.Sprintf("%s-%s", builder.Instance.Name, builder.profile),
+			Name:      fmt.Sprintf("%s-%s", builder.Instance.Name, builder.profile.Name),
 			Namespace: builder.Instance.Namespace,
 		},
 	}, nil
 }
 
 func (builder *ServiceBuilder) Update(object client.Object) error {
-	name := fmt.Sprintf("%s-%s", builder.Instance.Name, builder.profile)
+	name := fmt.Sprintf("%s-%s", builder.Instance.Name, builder.profile.Name)
 
 	service := object.(*corev1.Service)
 

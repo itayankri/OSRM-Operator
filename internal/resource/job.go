@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"strings"
 
+	osrmv1alpha1 "github.com/itayankri/OSRM-Operator/api/v1alpha1"
 	"github.com/itayankri/OSRM-Operator/internal/metadata"
 	batchv1 "k8s.io/api/batch/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -18,7 +19,7 @@ type JobBuilder struct {
 	*OSRMResourceBuilder
 }
 
-func (builder *OSRMResourceBuilder) Job(profile string) *JobBuilder {
+func (builder *OSRMResourceBuilder) Job(profile *osrmv1alpha1.ProfileSpec) *JobBuilder {
 	return &JobBuilder{
 		ProfileScopedBuilder{profile},
 		builder,
@@ -28,14 +29,14 @@ func (builder *OSRMResourceBuilder) Job(profile string) *JobBuilder {
 func (builder *JobBuilder) Build() (client.Object, error) {
 	return &batchv1.Job{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      fmt.Sprintf("%s-%s-%s", builder.Instance.Name, builder.profile, "map-builder"),
+			Name:      fmt.Sprintf("%s-%s-%s", builder.Instance.Name, builder.profile.Name, "map-builder"),
 			Namespace: builder.Instance.Namespace,
 		},
 	}, nil
 }
 
 func (builder *JobBuilder) Update(object client.Object) error {
-	name := fmt.Sprintf("%s-%s", builder.Instance.Name, builder.profile)
+	name := fmt.Sprintf("%s-%s", builder.Instance.Name, builder.profile.Name)
 	pbfFileName := builder.Instance.Spec.GetPbfFileName()
 	osrmFileName := strings.ReplaceAll(pbfFileName, "osm.pbf", "osrm")
 	job := object.(*batchv1.Job)
@@ -72,7 +73,7 @@ func (builder *JobBuilder) Update(object client.Object) error {
 							`,
 								osrmDataPath,
 								builder.Instance.Spec.PBFURL,
-								builder.profile,
+								builder.profile.Name,
 								pbfFileName,
 								osrmFileName,
 								osrmFileName,

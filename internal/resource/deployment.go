@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"strings"
 
+	osrmv1alpha1 "github.com/itayankri/OSRM-Operator/api/v1alpha1"
 	"github.com/itayankri/OSRM-Operator/internal/metadata"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -18,7 +19,7 @@ type DeploymentBuilder struct {
 	*OSRMResourceBuilder
 }
 
-func (builder *OSRMResourceBuilder) Deployment(profile string) *DeploymentBuilder {
+func (builder *OSRMResourceBuilder) Deployment(profile *osrmv1alpha1.ProfileSpec) *DeploymentBuilder {
 	return &DeploymentBuilder{
 		ProfileScopedBuilder{profile},
 		builder,
@@ -28,18 +29,18 @@ func (builder *OSRMResourceBuilder) Deployment(profile string) *DeploymentBuilde
 func (builder *DeploymentBuilder) Build() (client.Object, error) {
 	return &appsv1.Deployment{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      fmt.Sprintf("%s-%s", builder.Instance.Name, builder.profile),
+			Name:      fmt.Sprintf("%s-%s", builder.Instance.Name, builder.profile.Name),
 			Namespace: builder.Instance.Namespace,
 		},
 	}, nil
 }
 
 func (builder *DeploymentBuilder) Update(object client.Object) error {
-	name := fmt.Sprintf("%s-%s", builder.Instance.Name, builder.profile)
+	name := fmt.Sprintf("%s-%s", builder.Instance.Name, builder.profile.Name)
 	deployment := object.(*appsv1.Deployment)
 	pbfFileName := builder.Instance.Spec.GetPbfFileName()
 	osrmFileName := strings.ReplaceAll(pbfFileName, "osm.pbf", "osrm")
-	profileSpec := getProfileSpec(builder.profile, builder.Instance)
+	profileSpec := getProfileSpec(builder.profile.Name, builder.Instance)
 
 	deployment.Labels = metadata.GetLabels(builder.Instance.Name, builder.Instance.Labels)
 

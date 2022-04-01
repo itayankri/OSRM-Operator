@@ -3,6 +3,7 @@ package resource
 import (
 	"fmt"
 
+	osrmv1alpha1 "github.com/itayankri/OSRM-Operator/api/v1alpha1"
 	"github.com/itayankri/OSRM-Operator/internal/metadata"
 	autoscalingv1 "k8s.io/api/autoscaling/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -15,7 +16,7 @@ type HorizontalPodAutoscalerBuilder struct {
 	*OSRMResourceBuilder
 }
 
-func (builder *OSRMResourceBuilder) HorizontalPodAutoscaler(profile string) *HorizontalPodAutoscalerBuilder {
+func (builder *OSRMResourceBuilder) HorizontalPodAutoscaler(profile *osrmv1alpha1.ProfileSpec) *HorizontalPodAutoscalerBuilder {
 	return &HorizontalPodAutoscalerBuilder{
 		ProfileScopedBuilder{profile},
 		builder,
@@ -25,20 +26,20 @@ func (builder *OSRMResourceBuilder) HorizontalPodAutoscaler(profile string) *Hor
 func (builder *HorizontalPodAutoscalerBuilder) Build() (client.Object, error) {
 	return &autoscalingv1.HorizontalPodAutoscaler{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      fmt.Sprintf("%s-%s", builder.Instance.Name, builder.profile),
+			Name:      fmt.Sprintf("%s-%s", builder.Instance.Name, builder.profile.Name),
 			Namespace: builder.Instance.Namespace,
 		},
 	}, nil
 }
 
 func (builder *HorizontalPodAutoscalerBuilder) Update(object client.Object) error {
-	name := fmt.Sprintf("%s-%s", builder.Instance.Name, builder.profile)
+	name := fmt.Sprintf("%s-%s", builder.Instance.Name, builder.profile.Name)
 	hpa := object.(*autoscalingv1.HorizontalPodAutoscaler)
 
 	hpa.Labels = metadata.GetLabels(builder.Instance.Name, builder.Instance.Labels)
 
 	targetCPUUtilizationPercentage := int32(85)
-	profileSpec := getProfileSpec(builder.profile, builder.Instance)
+	profileSpec := getProfileSpec(builder.profile.Name, builder.Instance)
 
 	hpa.Spec.ScaleTargetRef = autoscalingv1.CrossVersionObjectReference{
 		Kind:       "Deployment",

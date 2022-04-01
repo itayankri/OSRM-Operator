@@ -3,6 +3,7 @@ package resource
 import (
 	"fmt"
 
+	osrmv1alpha1 "github.com/itayankri/OSRM-Operator/api/v1alpha1"
 	"github.com/itayankri/OSRM-Operator/internal/metadata"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -19,7 +20,7 @@ type GatewayDeploymentBuilder struct {
 	*OSRMResourceBuilder
 }
 
-func (builder *OSRMResourceBuilder) GatewayDeployment(profiles []string) *GatewayDeploymentBuilder {
+func (builder *OSRMResourceBuilder) GatewayDeployment(profiles []osrmv1alpha1.ProfileSpec) *GatewayDeploymentBuilder {
 	return &GatewayDeploymentBuilder{
 		ClusterScopedBuilder{profiles},
 		builder,
@@ -114,14 +115,3 @@ func (builder *GatewayDeploymentBuilder) Update(object client.Object) error {
 
 	return nil
 }
-
-/*
-func (builder *GatewayDeploymentBuilder) generateEnvsubtArguments() string {
-	args := ""
-
-	for _, profile := range builder.profiles {
-		serviceName := fmt.Sprintf("%s-%s", builder.Instance.Name, profile)
-		envVar := serviceToEnvVariable(serviceName)
-	}
-}
-*/
