@@ -32,13 +32,6 @@ Once you have a functional NFS server and an NFS volume provisioner you need cre
 kubectl create -f https://raw.githubusercontent.com/kubernetes-csi/csi-driver-nfs/master/deploy/example/storageclass-nfs.yaml
 ```
 
-### Installing an Ingress controller
-This demo also create an ingress that will enable us access our OSRMCluster from outside the cluster. In this demo we will use Nginx ingress contoller (If you are running in GCP environment you can skip this step).
-
-```bash
-kubectl apply -f https://raw.githubusercontent.com/kubernetes/ingress-nginx/main/deploy/static/provider/kind/deploy.yaml
-```
-
 ## OSRMCluster installation
 ### Installing the operator
 The easiest way to install the operator at the moment is cloning this repository and run a *make* command (Make sure you have [golang](https://go.dev/) installed on your machine).
