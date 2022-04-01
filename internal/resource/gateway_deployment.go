@@ -63,9 +63,19 @@ func (builder *GatewayDeploymentBuilder) Update(object client.Object) error {
 						},
 						Resources: corev1.ResourceRequirements{
 							Requests: map[corev1.ResourceName]resource.Quantity{
-								"memory": resource.MustParse("1Gi"),
-								"cpu":    resource.MustParse("1"),
+								"memory": resource.MustParse("500Mi"),
+								"cpu":    resource.MustParse("0.5"),
 							},
+						},
+						Command: []string{
+							"/bin/sh",
+							"-c",
+						},
+						Args: []string{`
+								envsubst < /etc/nginx/nginx.tmpl > /etc/nginx/nginx.conf &&
+								cat /etc/nginx/nginx.conf &&
+								nginx -g 'daemon off;'
+							`,
 						},
 						VolumeMounts: []corev1.VolumeMount{
 							{
@@ -103,3 +113,14 @@ func (builder *GatewayDeploymentBuilder) Update(object client.Object) error {
 
 	return nil
 }
+
+/*
+func (builder *GatewayDeploymentBuilder) generateEnvsubtArguments() string {
+	args := ""
+
+	for _, profile := range builder.profiles {
+		serviceName := fmt.Sprintf("%s-%s", builder.Instance.Name, profile)
+		envVar := serviceToEnvVariable(serviceName)
+	}
+}
+*/
