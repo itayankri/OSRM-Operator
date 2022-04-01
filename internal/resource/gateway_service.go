@@ -3,6 +3,7 @@ package resource
 import (
 	"fmt"
 
+	osrmv1alpha1 "github.com/itayankri/OSRM-Operator/api/v1alpha1"
 	"github.com/itayankri/OSRM-Operator/internal/metadata"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -16,7 +17,7 @@ type GatewayServiceBuilder struct {
 	*OSRMResourceBuilder
 }
 
-func (builder *OSRMResourceBuilder) GatewayServiceBuilder(profiles []string) *GatewayServiceBuilder {
+func (builder *OSRMResourceBuilder) GatewayServiceBuilder(profiles []osrmv1alpha1.ProfileSpec) *GatewayServiceBuilder {
 	return &GatewayServiceBuilder{
 		ClusterScopedBuilder{profiles},
 		builder,

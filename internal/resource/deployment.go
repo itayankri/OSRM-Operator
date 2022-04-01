@@ -29,14 +29,14 @@ func (builder *OSRMResourceBuilder) Deployment(profile *osrmv1alpha1.ProfileSpec
 func (builder *DeploymentBuilder) Build() (client.Object, error) {
 	return &appsv1.Deployment{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      fmt.Sprintf("%s-%s", builder.Instance.Name, builder.profile),
+			Name:      fmt.Sprintf("%s-%s", builder.Instance.Name, builder.profile.Name),
 			Namespace: builder.Instance.Namespace,
 		},
 	}, nil
 }
 
 func (builder *DeploymentBuilder) Update(object client.Object) error {
-	name := fmt.Sprintf("%s-%s", builder.Instance.Name, builder.profile)
+	name := fmt.Sprintf("%s-%s", builder.Instance.Name, builder.profile.Name)
 	deployment := object.(*appsv1.Deployment)
 	pbfFileName := builder.Instance.Spec.GetPbfFileName()
 	osrmFileName := strings.ReplaceAll(pbfFileName, "osm.pbf", "osrm")
