@@ -72,9 +72,10 @@ func (builder *GatewayDeploymentBuilder) Update(object client.Object) error {
 							"-c",
 						},
 						Args: []string{`
-								envsubst < /etc/nginx/nginx.tmpl > /etc/nginx/nginx.conf &&
-								cat /etc/nginx/nginx.conf &&
-								nginx -g 'daemon off;'
+								envsubst < /etc/nginx/nginx.tmpl > /etc/nginx.conf &&
+								printenv &&
+								cat /etc/nginx.conf &&
+								nginx -g 'daemon off;' -c /etc/nginx.conf
 							`,
 						},
 						VolumeMounts: []corev1.VolumeMount{
@@ -95,8 +96,8 @@ func (builder *GatewayDeploymentBuilder) Update(object client.Object) error {
 								},
 								Items: []corev1.KeyToPath{
 									{
-										Key:  nginxConfigurationFileName,
-										Path: nginxConfigurationFileName,
+										Key:  nginxConfigurationTemplateName,
+										Path: nginxConfigurationTemplateName,
 									},
 								},
 							},

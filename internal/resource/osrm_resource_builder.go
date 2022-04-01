@@ -33,7 +33,7 @@ func (builder *OSRMResourceBuilder) ResourceBuilders() []ResourceBuilder {
 
 	for _, profile := range builder.Instance.Spec.Profiles {
 		profilesEndpoints = append(profilesEndpoints, profile.EndpointName)
-		profiles = append(profilesEndpoints, profile.Name)
+		profiles = append(profiles, profile.Name)
 		builders = append(builders, []ResourceBuilder{
 			builder.Deployment(profile.Name),
 			builder.Service(profile.Name),
@@ -45,7 +45,7 @@ func (builder *OSRMResourceBuilder) ResourceBuilders() []ResourceBuilder {
 
 	if len(builders) > 0 {
 		builders = append(builders, []ResourceBuilder{
-			builder.ConfigMap(profilesEndpoints),
+			builder.ConfigMap(profiles, profilesEndpoints),
 			builder.GatewayServiceBuilder(profiles),
 			builder.GatewayDeployment(profiles),
 		}...)
