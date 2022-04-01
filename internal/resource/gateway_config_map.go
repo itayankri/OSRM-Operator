@@ -17,12 +17,14 @@ import (
 type ConfigMapBuilder struct {
 	ClusterScopedBuilder
 	*OSRMResourceBuilder
+	profilesEndpoints []string
 }
 
-func (builder *OSRMResourceBuilder) ConfigMap(profiles []string) *ConfigMapBuilder {
+func (builder *OSRMResourceBuilder) ConfigMap(profiles, profilesEndpoints []string) *ConfigMapBuilder {
 	return &ConfigMapBuilder{
 		ClusterScopedBuilder{profiles},
 		builder,
+		profilesEndpoints,
 	}
 }
 
@@ -46,6 +48,7 @@ func (builder *ConfigMapBuilder) Update(object client.Object) error {
 	configMap.Data[nginxConfigurationTemplateName] = generateNginxConf(
 		builder.Instance,
 		builder.profiles,
+		builder.profilesEndpoints,
 		builder.Instance.Spec.Service.ExposingServices,
 	)
 
@@ -56,7 +59,7 @@ func (builder *ConfigMapBuilder) Update(object client.Object) error {
 	return nil
 }
 
-func generateNginxConf(instance *osrmv1alpha1.OSRMCluster, profiles, osrmServices []string) string {
+func generateNginxConf(instance *osrmv1alpha1.OSRMCluster, profiles, endpoints, osrmServices []string) string {
 	config := `
 	events {
 	
@@ -69,36 +72,15 @@ func generateNginxConf(instance *osrmv1alpha1.OSRMCluster, profiles, osrmService
 		}
 	}
 	`
-	locations := getNginxLocations(instance, profiles, osrmServices)
+	locations := getNginxLocations(instance, profiles, endpoints, osrmServices)
 	return fmt.Sprintf(config, locations)
 }
 
-/*
-func getNginxUpstreams(instance *osrmv1alpha1.OSRMCluster, profiles []string) string {
-	var upstreams strings.Builder
-	for _, profile := range profiles {
-		upstream := formatNginxUpstream(instance, profile)
-		upstreams.WriteString(upstream)
-	}
-	return upstreams.String()
-}
-
-func formatNginxUpstream(instance *osrmv1alpha1.OSRMCluster, profile string) string {
-	upstream := fmt.Sprintf("%s-%s", instance.Name, profile)
-	svc := fmt.Sprintf("%s.%s.svc:80", upstream, instance.Namespace)
-	return fmt.Sprintf(`
-		upstream %s {
-			server %s;
-		}
-	`, upstream, svc)
-}
-*/
-
-func getNginxLocations(instance *osrmv1alpha1.OSRMCluster, profiles, osrmServices []string) string {
+func getNginxLocations(instance *osrmv1alpha1.OSRMCluster, profiles, endpoints, osrmServices []string) string {
 	var locations strings.Builder
-	for _, profile := range profiles {
+	for i, profile := range profiles {
 		for _, service := range osrmServices {
-			location := formatNginxLocation(instance, profile, service)
+			location := formatNginxLocation(instance, profile, endpoints[i], service)
 			locations.WriteString(location)
 		}
 	}
@@ -106,8 +88,8 @@ func getNginxLocations(instance *osrmv1alpha1.OSRMCluster, profiles, osrmService
 	return locations.String()
 }
 
-func formatNginxLocation(instance *osrmv1alpha1.OSRMCluster, profile, osrmService string) string {
-	path := fmt.Sprintf("%s/v1/%s/", osrmService, profile)
+func formatNginxLocation(instance *osrmv1alpha1.OSRMCluster, profile, endpoint, osrmService string) string {
+	path := fmt.Sprintf("%s/v1/%s/", osrmService, endpoint)
 	serviceName := fmt.Sprintf("%s-%s", instance.Name, profile)
 	envVar := serviceToEnvVariable(serviceName)
 	return fmt.Sprintf(`
