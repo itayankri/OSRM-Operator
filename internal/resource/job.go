@@ -44,7 +44,11 @@ func (builder *JobBuilder) Update(object client.Object) error {
 	job.Labels = metadata.GetLabels(builder.Instance.Name, builder.Instance.Labels)
 
 	job.Spec = batchv1.JobSpec{
+		Selector: job.Spec.Selector,
 		Template: corev1.PodTemplateSpec{
+			ObjectMeta: metav1.ObjectMeta{
+				Labels: job.Spec.Template.ObjectMeta.Labels,
+			},
 			Spec: corev1.PodSpec{
 				RestartPolicy: corev1.RestartPolicyOnFailure,
 				Containers: []corev1.Container{
