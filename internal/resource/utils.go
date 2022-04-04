@@ -10,7 +10,7 @@ import (
 func getProfileSpec(profileName string, instance *osrmv1alpha1.OSRMCluster) *osrmv1alpha1.ProfileSpec {
 	for _, profile := range instance.Spec.Profiles {
 		if profile.Name == profileName {
-			return &profile
+			return profile
 		}
 	}
 	return nil

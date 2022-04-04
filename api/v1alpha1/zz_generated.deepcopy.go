@@ -92,7 +92,11 @@ func (in *OSRMClusterSpec) DeepCopyInto(out *OSRMClusterSpec) {
 		in, out := &in.Profiles, &out.Profiles
 		*out = make(ProfilesSpec, len(*in))
 		for i := range *in {
-			(*in)[i].DeepCopyInto(&(*out)[i])
+			if (*in)[i] != nil {
+				in, out := &(*in)[i], &(*out)[i]
+				*out = new(ProfileSpec)
+				(*in).DeepCopyInto(*out)
+			}
 		}
 	}
 	in.Service.DeepCopyInto(&out.Service)
@@ -187,7 +191,11 @@ func (in ProfilesSpec) DeepCopyInto(out *ProfilesSpec) {
 		in := &in
 		*out = make(ProfilesSpec, len(*in))
 		for i := range *in {
-			(*in)[i].DeepCopyInto(&(*out)[i])
+			if (*in)[i] != nil {
+				in, out := &(*in)[i], &(*out)[i]
+				*out = new(ProfileSpec)
+				(*in).DeepCopyInto(*out)
+			}
 		}
 	}
 }

@@ -23,18 +23,18 @@ type ProfileScopedBuilder struct {
 }
 
 type ClusterScopedBuilder struct {
-	profiles []osrmv1alpha1.ProfileSpec
+	profiles []*osrmv1alpha1.ProfileSpec
 }
 
 func (builder *OSRMResourceBuilder) ResourceBuilders() []ResourceBuilder {
 	builders := []ResourceBuilder{}
 	for _, profile := range builder.Instance.Spec.Profiles {
 		builders = append(builders, []ResourceBuilder{
-			builder.Deployment(&profile),
-			builder.Service(&profile),
-			builder.Job(&profile),
-			builder.HorizontalPodAutoscaler(&profile),
-			builder.PersistentVolumeClaim(&profile),
+			builder.Deployment(profile),
+			builder.Service(profile),
+			builder.Job(profile),
+			builder.HorizontalPodAutoscaler(profile),
+			builder.PersistentVolumeClaim(profile),
 		}...)
 	}
 
