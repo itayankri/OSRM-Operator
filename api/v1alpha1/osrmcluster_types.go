@@ -51,7 +51,7 @@ func (spec *OSRMClusterSpec) GetPbfFileName() string {
 	return split[len(split)-1]
 }
 
-type ProfilesSpec []ProfileSpec
+type ProfilesSpec []*ProfileSpec
 
 type ProfileSpec struct {
 	Name         string `json:"name,omitempty"`

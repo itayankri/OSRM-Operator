@@ -57,7 +57,7 @@ var _ = Context("Services", func() {
 		})
 
 		It("Should use values from custom resource", func() {
-			serviceBuilder := builder.Service(&instance.Spec.Profiles[0])
+			serviceBuilder := builder.Service(instance.Spec.Profiles[0])
 			obj, err := serviceBuilder.Build()
 			Expect(err).NotTo(HaveOccurred())
 			service := obj.(*corev1.Service)

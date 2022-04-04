@@ -20,7 +20,7 @@ type GatewayDeploymentBuilder struct {
 	*OSRMResourceBuilder
 }
 
-func (builder *OSRMResourceBuilder) GatewayDeployment(profiles []osrmv1alpha1.ProfileSpec) *GatewayDeploymentBuilder {
+func (builder *OSRMResourceBuilder) GatewayDeployment(profiles []*osrmv1alpha1.ProfileSpec) *GatewayDeploymentBuilder {
 	return &GatewayDeploymentBuilder{
 		ClusterScopedBuilder{profiles},
 		builder,

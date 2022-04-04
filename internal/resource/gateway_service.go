@@ -17,7 +17,7 @@ type GatewayServiceBuilder struct {
 	*OSRMResourceBuilder
 }
 
-func (builder *OSRMResourceBuilder) GatewayServiceBuilder(profiles []osrmv1alpha1.ProfileSpec) *GatewayServiceBuilder {
+func (builder *OSRMResourceBuilder) GatewayServiceBuilder(profiles []*osrmv1alpha1.ProfileSpec) *GatewayServiceBuilder {
 	return &GatewayServiceBuilder{
 		ClusterScopedBuilder{profiles},
 		builder,
