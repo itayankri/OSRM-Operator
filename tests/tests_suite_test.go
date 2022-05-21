@@ -8,7 +8,6 @@ import (
 )
 
 func TestFunctional(t *testing.T) {
-	var reporters []Reporter
 	RegisterFailHandler(Fail)
-	RunSpecsWithDefaultAndCustomReporters(t, "Functional test suite", reporters)
+	RunSpecs(t, "OSRM operator e2e test suite")
 }
