@@ -32,6 +32,7 @@ import (
 	"github.com/go-logr/logr"
 	osrmv1alpha1 "github.com/itayankri/OSRM-Operator/api/v1alpha1"
 	"github.com/itayankri/OSRM-Operator/internal/resource"
+	"github.com/itayankri/OSRM-Operator/internal/status"
 	appsv1 "k8s.io/api/apps/v1"
 	autoscalingv1 "k8s.io/api/autoscaling/v1"
 	batchv1 "k8s.io/api/batch/v1"
@@ -89,6 +90,8 @@ func (r *OSRMClusterReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 		return reconcile.Result{}, err
 	}
 
+	r.setReconciliationInProgress(ctx, instance, metav1.ConditionTrue)
+
 	rawInstanceSpec, err := json.Marshal(instance.Spec)
 	if err != nil {
 		logger.Error(err, "Failed to marshal cluster spec")
@@ -119,12 +122,13 @@ func (r *OSRMClusterReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 		})
 		r.logAndRecordOperationResult(logger, instance, resource, operationResult, err)
 		if err != nil {
-			r.setReconcileSuccess(ctx, instance, metav1.ConditionFalse, "Error", err.Error())
+			r.setReconciliationSuccess(ctx, instance, metav1.ConditionFalse, "Error", err.Error())
 			return ctrl.Result{}, err
 		}
 	}
 
-	r.setReconcileSuccess(ctx, instance, metav1.ConditionTrue, "Success", "Reconciliation completed")
+	r.setReconciliationSuccess(ctx, instance, metav1.ConditionTrue, "Success", "Reconciliation completed")
+	r.setReconciliationInProgress(ctx, instance, metav1.ConditionFalse)
 	logger.Info("Finished reconciling")
 
 	return ctrl.Result{}, nil
@@ -169,13 +173,26 @@ func (r *OSRMClusterReconciler) logAndRecordOperationResult(
 	}
 }
 
-func (r *OSRMClusterReconciler) setReconcileSuccess(
+func (r *OSRMClusterReconciler) setReconciliationInProgress(
+	ctx context.Context,
+	osrmCluster *osrmv1alpha1.OSRMCluster,
+	condition metav1.ConditionStatus,
+) {
+	osrmCluster.Status.SetCondition(string(status.ReconciliationInProgress), condition, "", "")
+	if err := r.Status().Update(ctx, osrmCluster); err != nil {
+		ctrl.LoggerFrom(ctx).Error(err, "Failed to update Custom Resource status",
+			"namespace", osrmCluster.Namespace,
+			"name", osrmCluster.Name)
+	}
+}
+
+func (r *OSRMClusterReconciler) setReconciliationSuccess(
 	ctx context.Context,
 	osrmCluster *osrmv1alpha1.OSRMCluster,
 	condition metav1.ConditionStatus,
 	reason, msg string,
 ) {
-	osrmCluster.Status.SetCondition("ReconcileSuccess", condition, reason, msg)
+	osrmCluster.Status.SetCondition(string(status.ReconciliationSuccess), condition, reason, msg)
 	if err := r.Status().Update(ctx, osrmCluster); err != nil {
 		ctrl.LoggerFrom(ctx).Error(err, "Failed to update Custom Resource status",
 			"namespace", osrmCluster.Namespace,
