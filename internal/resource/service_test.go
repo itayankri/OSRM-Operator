@@ -1,12 +1,15 @@
 package resource_test
 
 import (
+	"fmt"
+
 	osrmv1alpha1 "github.com/itayankri/OSRM-Operator/api/v1alpha1"
 	"github.com/itayankri/OSRM-Operator/internal/resource"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	corev1 "k8s.io/api/core/v1"
 	k8sresource "k8s.io/apimachinery/pkg/api/resource"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	defaultscheme "k8s.io/client-go/kubernetes/scheme"
 )
@@ -16,6 +19,10 @@ func generateOSRMCluster() osrmv1alpha1.OSRMCluster {
 	maxReplicas := int32(4)
 	storage := k8sresource.MustParse("100Mi")
 	return osrmv1alpha1.OSRMCluster{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "test-service",
+			Namespace: "test-namespace",
+		},
 		Spec: osrmv1alpha1.OSRMClusterSpec{
 			PBFURL: "https://download.geofabrik.de/asia/israel-and-palestine-latest.osm.pbf",
 			Profiles: osrmv1alpha1.ProfilesSpec{
@@ -63,7 +70,7 @@ var _ = Context("Services", func() {
 			service := obj.(*corev1.Service)
 
 			By("generates a service object with the correct name and labels", func() {
-				expectedName := instance.Name
+				expectedName := fmt.Sprintf("%s-%s", instance.Name, instance.Spec.Profiles[0].Name)
 				Expect(service.Name).To(Equal(expectedName))
 			})
 
