@@ -2,8 +2,41 @@ name: Tests
 on: push
 
 jobs:
+  Unit-tests:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Install Go
+        uses: actions/setup-go@v2
+
+      - name: Check out code into the Go module directory
+        uses: actions/checkout@v2
+
+      - name: Test
+        run: |
+          export GOPATH=$HOME/go
+          export PATH=$PATH:$GOPATH/bin
+          make test
+
+  Build:
+    runs-on: ubuntu-latest
+    needs: [Unit-tests]
+    steps:
+      - name: Install Go
+        uses: actions/setup-go@v2
+
+      - name: Check out code into the Go module directory
+        uses: actions/checkout@v2
+
+      - name: Build
+        run: |
+          IMG=
+          export GOPATH=$HOME/go
+          export PATH=$PATH:$GOPATH/bin
+          make docker-build docker-push
+
   Dry-run:
     runs-on: ubuntu-latest
+    needs: [Build]
     steps:
       - name: Install Go
         uses: actions/setup-go@v2
@@ -20,23 +53,9 @@ jobs:
           sleep 5
           find demo/ -name "*.y*ml" -exec kubectl apply --dry-run=server -f {} \;
 
-  Unit-tests:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Install Go
-        uses: actions/setup-go@v2
-
-      - name: Check out code into the Go module directory
-        uses: actions/checkout@v2
-
-      - name: Test
-        run: |
-          export GOPATH=$HOME/go
-          export PATH=$PATH:$GOPATH/bin
-          make test
-
   E2E-tests:
     runs-on: ubuntu-latest
+    needs: [Build]
     steps:
       - name: Install Go
         uses: actions/setup-go@v2
