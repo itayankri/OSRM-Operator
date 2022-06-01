@@ -57,8 +57,8 @@ func (builder *JobBuilder) Update(object client.Object) error {
 						Image: builder.Instance.Spec.GetImage(),
 						Resources: corev1.ResourceRequirements{
 							Requests: map[corev1.ResourceName]resource.Quantity{
-								"memory": resource.MustParse("1Gi"),
-								"cpu":    resource.MustParse("1"),
+								"memory": resource.MustParse("1000M"),
+								"cpu":    resource.MustParse("1000m"),
 							},
 						},
 						Command: []string{
