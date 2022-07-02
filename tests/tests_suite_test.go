@@ -8,7 +8,7 @@ import (
 	. "github.com/onsi/gomega"
 
 	osrmv1alpha1 "github.com/itayankri/OSRM-Operator/api/v1alpha1"
-	resource "k8s.io/apimachinery/pkg/api/resource"
+	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -18,7 +18,7 @@ const (
 )
 
 func getOSRMClusterCR() *osrmv1alpha1.OSRMCluster {
-
+	storage := resource.MustParse("100Mi")
 	return &osrmv1alpha1.OSRMCluster{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "test-cluster",
@@ -44,7 +44,7 @@ func getOSRMClusterCR() *osrmv1alpha1.OSRMCluster {
 				ExposingServices: []string{"route", "table", "match"},
 			},
 			Persistence: osrmv1alpha1.PersistenceSpec{
-				Storage:          &resource.MustParse("100Mi"),
+				Storage:          &storage,
 				StorageClassName: "Standard",
 			},
 		},
