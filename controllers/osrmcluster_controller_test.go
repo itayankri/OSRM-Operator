@@ -31,14 +31,14 @@ var _ = Describe("OSRMClusterController", func() {
 		BeforeEach(func() {
 			cluster = getOSRMClusterCR()
 
-			Expect(k8sClient.Create(ctx, cluster)).To(Succeed())
-			waitForClusterCreation(ctx, cluster, k8sClient)
+			Expect(k.Create(ctx, cluster)).To(Succeed())
+			waitForClusterCreation(ctx, cluster, k)
 		})
 
 		AfterEach(func() {
-			Expect(k8sClient.Delete(ctx, cluster)).To(Succeed())
+			Expect(k.Delete(ctx, cluster)).To(Succeed())
 			Eventually(func() bool {
-				err := k8sClient.Get(ctx, types.NamespacedName{
+				err := k.Get(ctx, types.NamespacedName{
 					Name:      cluster.Name,
 					Namespace: cluster.Namespace,
 				}, cluster)
@@ -49,7 +49,7 @@ var _ = Describe("OSRMClusterController", func() {
 		It("should be able to create a single-profile OSRM cluster", func() {
 			By("populating the image spec with the default image", func() {
 				fetchedCluster := &osrmv1alpha1.OSRMCluster{}
-				Expect(k8sClient.Get(ctx, types.NamespacedName{Name: "rabbitmq-one", Namespace: defaultNamespace}, fetchedCluster)).To(Succeed())
+				Expect(k.Get(ctx, types.NamespacedName{Name: "rabbitmq-one", Namespace: defaultNamespace}, fetchedCluster)).To(Succeed())
 				Expect(fetchedCluster.Spec.Image).To(Equal(defaultImage))
 			})
 		})

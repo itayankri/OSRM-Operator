@@ -40,11 +40,11 @@ import (
 // http://onsi.github.io/ginkgo/ to learn more about Ginkgo.
 
 var (
-	cfg       *rest.Config
-	ctx       context.Context
-	cancel    context.CancelFunc
-	k8sClient client.Client
-	testEnv   *envtest.Environment
+	cfg     *rest.Config
+	ctx     context.Context
+	cancel  context.CancelFunc
+	k       client.Client
+	testEnv *envtest.Environment
 )
 
 func TestAPIs(t *testing.T) {
@@ -75,13 +75,14 @@ var _ = BeforeSuite(func() {
 
 	//+kubebuilder:scaffold:scheme
 
-	k8sClient, err = client.New(cfg, client.Options{Scheme: scheme.Scheme})
+	k, err = client.New(cfg, client.Options{Scheme: scheme.Scheme})
 	Expect(err).NotTo(HaveOccurred())
-	Expect(k8sClient).NotTo(BeNil())
+	Expect(k).NotTo(BeNil())
 
 }, 60)
 
 var _ = AfterSuite(func() {
+	cancel()
 	By("tearing down the test environment")
 	err := testEnv.Stop()
 	Expect(err).NotTo(HaveOccurred())

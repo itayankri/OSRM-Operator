@@ -13,12 +13,12 @@ import (
 
 var _ = Context("Reconcile", func() {
 	var cluster *osrmv1alpha1.OSRMCluster
-	var k8sClient client.Client
+	var k client.Client
 
 	BeforeEach(func() {
-		k8sClient, _ = client.New(config.GetConfigOrDie(), client.Options{})
+		k, _ = client.New(config.GetConfigOrDie(), client.Options{})
 		cluster = getOSRMClusterCR()
-		Expect(k8sClient.Create(context.Background(), cluster)).To(Succeed())
+		Expect(k.Create(context.Background(), cluster)).To(Succeed())
 	})
 
 	Describe("Profile updates", func() {
