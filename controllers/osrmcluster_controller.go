@@ -120,7 +120,7 @@ func (r *OSRMClusterReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 			})
 			return apiError
 		})
-		r.logAndRecordOperationResult(logger, instance, resource, operationResult, err)
+		r.logOperationResult(logger, instance, resource, operationResult, err)
 		if err != nil {
 			r.setReconciliationSuccess(ctx, instance, metav1.ConditionFalse, "Error", err.Error())
 			return ctrl.Result{}, err
@@ -142,7 +142,7 @@ func (r *OSRMClusterReconciler) getOSRMCluster(ctx context.Context, namespacedNa
 
 // logAndRecordOperationResult - helper function to log and record events with message and error
 // it logs and records 'updated' and 'created' OperationResult, and ignores OperationResult 'unchanged'
-func (r *OSRMClusterReconciler) logAndRecordOperationResult(
+func (r *OSRMClusterReconciler) logOperationResult(
 	logger logr.Logger,
 	ro runtime.Object,
 	resource runtime.Object,
