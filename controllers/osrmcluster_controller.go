@@ -61,9 +61,9 @@ type OSRMClusterReconciler struct {
 // +kubebuilder:rbac:groups="autoscaling",resources=horizontalpodautoscalers,verbs=get;list;watch;create;update
 // +kubebuilder:rbac:groups="networking.k8s.io",resources=ingresses,verbs=get;list;watch;create;update
 // +kubebuilder:rbac:groups="",resources=endpoints,verbs=get;watch;list
-// +kubebuilder:rbac:groups=osrm.ankri.io,resources=osrmclusters,verbs=get;list;watch;create;update;patch;delete
-// +kubebuilder:rbac:groups=osrm.ankri.io,resources=osrmclusters/status,verbs=get;update;patch
-// +kubebuilder:rbac:groups=osrm.ankri.io,resources=osrmclusters/finalizers,verbs=update
+// +kubebuilder:rbac:groups=osrm.itayankri,resources=osrmclusters,verbs=get;list;watch;create;update;patch;delete
+// +kubebuilder:rbac:groups=osrm.itayankri,resources=osrmclusters/status,verbs=get;update;patch
+// +kubebuilder:rbac:groups=osrm.itayankri,resources=osrmclusters/finalizers,verbs=update
 // +kubebuilder:rbac:groups="",resources=persistentvolumeclaims,verbs=get;list;watch;create;update
 // +kubebuilder:rbac:groups="rbac.authorization.k8s.io",resources=roles,verbs=get;list;watch;create;update
 // +kubebuilder:rbac:groups="rbac.authorization.k8s.io",resources=rolebindings,verbs=get;list;watch;create;update
