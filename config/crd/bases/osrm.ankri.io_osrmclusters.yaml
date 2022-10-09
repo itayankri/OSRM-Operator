@@ -6,9 +6,9 @@ metadata:
   annotations:
     controller-gen.kubebuilder.io/version: v0.7.0
   creationTimestamp: null
-  name: osrmclusters.osrm.ankri.io
+  name: osrmclusters.osrm.itayankri
 spec:
-  group: osrm.ankri.io
+  group: osrm.itayankri
   names:
     kind: OSRMCluster
     listKind: OSRMClusterList

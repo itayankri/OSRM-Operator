@@ -1,4 +1,4 @@
-apiVersion: osrm.ankri.io/v1alpha1
+apiVersion: osrm.itayankri/v1alpha1
 kind: OSRMCluster
 metadata:
   name: multi-profile-example

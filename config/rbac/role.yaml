@@ -100,7 +100,7 @@ rules:
   - update
   - watch
 - apiGroups:
-  - osrm.ankri.io
+  - osrm.itayankri
   resources:
   - osrmclusters
   verbs:
@@ -112,13 +112,13 @@ rules:
   - update
   - watch
 - apiGroups:
-  - osrm.ankri.io
+  - osrm.itayankri
   resources:
   - osrmclusters/finalizers
   verbs:
   - update
 - apiGroups:
-  - osrm.ankri.io
+  - osrm.itayankri
   resources:
   - osrmclusters/status
   verbs:

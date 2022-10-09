@@ -5,7 +5,7 @@ metadata:
   name: osrmcluster-viewer-role
 rules:
 - apiGroups:
-  - osrm.ankri.io
+  - osrm.itayankri
   resources:
   - osrmclusters
   verbs:
@@ -13,7 +13,7 @@ rules:
   - list
   - watch
 - apiGroups:
-  - osrm.ankri.io
+  - osrm.itayankri
   resources:
   - osrmclusters/status
   verbs:
