@@ -89,11 +89,11 @@ func ReconcileSuccessCondition(status metav1.ConditionStatus, reason, message st
 	}
 }
 
-func IsPersistentVolumeClaimBound(resources []runtime.Object) bool {
+func IsPersistentVolumeClaimBound(pvcName string, resources []runtime.Object) bool {
 	pvcBound := false
 	for _, resource := range resources {
 		if pvc, ok := resource.(*corev1.PersistentVolumeClaim); ok {
-			if pvc != nil && pvc.Status.Phase == corev1.ClaimBound {
+			if pvc != nil && pvc.ObjectMeta.Name == pvcName && pvc.Status.Phase == corev1.ClaimBound {
 				pvcBound = true
 			}
 			break
@@ -102,11 +102,11 @@ func IsPersistentVolumeClaimBound(resources []runtime.Object) bool {
 	return pvcBound
 }
 
-func IsJobCompleted(resources []runtime.Object) bool {
+func IsJobCompleted(jobName string, resources []runtime.Object) bool {
 	jobCompleted := false
 	for _, resource := range resources {
 		if job, ok := resource.(*batchv1.Job); ok {
-			if job != nil {
+			if job != nil && job.ObjectMeta.Name == jobName {
 				for _, condition := range job.Status.Conditions {
 					if condition.Type == batchv1.JobComplete && condition.Status == corev1.ConditionTrue {
 						jobCompleted = true

@@ -97,6 +97,12 @@ func formatNginxLocation(instance *osrmv1alpha1.OSRMCluster, profile osrmv1alpha
 			}`, path, envVar)
 }
 
-func (*ConfigMapBuilder) ShouldDeploy(resources []runtime.Object) bool {
-	return status.IsPersistentVolumeClaimBound(resources) && status.IsJobCompleted(resources)
+func (builder *ConfigMapBuilder) ShouldDeploy(resources []runtime.Object) bool {
+	for _, profile := range builder.Instance.Spec.Profiles {
+		if !status.IsJobCompleted(builder.Instance.ChildResourceName(profile.Name, JobSuffix), resources) ||
+			!status.IsPersistentVolumeClaimBound(builder.Instance.ChildResourceName(profile.Name, PersistentVolumeClaimSuffix), resources) {
+			return false
+		}
+	}
+	return true
 }
