@@ -26,7 +26,7 @@ func (builder *OSRMResourceBuilder) PersistentVolumeClaim(profile *osrmv1alpha1.
 }
 
 func (builder *PersistentVolumeClaimBuilder) Build() (client.Object, error) {
-	name := fmt.Sprintf("%s-%s", builder.Instance.Name, builder.profile.Name)
+	name := builder.Instance.ChildResourceName(builder.profile.Name, PersistentVolumeClaimSuffix)
 	return &corev1.PersistentVolumeClaim{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      name,

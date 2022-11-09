@@ -45,13 +45,13 @@ func (builder *GatewayDeploymentBuilder) Update(object client.Object) error {
 		Replicas: &gatewayDefaultReplicas,
 		Selector: &metav1.LabelSelector{
 			MatchLabels: map[string]string{
-				"app": fmt.Sprintf("%s-%s", builder.Instance.Name, GatewaySuffix),
+				"app": builder.Instance.ChildResourceName(GatewaySuffix, DeploymentSuffix),
 			},
 		},
 		Template: corev1.PodTemplateSpec{
 			ObjectMeta: metav1.ObjectMeta{
 				Labels: map[string]string{
-					"app": fmt.Sprintf("%s-%s", builder.Instance.Name, GatewaySuffix),
+					"app": builder.Instance.ChildResourceName(GatewaySuffix, DeploymentSuffix),
 				},
 			},
 			Spec: corev1.PodSpec{

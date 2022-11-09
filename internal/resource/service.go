@@ -29,14 +29,14 @@ func (builder *OSRMResourceBuilder) Service(profile *osrmv1alpha1.ProfileSpec) *
 func (builder *ServiceBuilder) Build() (client.Object, error) {
 	return &corev1.Service{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      fmt.Sprintf("%s-%s", builder.Instance.Name, builder.profile.Name),
+			Name:      builder.Instance.ChildResourceName(builder.profile.Name, ServiceSuffix),
 			Namespace: builder.Instance.Namespace,
 		},
 	}, nil
 }
 
 func (builder *ServiceBuilder) Update(object client.Object) error {
-	name := fmt.Sprintf("%s-%s", builder.Instance.Name, builder.profile.Name)
+	name := builder.Instance.ChildResourceName(builder.profile.Name, ServiceSuffix)
 
 	service := object.(*corev1.Service)
 

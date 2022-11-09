@@ -31,14 +31,14 @@ func (builder *OSRMResourceBuilder) Job(profile *osrmv1alpha1.ProfileSpec) *JobB
 func (builder *JobBuilder) Build() (client.Object, error) {
 	return &batchv1.Job{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      fmt.Sprintf("%s-%s-%s", builder.Instance.Name, builder.profile.Name, "map-builder"),
+			Name:      builder.Instance.ChildResourceName(builder.profile.Name, JobSuffix),
 			Namespace: builder.Instance.Namespace,
 		},
 	}, nil
 }
 
 func (builder *JobBuilder) Update(object client.Object) error {
-	name := fmt.Sprintf("%s-%s", builder.Instance.Name, builder.profile.Name)
+	name := builder.Instance.ChildResourceName(builder.profile.Name, JobSuffix)
 	pbfFileName := builder.Instance.Spec.GetPbfFileName()
 	osrmFileName := strings.ReplaceAll(pbfFileName, "osm.pbf", "osrm")
 	job := object.(*batchv1.Job)
@@ -55,7 +55,7 @@ func (builder *JobBuilder) Update(object client.Object) error {
 				RestartPolicy: corev1.RestartPolicyOnFailure,
 				Containers: []corev1.Container{
 					{
-						Name:  fmt.Sprintf("%s-%s", name, "map-builder"),
+						Name:  builder.Instance.ChildResourceName(builder.profile.Name, JobSuffix),
 						Image: builder.Instance.Spec.GetImage(),
 						Resources: corev1.ResourceRequirements{
 							Requests: map[corev1.ResourceName]resource.Quantity{
