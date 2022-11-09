@@ -115,6 +115,9 @@ func (builder *JobBuilder) Update(object client.Object) error {
 	return nil
 }
 
-func (*JobBuilder) ShouldDeploy(resources []runtime.Object) bool {
-	return status.IsPersistentVolumeClaimBound(resources)
+func (builder *JobBuilder) ShouldDeploy(resources []runtime.Object) bool {
+	return status.IsPersistentVolumeClaimBound(
+		builder.Instance.ChildResourceName(builder.profile.Name, PersistentVolumeClaimSuffix),
+		resources,
+	)
 }

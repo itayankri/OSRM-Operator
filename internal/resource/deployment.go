@@ -118,6 +118,13 @@ func (builder *DeploymentBuilder) Update(object client.Object) error {
 	return nil
 }
 
-func (*DeploymentBuilder) ShouldDeploy(resources []runtime.Object) bool {
-	return status.IsPersistentVolumeClaimBound(resources) && status.IsJobCompleted(resources)
+func (builder *DeploymentBuilder) ShouldDeploy(resources []runtime.Object) bool {
+	return status.IsPersistentVolumeClaimBound(
+		builder.Instance.ChildResourceName(builder.profile.Name, PersistentVolumeClaimSuffix),
+		resources,
+	) &&
+		status.IsJobCompleted(
+			builder.Instance.ChildResourceName(builder.profile.Name, JobSuffix),
+			resources,
+		)
 }

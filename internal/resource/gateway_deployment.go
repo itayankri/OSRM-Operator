@@ -118,6 +118,12 @@ func (builder *GatewayDeploymentBuilder) Update(object client.Object) error {
 	return nil
 }
 
-func (*GatewayDeploymentBuilder) ShouldDeploy(resources []runtime.Object) bool {
-	return status.IsPersistentVolumeClaimBound(resources) && status.IsJobCompleted(resources)
+func (builder *GatewayDeploymentBuilder) ShouldDeploy(resources []runtime.Object) bool {
+	for _, profile := range builder.Instance.Spec.Profiles {
+		if !status.IsJobCompleted(builder.Instance.ChildResourceName(profile.Name, JobSuffix), resources) ||
+			!status.IsPersistentVolumeClaimBound(builder.Instance.ChildResourceName(profile.Name, PersistentVolumeClaimSuffix), resources) {
+			return false
+		}
+	}
+	return true
 }

@@ -59,6 +59,13 @@ func (builder *HorizontalPodAutoscalerBuilder) Update(object client.Object) erro
 	return nil
 }
 
-func (*HorizontalPodAutoscalerBuilder) ShouldDeploy(resources []runtime.Object) bool {
-	return status.IsPersistentVolumeClaimBound(resources) && status.IsJobCompleted(resources)
+func (builder *HorizontalPodAutoscalerBuilder) ShouldDeploy(resources []runtime.Object) bool {
+	return status.IsPersistentVolumeClaimBound(
+		builder.Instance.ChildResourceName(builder.profile.Name, PersistentVolumeClaimSuffix),
+		resources,
+	) &&
+		status.IsJobCompleted(
+			builder.Instance.ChildResourceName(builder.profile.Name, JobSuffix),
+			resources,
+		)
 }
