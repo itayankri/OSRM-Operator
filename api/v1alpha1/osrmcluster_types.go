@@ -27,7 +27,7 @@ import (
 
 const defaultImage = "osrm/osrm-backend"
 
-const OperatorPausedAnnotation = "valhalla.itayankri/operator.paused"
+const OperatorPausedAnnotation = "osrm.itayankri/operator.paused"
 
 // Phase is the current phase of the deployment
 type Phase string
@@ -170,8 +170,9 @@ type OSRMCluster struct {
 	Status OSRMClusterStatus `json:"status,omitempty"`
 }
 
-func (cluster *OSRMCluster) ChildResourceName(suffix string) string {
-	return strings.TrimSuffix(strings.Join([]string{cluster.Name, suffix}, "-"), "-")
+func (cluster *OSRMCluster) ChildResourceName(service string, suffix string) string {
+	nameWithService := strings.TrimSuffix(strings.Join([]string{}, "-"), "-")
+	return strings.TrimSuffix(strings.Join([]string{nameWithService, suffix}, "-"), "-")
 }
 
 //+kubebuilder:object:root=true

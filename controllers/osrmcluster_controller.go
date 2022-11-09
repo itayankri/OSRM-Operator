@@ -185,7 +185,7 @@ func (r *OSRMClusterReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 		if builder.ShouldDeploy(childResources) {
 			resource, err := builder.Build()
 			if err != nil {
-				logger.Error(err, "Failed to build resource %v for Valhalla Instance %v/%v", builder, instance.Namespace, instance.Name)
+				logger.Error(err, "Failed to build resource %v for OSRMCluster %v/%v", builder, instance.Namespace, instance.Name)
 				r.setReconciliationSuccess(ctx, instance, metav1.ConditionFalse, "FailedToBuildChildResource", err.Error())
 				return ctrl.Result{}, err
 			}
@@ -305,57 +305,61 @@ func (r *OSRMClusterReconciler) updateStatusConditions(
 }
 
 func (r *OSRMClusterReconciler) getChildResources(ctx context.Context, instance *osrmv1alpha1.OSRMCluster) ([]runtime.Object, error) {
-	pvc := &corev1.PersistentVolumeClaim{}
-	if err := r.Client.Get(ctx, types.NamespacedName{
-		Name:      instance.ChildResourceName(resource.PersistentVolumeClaimSuffix),
-		Namespace: instance.Namespace,
-	}, pvc); err != nil && !errors.IsNotFound(err) {
-		return nil, err
-	} else if errors.IsNotFound(err) {
-		pvc = nil
+	children := []runtime.Object{}
+
+	for _, profileSpec := range instance.Spec.Profiles {
+		pvc := &corev1.PersistentVolumeClaim{}
+		if err := r.Client.Get(ctx, types.NamespacedName{
+			Name:      instance.ChildResourceName(profileSpec.Name, resource.PersistentVolumeClaimSuffix),
+			Namespace: instance.Namespace,
+		}, pvc); err != nil && errors.IsNotFound(err) {
+			pvc = nil
+		} else {
+			return nil, err
+		}
+
+		job := &batchv1.Job{}
+		if err := r.Client.Get(ctx, types.NamespacedName{
+			Name:      instance.ChildResourceName(profileSpec.Name, resource.JobSuffix),
+			Namespace: instance.Namespace,
+		}, job); err != nil && errors.IsNotFound(err) {
+			job = nil
+		} else {
+			return nil, err
+		}
+
+		deployment := &appsv1.Deployment{}
+		if err := r.Client.Get(ctx, types.NamespacedName{
+			Name:      instance.ChildResourceName(profileSpec.Name, resource.DeploymentSuffix),
+			Namespace: instance.Namespace,
+		}, deployment); err != nil && errors.IsNotFound(err) {
+			deployment = nil
+		} else {
+			return nil, err
+		}
+
+		hpa := &autoscalingv1.HorizontalPodAutoscaler{}
+		if err := r.Client.Get(ctx, types.NamespacedName{
+			Name:      instance.ChildResourceName(profileSpec.Name, resource.HorizontalPodAutoscalerSuffix),
+			Namespace: instance.Namespace,
+		}, hpa); err != nil && errors.IsNotFound(err) {
+			hpa = nil
+		} else {
+			return nil, err
+		}
+
+		service := &corev1.Service{}
+		if err := r.Client.Get(ctx, types.NamespacedName{
+			Name:      instance.ChildResourceName(profileSpec.Name, resource.ServiceSuffix),
+			Namespace: instance.Namespace,
+		}, service); err != nil && errors.IsNotFound(err) {
+			service = nil
+		} else {
+			return nil, err
+		}
 	}
 
-	job := &batchv1.Job{}
-	if err := r.Client.Get(ctx, types.NamespacedName{
-		Name:      instance.ChildResourceName(resource.JobSuffix),
-		Namespace: instance.Namespace,
-	}, job); err != nil && !errors.IsNotFound(err) {
-		return nil, err
-	} else if errors.IsNotFound(err) {
-		job = nil
-	}
-
-	deployment := &appsv1.Deployment{}
-	if err := r.Client.Get(ctx, types.NamespacedName{
-		Name:      instance.ChildResourceName(resource.DeploymentSuffix),
-		Namespace: instance.Namespace,
-	}, deployment); err != nil && !errors.IsNotFound(err) {
-		return nil, err
-	} else if errors.IsNotFound(err) {
-		deployment = nil
-	}
-
-	hpa := &autoscalingv1.HorizontalPodAutoscaler{}
-	if err := r.Client.Get(ctx, types.NamespacedName{
-		Name:      instance.ChildResourceName(resource.HorizontalPodAutoscalerSuffix),
-		Namespace: instance.Namespace,
-	}, hpa); err != nil && !errors.IsNotFound(err) {
-		return nil, err
-	} else if errors.IsNotFound(err) {
-		hpa = nil
-	}
-
-	service := &corev1.Service{}
-	if err := r.Client.Get(ctx, types.NamespacedName{
-		Name:      instance.ChildResourceName(resource.ServiceSuffix),
-		Namespace: instance.Namespace,
-	}, service); err != nil && !errors.IsNotFound(err) {
-		return nil, err
-	} else if errors.IsNotFound(err) {
-		service = nil
-	}
-
-	return []runtime.Object{pvc, job, deployment, hpa, service}, nil
+	return children, nil
 }
 
 func (r *OSRMClusterReconciler) cleanup(ctx context.Context, instance *osrmv1alpha1.OSRMCluster) error {
@@ -365,7 +369,7 @@ func (r *OSRMClusterReconciler) cleanup(ctx context.Context, instance *osrmv1alp
 			Type:    status.ConditionAvailable,
 			Status:  metav1.ConditionFalse,
 			Reason:  "Cleanup",
-			Message: "Deleting Valhalla resources",
+			Message: "Deleting OSRMCluster resources",
 		})
 
 		err := r.Client.Status().Update(ctx, instance)
