@@ -11,6 +11,7 @@ type OSRMService string
 type ResourceBuilder interface {
 	Build() (client.Object, error)
 	Update(client.Object) error
+	ShouldDeploy(resources []runtime.Object) bool
 }
 
 type OSRMResourceBuilder struct {

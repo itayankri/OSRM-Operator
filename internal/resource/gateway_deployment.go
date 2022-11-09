@@ -5,10 +5,12 @@ import (
 
 	osrmv1alpha1 "github.com/itayankri/OSRM-Operator/api/v1alpha1"
 	"github.com/itayankri/OSRM-Operator/internal/metadata"
+	"github.com/itayankri/OSRM-Operator/internal/status"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 )
@@ -43,13 +45,13 @@ func (builder *GatewayDeploymentBuilder) Update(object client.Object) error {
 		Replicas: &gatewayDefaultReplicas,
 		Selector: &metav1.LabelSelector{
 			MatchLabels: map[string]string{
-				"app": fmt.Sprintf("%s-%s", builder.Instance.Name, gatewayPostfix),
+				"app": fmt.Sprintf("%s-%s", builder.Instance.Name, GatewaySuffix),
 			},
 		},
 		Template: corev1.PodTemplateSpec{
 			ObjectMeta: metav1.ObjectMeta{
 				Labels: map[string]string{
-					"app": fmt.Sprintf("%s-%s", builder.Instance.Name, gatewayPostfix),
+					"app": fmt.Sprintf("%s-%s", builder.Instance.Name, GatewaySuffix),
 				},
 			},
 			Spec: corev1.PodSpec{
@@ -114,4 +116,8 @@ func (builder *GatewayDeploymentBuilder) Update(object client.Object) error {
 	}
 
 	return nil
+}
+
+func (*GatewayDeploymentBuilder) ShouldDeploy(resources []runtime.Object) bool {
+	return status.IsPersistentVolumeClaimBound(resources) && status.IsJobCompleted(resources)
 }

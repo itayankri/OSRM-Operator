@@ -20,18 +20,20 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"strconv"
+	"time"
 
 	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-	"sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 
 	"github.com/go-logr/logr"
 	osrmv1alpha1 "github.com/itayankri/OSRM-Operator/api/v1alpha1"
 	"github.com/itayankri/OSRM-Operator/internal/resource"
+	"github.com/itayankri/OSRM-Operator/internal/status"
 	appsv1 "k8s.io/api/apps/v1"
 	autoscalingv1 "k8s.io/api/autoscaling/v1"
 	batchv1 "k8s.io/api/batch/v1"
@@ -43,12 +45,37 @@ import (
 )
 
 const pauseReconciliationLabel = "ankri.io/pauseReconciliation"
+const finalizerName = "osrmcluster.itayankri/finalizer"
 
 // OSRMClusterReconciler reconciles a OSRMCluster object
 type OSRMClusterReconciler struct {
 	client.Client
 	Scheme           *runtime.Scheme
+	log              logr.Logger
 	DefaultOSRMImage string
+}
+
+func isInitialized(instance *osrmv1alpha1.OSRMCluster) bool {
+	return controllerutil.ContainsFinalizer(instance, finalizerName)
+}
+
+func isBeingDeleted(object metav1.Object) bool {
+	return !object.GetDeletionTimestamp().IsZero()
+}
+
+func isPaused(object metav1.Object) bool {
+	if object.GetAnnotations() == nil {
+		return false
+	}
+	pausedStr, ok := object.GetAnnotations()[osrmv1alpha1.OperatorPausedAnnotation]
+	if !ok {
+		return false
+	}
+	paused, err := strconv.ParseBool(pausedStr)
+	if err != nil {
+		return false
+	}
+	return paused
 }
 
 // the rbac rule requires an empty row at the end to render
@@ -57,10 +84,12 @@ type OSRMClusterReconciler struct {
 // +kubebuilder:rbac:groups="",resources=services,verbs=get;list;watch;create;update
 // +kubebuilder:rbac:groups="",resources=configmaps,verbs=get;list;watch;create;update
 // +kubebuilder:rbac:groups="batch",resources=jobs,verbs=get;list;watch;create;update
+// +kubebuilder:rbac:groups="batch",resources=cronjobs,verbs=get;list;watch;create;update
 // +kubebuilder:rbac:groups="apps",resources=deployments,verbs=get;list;watch;create;update
 // +kubebuilder:rbac:groups="autoscaling",resources=horizontalpodautoscalers,verbs=get;list;watch;create;update
 // +kubebuilder:rbac:groups="networking.k8s.io",resources=ingresses,verbs=get;list;watch;create;update
 // +kubebuilder:rbac:groups="",resources=endpoints,verbs=get;watch;list
+// +kubebuilder:rbac:groups="policy",resources=poddisruptionbudgets,verbs=get;list;watch;create;update
 // +kubebuilder:rbac:groups=osrm.itayankri,resources=osrmclusters,verbs=get;list;watch;create;update;patch;delete
 // +kubebuilder:rbac:groups=osrm.itayankri,resources=osrmclusters/status,verbs=get;update;patch
 // +kubebuilder:rbac:groups=osrm.itayankri,resources=osrmclusters/finalizers,verbs=update
@@ -78,20 +107,69 @@ type OSRMClusterReconciler struct {
 // For more details, check Reconcile and its Result here:
 // - https://pkg.go.dev/sigs.k8s.io/controller-runtime@v0.10.0/pkg/reconcile
 func (r *OSRMClusterReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
-	logger := log.FromContext(ctx)
+	logger := r.log.WithValues("OSRM", req.NamespacedName)
+	logger.Info("Starting reconciliation")
 
 	instance, err := r.getOSRMCluster(ctx, req.NamespacedName)
 	if err != nil {
 		if errors.IsNotFound(err) {
+			logger.Info("Instance not found")
+
 			// No need to requeue if the resource no longer exists
 			return reconcile.Result{}, nil
 		}
+
+		logger.Error(err, "Failed to fetch OSRMCluster")
+
+		// Error reading the object - requeue the request.
 		return reconcile.Result{}, err
+	}
+
+	childResources, err := r.getChildResources(ctx, instance)
+	if err != nil {
+		logger.Error(err, "Failed to fetch child resources", instance.Namespace, instance.Name)
+		r.setReconciliationSuccess(ctx, instance, metav1.ConditionFalse, "FailedToFetchChildResources", err.Error())
+		return ctrl.Result{}, err
+	}
+
+	if requeueAfter, err := r.updateStatusConditions(ctx, instance, childResources); err != nil || requeueAfter > 0 {
+		return ctrl.Result{RequeueAfter: requeueAfter}, err
+	}
+
+	if !isInitialized(instance) {
+		err := r.initialize(ctx, instance)
+		// No need to requeue here, because
+		// the update will trigger reconciliation again
+		logger.Info("OSRMCLuster initialized")
+		return ctrl.Result{}, err
+	}
+
+	if isBeingDeleted(instance) {
+		err := r.cleanup(ctx, instance)
+		if err != nil {
+			logger.Error(err, "Cleanup failed for rerouce: %v/%v", instance.Namespace, instance.Name)
+			return ctrl.Result{}, err
+		}
+
+		return ctrl.Result{}, nil
+	}
+
+	if isPaused(instance) {
+		if instance.Status.Paused {
+			logger.Info("OSRM operator is paused on resource: %v/%v", instance.Namespace, instance.Name)
+			return ctrl.Result{}, nil
+		}
+		logger.Info(fmt.Sprintf("Pausing OSRM operator on resource: %v/%v", instance.Namespace, instance.Name))
+		instance.Status.Paused = true
+		err := r.updateOSRMClusterResource(ctx, instance)
+		// instance.Status.ObservedGeneration = instance.Generation
+		// err := r.Client.Status().Update(ctx, instance)
+		return ctrl.Result{}, err
 	}
 
 	rawInstanceSpec, err := json.Marshal(instance.Spec)
 	if err != nil {
-		logger.Error(err, "Failed to marshal cluster spec")
+		logger.Error(err, "Failed to marshal OSRMCluster spec")
 	}
 
 	logger.Info("Reconciling OSRMCluster", "spec", string(rawInstanceSpec))
@@ -104,29 +182,32 @@ func (r *OSRMClusterReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 	builders := resourceBuilder.ResourceBuilders()
 
 	for _, builder := range builders {
-		resource, err := builder.Build()
-		if err != nil {
-			return ctrl.Result{}, err
-		}
+		if builder.ShouldDeploy(childResources) {
+			resource, err := builder.Build()
+			if err != nil {
+				logger.Error(err, "Failed to build resource %v for Valhalla Instance %v/%v", builder, instance.Namespace, instance.Name)
+				r.setReconciliationSuccess(ctx, instance, metav1.ConditionFalse, "FailedToBuildChildResource", err.Error())
+				return ctrl.Result{}, err
+			}
 
-		var operationResult controllerutil.OperationResult
-		err = clientretry.RetryOnConflict(clientretry.DefaultRetry, func() error {
-			var apiError error
-			operationResult, apiError = controllerutil.CreateOrUpdate(ctx, r.Client, resource, func() error {
-				return builder.Update(resource)
+			var operationResult controllerutil.OperationResult
+			err = clientretry.RetryOnConflict(clientretry.DefaultRetry, func() error {
+				var apiError error
+				operationResult, apiError = controllerutil.CreateOrUpdate(ctx, r.Client, resource, func() error {
+					return builder.Update(resource)
+				})
+				return apiError
 			})
-			return apiError
-		})
-		r.logAndRecordOperationResult(logger, instance, resource, operationResult, err)
-		if err != nil {
-			r.setReconcileSuccess(ctx, instance, metav1.ConditionFalse, "Error", err.Error())
-			return ctrl.Result{}, err
+			r.logOperationResult(logger, instance, resource, operationResult, err)
+			if err != nil {
+				r.setReconciliationSuccess(ctx, instance, metav1.ConditionFalse, "Error", err.Error())
+				return ctrl.Result{}, err
+			}
 		}
 	}
 
-	r.setReconcileSuccess(ctx, instance, metav1.ConditionTrue, "Success", "Reconciliation completed")
+	r.setReconciliationSuccess(ctx, instance, metav1.ConditionTrue, "Success", "Reconciliation completed")
 	logger.Info("Finished reconciling")
-
 	return ctrl.Result{}, nil
 }
 
@@ -138,7 +219,7 @@ func (r *OSRMClusterReconciler) getOSRMCluster(ctx context.Context, namespacedNa
 
 // logAndRecordOperationResult - helper function to log and record events with message and error
 // it logs and records 'updated' and 'created' OperationResult, and ignores OperationResult 'unchanged'
-func (r *OSRMClusterReconciler) logAndRecordOperationResult(
+func (r *OSRMClusterReconciler) logOperationResult(
 	logger logr.Logger,
 	ro runtime.Object,
 	resource runtime.Object,
@@ -169,13 +250,21 @@ func (r *OSRMClusterReconciler) logAndRecordOperationResult(
 	}
 }
 
-func (r *OSRMClusterReconciler) setReconcileSuccess(
+func (r *OSRMClusterReconciler) setReconciliationSuccess(
 	ctx context.Context,
 	osrmCluster *osrmv1alpha1.OSRMCluster,
-	condition metav1.ConditionStatus,
+	conditionStatus metav1.ConditionStatus,
 	reason, msg string,
 ) {
-	osrmCluster.Status.SetCondition("ReconcileSuccess", condition, reason, msg)
+	osrmCluster.Status.SetCondition(metav1.Condition{
+		Type:    status.ConditionReconciliationSuccess,
+		Status:  conditionStatus,
+		Reason:  reason,
+		Message: msg,
+		LastTransitionTime: metav1.Time{
+			Time: time.Now(),
+		},
+	})
 	if err := r.Status().Update(ctx, osrmCluster); err != nil {
 		ctrl.LoggerFrom(ctx).Error(err, "Failed to update Custom Resource status",
 			"namespace", osrmCluster.Namespace,
@@ -183,12 +272,133 @@ func (r *OSRMClusterReconciler) setReconcileSuccess(
 	}
 }
 
+func (r *OSRMClusterReconciler) initialize(ctx context.Context, instance *osrmv1alpha1.OSRMCluster) error {
+	controllerutil.AddFinalizer(instance, finalizerName)
+	return r.updateOSRMClusterResource(ctx, instance)
+}
+
+func (r *OSRMClusterReconciler) updateOSRMClusterResource(ctx context.Context, instance *osrmv1alpha1.OSRMCluster) error {
+	err := r.Client.Update(ctx, instance)
+	if err != nil {
+		return err
+	}
+
+	instance.Status.ObservedGeneration = instance.Generation
+	return r.Client.Status().Update(ctx, instance)
+}
+
+func (r *OSRMClusterReconciler) updateStatusConditions(
+	ctx context.Context,
+	instance *osrmv1alpha1.OSRMCluster,
+	childResources []runtime.Object,
+) (time.Duration, error) {
+	instance.Status.SetConditions(childResources)
+	err := r.Client.Status().Update(ctx, instance)
+	if err != nil {
+		if errors.IsConflict(err) {
+			r.log.Info("failed to update status because of conflict; requeueing...")
+			return 2 * time.Second, nil
+		}
+		return 0, err
+	}
+	return 0, nil
+}
+
+func (r *OSRMClusterReconciler) getChildResources(ctx context.Context, instance *osrmv1alpha1.OSRMCluster) ([]runtime.Object, error) {
+	pvc := &corev1.PersistentVolumeClaim{}
+	if err := r.Client.Get(ctx, types.NamespacedName{
+		Name:      instance.ChildResourceName(resource.PersistentVolumeClaimSuffix),
+		Namespace: instance.Namespace,
+	}, pvc); err != nil && !errors.IsNotFound(err) {
+		return nil, err
+	} else if errors.IsNotFound(err) {
+		pvc = nil
+	}
+
+	job := &batchv1.Job{}
+	if err := r.Client.Get(ctx, types.NamespacedName{
+		Name:      instance.ChildResourceName(resource.JobSuffix),
+		Namespace: instance.Namespace,
+	}, job); err != nil && !errors.IsNotFound(err) {
+		return nil, err
+	} else if errors.IsNotFound(err) {
+		job = nil
+	}
+
+	deployment := &appsv1.Deployment{}
+	if err := r.Client.Get(ctx, types.NamespacedName{
+		Name:      instance.ChildResourceName(resource.DeploymentSuffix),
+		Namespace: instance.Namespace,
+	}, deployment); err != nil && !errors.IsNotFound(err) {
+		return nil, err
+	} else if errors.IsNotFound(err) {
+		deployment = nil
+	}
+
+	hpa := &autoscalingv1.HorizontalPodAutoscaler{}
+	if err := r.Client.Get(ctx, types.NamespacedName{
+		Name:      instance.ChildResourceName(resource.HorizontalPodAutoscalerSuffix),
+		Namespace: instance.Namespace,
+	}, hpa); err != nil && !errors.IsNotFound(err) {
+		return nil, err
+	} else if errors.IsNotFound(err) {
+		hpa = nil
+	}
+
+	service := &corev1.Service{}
+	if err := r.Client.Get(ctx, types.NamespacedName{
+		Name:      instance.ChildResourceName(resource.ServiceSuffix),
+		Namespace: instance.Namespace,
+	}, service); err != nil && !errors.IsNotFound(err) {
+		return nil, err
+	} else if errors.IsNotFound(err) {
+		service = nil
+	}
+
+	return []runtime.Object{pvc, job, deployment, hpa, service}, nil
+}
+
+func (r *OSRMClusterReconciler) cleanup(ctx context.Context, instance *osrmv1alpha1.OSRMCluster) error {
+	if controllerutil.ContainsFinalizer(instance, finalizerName) {
+		instance.Status.ObservedGeneration = instance.Generation
+		instance.Status.SetCondition(metav1.Condition{
+			Type:    status.ConditionAvailable,
+			Status:  metav1.ConditionFalse,
+			Reason:  "Cleanup",
+			Message: "Deleting Valhalla resources",
+		})
+
+		err := r.Client.Status().Update(ctx, instance)
+		if err != nil {
+			return err
+		}
+
+		controllerutil.RemoveFinalizer(instance, finalizerName)
+
+		err = r.Client.Update(ctx, instance)
+		if err != nil {
+			return err
+		}
+	}
+
+	instance.Status.ObservedGeneration = instance.Generation
+	err := r.Client.Status().Update(ctx, instance)
+	if errors.IsConflict(err) || errors.IsNotFound(err) {
+		// These errors are ignored. They can happen if the CR was removed
+		// before the status update call is executed.
+		return nil
+	}
+	return err
+}
+
 // SetupWithManager sets up the controller with the Manager.
 func (r *OSRMClusterReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&osrmv1alpha1.OSRMCluster{}).
 		Owns(&appsv1.Deployment{}).
+		Owns(&corev1.PersistentVolumeClaim{}).
 		Owns(&batchv1.Job{}).
+		Owns(&batchv1.CronJob{}).
 		Owns(&corev1.Service{}).
 		Owns(&corev1.ConfigMap{}).
 		Owns(&networkingv1.Ingress{}).
