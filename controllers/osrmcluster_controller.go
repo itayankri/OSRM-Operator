@@ -307,55 +307,85 @@ func (r *OSRMClusterReconciler) updateStatusConditions(
 func (r *OSRMClusterReconciler) getChildResources(ctx context.Context, instance *osrmv1alpha1.OSRMCluster) ([]runtime.Object, error) {
 	children := []runtime.Object{}
 
+	gatewayDeployment := &appsv1.Deployment{}
+	if err := r.Client.Get(ctx, types.NamespacedName{
+		Name:      instance.ChildResourceName(resource.GatewaySuffix, resource.DeploymentSuffix),
+		Namespace: instance.Namespace,
+	}, gatewayDeployment); err != nil && !errors.IsNotFound(err) {
+		return nil, err
+	} else {
+		children = append(children, gatewayDeployment)
+	}
+
+	gatewayService := &corev1.Service{}
+	if err := r.Client.Get(ctx, types.NamespacedName{
+		Name:      instance.ChildResourceName(resource.GatewaySuffix, resource.ServiceSuffix),
+		Namespace: instance.Namespace,
+	}, gatewayService); err != nil && !errors.IsNotFound(err) {
+		return nil, err
+	} else {
+		children = append(children, gatewayService)
+	}
+
+	gatewayConfigMap := &corev1.ConfigMap{}
+	if err := r.Client.Get(ctx, types.NamespacedName{
+		Name:      instance.ChildResourceName(resource.GatewaySuffix, resource.ConfigMapSuffix),
+		Namespace: instance.Namespace,
+	}, gatewayConfigMap); err != nil && !errors.IsNotFound(err) {
+		return nil, err
+	} else {
+		children = append(children, gatewayConfigMap)
+	}
+
 	for _, profileSpec := range instance.Spec.Profiles {
 		pvc := &corev1.PersistentVolumeClaim{}
 		if err := r.Client.Get(ctx, types.NamespacedName{
 			Name:      instance.ChildResourceName(profileSpec.Name, resource.PersistentVolumeClaimSuffix),
 			Namespace: instance.Namespace,
-		}, pvc); err != nil && errors.IsNotFound(err) {
-			pvc = nil
-		} else {
+		}, pvc); err != nil && !errors.IsNotFound(err) {
 			return nil, err
+		} else {
+			children = append(children, pvc)
 		}
 
 		job := &batchv1.Job{}
 		if err := r.Client.Get(ctx, types.NamespacedName{
 			Name:      instance.ChildResourceName(profileSpec.Name, resource.JobSuffix),
 			Namespace: instance.Namespace,
-		}, job); err != nil && errors.IsNotFound(err) {
-			job = nil
-		} else {
+		}, job); err != nil && !errors.IsNotFound(err) {
 			return nil, err
+		} else {
+			children = append(children, job)
 		}
 
 		deployment := &appsv1.Deployment{}
 		if err := r.Client.Get(ctx, types.NamespacedName{
 			Name:      instance.ChildResourceName(profileSpec.Name, resource.DeploymentSuffix),
 			Namespace: instance.Namespace,
-		}, deployment); err != nil && errors.IsNotFound(err) {
-			deployment = nil
-		} else {
+		}, deployment); err != nil && !errors.IsNotFound(err) {
 			return nil, err
+		} else {
+			children = append(children, deployment)
 		}
 
 		hpa := &autoscalingv1.HorizontalPodAutoscaler{}
 		if err := r.Client.Get(ctx, types.NamespacedName{
 			Name:      instance.ChildResourceName(profileSpec.Name, resource.HorizontalPodAutoscalerSuffix),
 			Namespace: instance.Namespace,
-		}, hpa); err != nil && errors.IsNotFound(err) {
-			hpa = nil
-		} else {
+		}, hpa); err != nil && !errors.IsNotFound(err) {
 			return nil, err
+		} else {
+			children = append(children, hpa)
 		}
 
 		service := &corev1.Service{}
 		if err := r.Client.Get(ctx, types.NamespacedName{
 			Name:      instance.ChildResourceName(profileSpec.Name, resource.ServiceSuffix),
 			Namespace: instance.Namespace,
-		}, service); err != nil && errors.IsNotFound(err) {
-			service = nil
-		} else {
+		}, service); err != nil && !errors.IsNotFound(err) {
 			return nil, err
+		} else {
+			children = append(children, service)
 		}
 	}
 

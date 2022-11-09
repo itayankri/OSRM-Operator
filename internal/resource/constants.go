@@ -19,5 +19,7 @@ const JobSuffix = "map-initializer"
 const DeploymentSuffix = ""
 const HorizontalPodAutoscalerSuffix = ""
 const ServiceSuffix = ""
+const ConfigMapSuffix = ""
+
 const nginxConfigurationTemplateName = "nginx.tmpl"
 const gatewayImage = "nginx"

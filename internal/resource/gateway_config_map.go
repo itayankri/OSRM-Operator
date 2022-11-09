@@ -89,7 +89,7 @@ func getNginxLocations(instance *osrmv1alpha1.OSRMCluster, profiles []*osrmv1alp
 
 func formatNginxLocation(instance *osrmv1alpha1.OSRMCluster, profile osrmv1alpha1.ProfileSpec, osrmService string) string {
 	path := fmt.Sprintf("%s/v1/%s/", osrmService, profile.EndpointName)
-	serviceName := fmt.Sprintf("%s-%s", instance.Name, profile.Name)
+	serviceName := instance.ChildResourceName(GatewaySuffix, ConfigMapSuffix)
 	envVar := serviceToEnvVariable(serviceName)
 	return fmt.Sprintf(`
 			location /%s {

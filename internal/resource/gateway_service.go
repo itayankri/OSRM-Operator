@@ -53,7 +53,7 @@ func (builder *GatewayServiceBuilder) Update(object client.Object) error {
 		},
 	}
 	service.Spec.Selector = map[string]string{
-		"app": fmt.Sprintf("%s-%s", builder.Instance.Name, GatewaySuffix),
+		"app": builder.Instance.ChildResourceName(GatewaySuffix, ServiceSuffix),
 	}
 
 	if err := controllerutil.SetControllerReference(builder.Instance, service, builder.Scheme); err != nil {
