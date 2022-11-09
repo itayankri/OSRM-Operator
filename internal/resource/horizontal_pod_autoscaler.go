@@ -5,8 +5,10 @@ import (
 
 	osrmv1alpha1 "github.com/itayankri/OSRM-Operator/api/v1alpha1"
 	"github.com/itayankri/OSRM-Operator/internal/metadata"
+	"github.com/itayankri/OSRM-Operator/internal/status"
 	autoscalingv1 "k8s.io/api/autoscaling/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 )
@@ -55,4 +57,8 @@ func (builder *HorizontalPodAutoscalerBuilder) Update(object client.Object) erro
 	}
 
 	return nil
+}
+
+func (*HorizontalPodAutoscalerBuilder) ShouldDeploy(resources []runtime.Object) bool {
+	return status.IsPersistentVolumeClaimBound(resources) && status.IsJobCompleted(resources)
 }
