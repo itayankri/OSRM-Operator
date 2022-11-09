@@ -42,7 +42,7 @@ func (builder *OSRMResourceBuilder) ResourceBuilders() []ResourceBuilder {
 	if len(builders) > 0 {
 		builders = append(builders, []ResourceBuilder{
 			builder.ConfigMap(builder.Instance.Spec.Profiles),
-			builder.GatewayServiceBuilder(builder.Instance.Spec.Profiles),
+			builder.GatewayService(builder.Instance.Spec.Profiles),
 			builder.GatewayDeployment(builder.Instance.Spec.Profiles),
 		}...)
 	}
