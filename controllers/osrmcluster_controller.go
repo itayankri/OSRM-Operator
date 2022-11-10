@@ -44,7 +44,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 )
 
-const pauseReconciliationLabel = "ankri.io/pauseReconciliation"
+const pauseReconciliationLabel = "osrmcluster.itayankri/pauseReconciliation"
 const finalizerName = "osrmcluster.itayankri/finalizer"
 
 // OSRMClusterReconciler reconciles a OSRMCluster object
