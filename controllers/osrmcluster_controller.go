@@ -318,8 +318,10 @@ func (r *OSRMClusterReconciler) getChildResources(ctx context.Context, instance 
 	if err := r.Client.Get(ctx, types.NamespacedName{
 		Name:      instance.ChildResourceName(resource.GatewaySuffix, resource.DeploymentSuffix),
 		Namespace: instance.Namespace,
-	}, gatewayDeployment); err != nil && !errors.IsNotFound(err) {
-		return nil, err
+	}, gatewayDeployment); err != nil {
+		if !errors.IsNotFound(err) {
+			return nil, err
+		}
 	} else {
 		children = append(children, gatewayDeployment)
 	}
@@ -328,8 +330,10 @@ func (r *OSRMClusterReconciler) getChildResources(ctx context.Context, instance 
 	if err := r.Client.Get(ctx, types.NamespacedName{
 		Name:      instance.ChildResourceName(resource.GatewaySuffix, resource.ServiceSuffix),
 		Namespace: instance.Namespace,
-	}, gatewayService); err != nil && !errors.IsNotFound(err) {
-		return nil, err
+	}, gatewayService); err != nil {
+		if !errors.IsNotFound(err) {
+			return nil, err
+		}
 	} else {
 		children = append(children, gatewayService)
 	}
@@ -338,8 +342,10 @@ func (r *OSRMClusterReconciler) getChildResources(ctx context.Context, instance 
 	if err := r.Client.Get(ctx, types.NamespacedName{
 		Name:      instance.ChildResourceName(resource.GatewaySuffix, resource.ConfigMapSuffix),
 		Namespace: instance.Namespace,
-	}, gatewayConfigMap); err != nil && !errors.IsNotFound(err) {
-		return nil, err
+	}, gatewayConfigMap); err != nil {
+		if !errors.IsNotFound(err) {
+			return nil, err
+		}
 	} else {
 		children = append(children, gatewayConfigMap)
 	}
@@ -349,8 +355,10 @@ func (r *OSRMClusterReconciler) getChildResources(ctx context.Context, instance 
 		if err := r.Client.Get(ctx, types.NamespacedName{
 			Name:      instance.ChildResourceName(profileSpec.Name, resource.PersistentVolumeClaimSuffix),
 			Namespace: instance.Namespace,
-		}, pvc); err != nil && !errors.IsNotFound(err) {
-			return nil, err
+		}, pvc); err != nil {
+			if !errors.IsNotFound(err) {
+				return nil, err
+			}
 		} else {
 			children = append(children, pvc)
 		}
@@ -359,8 +367,10 @@ func (r *OSRMClusterReconciler) getChildResources(ctx context.Context, instance 
 		if err := r.Client.Get(ctx, types.NamespacedName{
 			Name:      instance.ChildResourceName(profileSpec.Name, resource.JobSuffix),
 			Namespace: instance.Namespace,
-		}, job); err != nil && !errors.IsNotFound(err) {
-			return nil, err
+		}, job); err != nil {
+			if !errors.IsNotFound(err) {
+				return nil, err
+			}
 		} else {
 			children = append(children, job)
 		}
@@ -369,8 +379,10 @@ func (r *OSRMClusterReconciler) getChildResources(ctx context.Context, instance 
 		if err := r.Client.Get(ctx, types.NamespacedName{
 			Name:      instance.ChildResourceName(profileSpec.Name, resource.DeploymentSuffix),
 			Namespace: instance.Namespace,
-		}, deployment); err != nil && !errors.IsNotFound(err) {
-			return nil, err
+		}, deployment); err != nil {
+			if !errors.IsNotFound(err) {
+				return nil, err
+			}
 		} else {
 			children = append(children, deployment)
 		}
@@ -379,8 +391,10 @@ func (r *OSRMClusterReconciler) getChildResources(ctx context.Context, instance 
 		if err := r.Client.Get(ctx, types.NamespacedName{
 			Name:      instance.ChildResourceName(profileSpec.Name, resource.HorizontalPodAutoscalerSuffix),
 			Namespace: instance.Namespace,
-		}, hpa); err != nil && !errors.IsNotFound(err) {
-			return nil, err
+		}, hpa); err != nil {
+			if !errors.IsNotFound(err) {
+				return nil, err
+			}
 		} else {
 			children = append(children, hpa)
 		}
@@ -389,8 +403,10 @@ func (r *OSRMClusterReconciler) getChildResources(ctx context.Context, instance 
 		if err := r.Client.Get(ctx, types.NamespacedName{
 			Name:      instance.ChildResourceName(profileSpec.Name, resource.ServiceSuffix),
 			Namespace: instance.Namespace,
-		}, service); err != nil && !errors.IsNotFound(err) {
-			return nil, err
+		}, service); err != nil {
+			if !errors.IsNotFound(err) {
+				return nil, err
+			}
 		} else {
 			children = append(children, service)
 		}
