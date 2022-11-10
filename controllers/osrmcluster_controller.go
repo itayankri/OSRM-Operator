@@ -189,10 +189,10 @@ func (r *OSRMClusterReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 	builders := resourceBuilder.ResourceBuilders()
 
 	for _, builder := range builders {
-		logger.Info("Builder %v", builder)
+		logger.Info("Builder", builder, fmt.Sprintf("%v", builder))
 		if builder.ShouldDeploy(childResources) {
 			resource, err := builder.Build()
-			logger.Info("Deploying resource %v", resource)
+			logger.Info("Deploying resource", "resource", fmt.Sprintf("%v", resource))
 			if err != nil {
 				logger.Error(err, "Failed to build resource %v for OSRMCluster %v/%v", builder, instance.Namespace, instance.Name)
 				r.setReconciliationSuccess(ctx, instance, metav1.ConditionFalse, "FailedToBuildChildResource", err.Error())
