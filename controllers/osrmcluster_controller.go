@@ -55,6 +55,14 @@ type OSRMClusterReconciler struct {
 	DefaultOSRMImage string
 }
 
+func NewOSRMClusterReconciler(client client.Client, scheme *runtime.Scheme) *OSRMClusterReconciler {
+	return &OSRMClusterReconciler{
+		Client: client,
+		Scheme: scheme,
+		log:    ctrl.Log.WithName("controller").WithName("valhalla"),
+	}
+}
+
 func isInitialized(instance *osrmv1alpha1.OSRMCluster) bool {
 	return controllerutil.ContainsFinalizer(instance, finalizerName)
 }

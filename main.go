@@ -79,11 +79,7 @@ func main() {
 		os.Exit(1)
 	}
 
-	if err = (&controllers.OSRMClusterReconciler{
-		Client: mgr.GetClient(),
-		Scheme: mgr.GetScheme(),
-		log:    ctrl.Log.WithName("controller").WithName("OSRM"),
-	}).SetupWithManager(mgr); err != nil {
+	if err = (controllers.NewOSRMClusterReconciler(mgr.GetClient(), mgr.GetScheme())).SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "OSRMCluster")
 		os.Exit(1)
 	}
