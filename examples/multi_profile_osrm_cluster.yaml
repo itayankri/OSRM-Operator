@@ -21,4 +21,4 @@ spec:
     exposingServices: ["route", "table", "match"]
   persistence:
     storage: "100Mi"
-    storageClassName: nfs-csi
+    storageClassName: standard
