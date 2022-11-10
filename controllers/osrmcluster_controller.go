@@ -44,7 +44,6 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 )
 
-const pauseReconciliationLabel = "osrmcluster.itayankri/pauseReconciliation"
 const finalizerName = "osrmcluster.itayankri/finalizer"
 
 // OSRMClusterReconciler reconciles a OSRMCluster object
@@ -190,8 +189,10 @@ func (r *OSRMClusterReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 	builders := resourceBuilder.ResourceBuilders()
 
 	for _, builder := range builders {
+		logger.Info("Builder %v", builder)
 		if builder.ShouldDeploy(childResources) {
 			resource, err := builder.Build()
+			logger.Info("Deploying resource %v", resource)
 			if err != nil {
 				logger.Error(err, "Failed to build resource %v for OSRMCluster %v/%v", builder, instance.Namespace, instance.Name)
 				r.setReconciliationSuccess(ctx, instance, metav1.ConditionFalse, "FailedToBuildChildResource", err.Error())
