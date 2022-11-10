@@ -125,8 +125,8 @@ func DoAllReplicasReady(resources []runtime.Object) bool {
 		if deployment, ok := resource.(*appsv1.Deployment); ok {
 			if deployment != nil && deployment.Spec.Replicas != nil && deployment.Status.ReadyReplicas >= *deployment.Spec.Replicas {
 				allReplicasReady = true
+				break
 			}
-			break
 		}
 	}
 	return allReplicasReady
