@@ -38,7 +38,6 @@ func (builder *JobBuilder) Build() (client.Object, error) {
 }
 
 func (builder *JobBuilder) Update(object client.Object) error {
-	name := builder.Instance.ChildResourceName(builder.profile.Name, JobSuffix)
 	pbfFileName := builder.Instance.Spec.GetPbfFileName()
 	osrmFileName := strings.ReplaceAll(pbfFileName, "osm.pbf", "osrm")
 	job := object.(*batchv1.Job)
@@ -98,7 +97,7 @@ func (builder *JobBuilder) Update(object client.Object) error {
 						Name: osrmDataVolumeName,
 						VolumeSource: corev1.VolumeSource{
 							PersistentVolumeClaim: &corev1.PersistentVolumeClaimVolumeSource{
-								ClaimName: name,
+								ClaimName: builder.Instance.ChildResourceName(builder.profile.Name, PersistentVolumeClaimSuffix),
 								ReadOnly:  false,
 							},
 						},
