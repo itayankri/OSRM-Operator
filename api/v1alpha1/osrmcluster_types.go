@@ -171,7 +171,7 @@ type OSRMCluster struct {
 }
 
 func (cluster *OSRMCluster) ChildResourceName(service string, suffix string) string {
-	nameWithService := strings.TrimSuffix(strings.Join([]string{}, "-"), "-")
+	nameWithService := strings.TrimSuffix(strings.Join([]string{cluster.ObjectMeta.Name, service}, "-"), "-")
 	return strings.TrimSuffix(strings.Join([]string{nameWithService, suffix}, "-"), "-")
 }
 
