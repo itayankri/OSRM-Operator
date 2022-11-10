@@ -95,8 +95,8 @@ func IsPersistentVolumeClaimBound(pvcName string, resources []runtime.Object) bo
 		if pvc, ok := resource.(*corev1.PersistentVolumeClaim); ok {
 			if pvc != nil && pvc.ObjectMeta.Name == pvcName && pvc.Status.Phase == corev1.ClaimBound {
 				pvcBound = true
+				break
 			}
-			break
 		}
 	}
 	return pvcBound
