@@ -82,6 +82,16 @@ rules:
 - apiGroups:
   - batch
   resources:
+  - cronjobs
+  verbs:
+  - create
+  - get
+  - list
+  - update
+  - watch
+- apiGroups:
+  - batch
+  resources:
   - jobs
   verbs:
   - create
@@ -125,6 +135,16 @@ rules:
   - get
   - patch
   - update
+- apiGroups:
+  - policy
+  resources:
+  - poddisruptionbudgets
+  verbs:
+  - create
+  - get
+  - list
+  - update
+  - watch
 - apiGroups:
   - rbac.authorization.k8s.io
   resources:
