@@ -412,9 +412,6 @@ func (r *OSRMClusterReconciler) getChildResources(ctx context.Context, instance 
 		}
 	}
 
-	array, _ := json.Marshal(children)
-	r.log.Info("Child resources", "array", string(array))
-
 	return children, nil
 }
 
