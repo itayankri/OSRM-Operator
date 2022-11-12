@@ -42,6 +42,7 @@ func (builder *ServiceBuilder) Update(object client.Object) error {
 
 	service.Labels = metadata.GetLabels(builder.Instance.Name, builder.Instance.Labels)
 
+	service.Spec.Type = corev1.ServiceTypeClusterIP
 	service.Spec.Ports = []corev1.ServicePort{
 		{
 			Name:     fmt.Sprintf("%s-port", name),
@@ -56,9 +57,6 @@ func (builder *ServiceBuilder) Update(object client.Object) error {
 	service.Spec.Selector = map[string]string{
 		"app": name,
 	}
-
-	service.Spec.Type = builder.Instance.Spec.Service.GetType()
-	builder.setAnnotations(service)
 
 	if err := controllerutil.SetControllerReference(builder.Instance, service, builder.Scheme); err != nil {
 		return fmt.Errorf("failed setting controller reference: %v", err)
@@ -76,10 +74,4 @@ func (builder *ServiceBuilder) ShouldDeploy(resources []runtime.Object) bool {
 			builder.Instance.ChildResourceName(builder.profile.Name, JobSuffix),
 			resources,
 		)
-}
-
-func (builder *ServiceBuilder) setAnnotations(service *corev1.Service) {
-	if builder.Instance.Spec.Service.Annotations != nil {
-		service.Annotations = metadata.ReconcileAnnotations(service.Annotations, builder.Instance.Spec.Service.Annotations)
-	}
 }
