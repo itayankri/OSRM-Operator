@@ -100,7 +100,9 @@ func (spec *ProfileSpec) GetResources() *corev1.ResourceRequirements {
 }
 
 type ServiceSpec struct {
-	ExposingServices []string `json:"exposingServices,omitempty"`
+	Type             corev1.ServiceType `json:"type,omitempty"`
+	Annotations      map[string]string  `json:"annotations,omitempty"`
+	ExposingServices []string           `json:"exposingServices,omitempty"`
 }
 
 type PersistenceSpec struct {
