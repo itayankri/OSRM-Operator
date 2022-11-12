@@ -9,14 +9,29 @@ spec:
     endpointName: driving
     minReplicas: 1
     maxReplicas: 10
+    resources:
+      requests:
+        cpu: 100m
+        memory: 100Mi
+      limits:
+        cpu: 500m
+        memory: 500Mi
   - name: bicycle
     endpointName: cycling
     minReplicas: 1
     maxReplicas: 4
+    resources:
+      requests:
+        cpu: 100m
+        memory: 100Mi
   - name: foot
     endpointName: foot
     minReplicas: 1
     maxReplicas: 2
+    resources:
+      limits:
+        cpu: 600m
+        memory: 600Mi
   service:
     exposingServices: ["route", "table", "match"]
   persistence:
