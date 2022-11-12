@@ -58,6 +58,9 @@ func (builder *ServiceBuilder) Update(object client.Object) error {
 		"app": name,
 	}
 
+	service.Spec.Type = builder.Instance.Spec.Service.Type
+	builder.setAnnotations(service)
+
 	if err := controllerutil.SetControllerReference(builder.Instance, service, builder.Scheme); err != nil {
 		return fmt.Errorf("failed setting controller reference: %v", err)
 	}
@@ -74,4 +77,10 @@ func (builder *ServiceBuilder) ShouldDeploy(resources []runtime.Object) bool {
 			builder.Instance.ChildResourceName(builder.profile.Name, JobSuffix),
 			resources,
 		)
+}
+
+func (builder *ServiceBuilder) setAnnotations(service *corev1.Service) {
+	if builder.Instance.Spec.Service.Annotations != nil {
+		service.Annotations = metadata.ReconcileAnnotations(service.Annotations, builder.Instance.Spec.Service.Annotations)
+	}
 }
