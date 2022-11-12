@@ -42,7 +42,6 @@ func (builder *ServiceBuilder) Update(object client.Object) error {
 
 	service.Labels = metadata.GetLabels(builder.Instance.Name, builder.Instance.Labels)
 
-	service.Spec.Type = corev1.ServiceTypeClusterIP
 	service.Spec.Ports = []corev1.ServicePort{
 		{
 			Name:     fmt.Sprintf("%s-port", name),
@@ -58,7 +57,7 @@ func (builder *ServiceBuilder) Update(object client.Object) error {
 		"app": name,
 	}
 
-	service.Spec.Type = builder.Instance.Spec.Service.Type
+	service.Spec.Type = builder.Instance.Spec.Service.GetType()
 	builder.setAnnotations(service)
 
 	if err := controllerutil.SetControllerReference(builder.Instance, service, builder.Scheme); err != nil {
