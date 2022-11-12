@@ -97,10 +97,18 @@ spec:
                 type: array
               service:
                 properties:
+                  annotations:
+                    additionalProperties:
+                      type: string
+                    type: object
                   exposingServices:
                     items:
                       type: string
                     type: array
+                  type:
+                    description: Service Type string describes ingress methods for
+                      a service
+                    type: string
                 type: object
             type: object
           status:
