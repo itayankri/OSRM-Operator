@@ -33,7 +33,10 @@ spec:
         cpu: 600m
         memory: 600Mi
   service:
+    type: LoadBalancer
+    annotations:
+      example-annotation: "example-annotation"
     exposingServices: ["route", "table", "match"]
   persistence:
-    storage: "100Mi"
+    storage: 100Mi
     storageClassName: standard
