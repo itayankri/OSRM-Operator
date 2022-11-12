@@ -5,8 +5,10 @@ import (
 
 	osrmv1alpha1 "github.com/itayankri/OSRM-Operator/api/v1alpha1"
 	"github.com/itayankri/OSRM-Operator/internal/metadata"
+	"github.com/itayankri/OSRM-Operator/internal/status"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/util/intstr"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
@@ -27,14 +29,14 @@ func (builder *OSRMResourceBuilder) Service(profile *osrmv1alpha1.ProfileSpec) *
 func (builder *ServiceBuilder) Build() (client.Object, error) {
 	return &corev1.Service{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      fmt.Sprintf("%s-%s", builder.Instance.Name, builder.profile.Name),
+			Name:      builder.Instance.ChildResourceName(builder.profile.Name, ServiceSuffix),
 			Namespace: builder.Instance.Namespace,
 		},
 	}, nil
 }
 
 func (builder *ServiceBuilder) Update(object client.Object) error {
-	name := fmt.Sprintf("%s-%s", builder.Instance.Name, builder.profile.Name)
+	name := builder.Instance.ChildResourceName(builder.profile.Name, ServiceSuffix)
 
 	service := object.(*corev1.Service)
 
@@ -61,4 +63,15 @@ func (builder *ServiceBuilder) Update(object client.Object) error {
 	}
 
 	return nil
+}
+
+func (builder *ServiceBuilder) ShouldDeploy(resources []runtime.Object) bool {
+	return status.IsPersistentVolumeClaimBound(
+		builder.Instance.ChildResourceName(builder.profile.Name, PersistentVolumeClaimSuffix),
+		resources,
+	) &&
+		status.IsJobCompleted(
+			builder.Instance.ChildResourceName(builder.profile.Name, JobSuffix),
+			resources,
+		)
 }

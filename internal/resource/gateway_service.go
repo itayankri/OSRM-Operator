@@ -5,8 +5,10 @@ import (
 
 	osrmv1alpha1 "github.com/itayankri/OSRM-Operator/api/v1alpha1"
 	"github.com/itayankri/OSRM-Operator/internal/metadata"
+	"github.com/itayankri/OSRM-Operator/internal/status"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/util/intstr"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
@@ -17,7 +19,7 @@ type GatewayServiceBuilder struct {
 	*OSRMResourceBuilder
 }
 
-func (builder *OSRMResourceBuilder) GatewayServiceBuilder(profiles []*osrmv1alpha1.ProfileSpec) *GatewayServiceBuilder {
+func (builder *OSRMResourceBuilder) GatewayService(profiles []*osrmv1alpha1.ProfileSpec) *GatewayServiceBuilder {
 	return &GatewayServiceBuilder{
 		ClusterScopedBuilder{profiles},
 		builder,
@@ -51,7 +53,7 @@ func (builder *GatewayServiceBuilder) Update(object client.Object) error {
 		},
 	}
 	service.Spec.Selector = map[string]string{
-		"app": fmt.Sprintf("%s-%s", builder.Instance.Name, gatewayPostfix),
+		"app": builder.Instance.ChildResourceName(GatewaySuffix, ServiceSuffix),
 	}
 
 	if err := controllerutil.SetControllerReference(builder.Instance, service, builder.Scheme); err != nil {
@@ -59,4 +61,14 @@ func (builder *GatewayServiceBuilder) Update(object client.Object) error {
 	}
 
 	return nil
+}
+
+func (builder *GatewayServiceBuilder) ShouldDeploy(resources []runtime.Object) bool {
+	for _, profile := range builder.Instance.Spec.Profiles {
+		if !status.IsJobCompleted(builder.Instance.ChildResourceName(profile.Name, JobSuffix), resources) ||
+			!status.IsPersistentVolumeClaimBound(builder.Instance.ChildResourceName(profile.Name, PersistentVolumeClaimSuffix), resources) {
+			return false
+		}
+	}
+	return true
 }

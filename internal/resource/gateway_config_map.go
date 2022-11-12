@@ -10,8 +10,10 @@ import (
 
 	osrmv1alpha1 "github.com/itayankri/OSRM-Operator/api/v1alpha1"
 	"github.com/itayankri/OSRM-Operator/internal/metadata"
+	"github.com/itayankri/OSRM-Operator/internal/status"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/runtime"
 )
 
 type ConfigMapBuilder struct {
@@ -87,10 +89,20 @@ func getNginxLocations(instance *osrmv1alpha1.OSRMCluster, profiles []*osrmv1alp
 
 func formatNginxLocation(instance *osrmv1alpha1.OSRMCluster, profile osrmv1alpha1.ProfileSpec, osrmService string) string {
 	path := fmt.Sprintf("%s/v1/%s/", osrmService, profile.EndpointName)
-	serviceName := fmt.Sprintf("%s-%s", instance.Name, profile.Name)
+	serviceName := instance.ChildResourceName(profile.Name, "")
 	envVar := serviceToEnvVariable(serviceName)
 	return fmt.Sprintf(`
 			location /%s {
 				proxy_pass http://${%s};
 			}`, path, envVar)
+}
+
+func (builder *ConfigMapBuilder) ShouldDeploy(resources []runtime.Object) bool {
+	for _, profile := range builder.Instance.Spec.Profiles {
+		if !status.IsJobCompleted(builder.Instance.ChildResourceName(profile.Name, JobSuffix), resources) ||
+			!status.IsPersistentVolumeClaimBound(builder.Instance.ChildResourceName(profile.Name, PersistentVolumeClaimSuffix), resources) {
+			return false
+		}
+	}
+	return true
 }

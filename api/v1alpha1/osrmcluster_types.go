@@ -19,11 +19,41 @@ package v1alpha1
 import (
 	"strings"
 
+	"github.com/itayankri/OSRM-Operator/internal/status"
 	resource "k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	runtime "k8s.io/apimachinery/pkg/runtime"
 )
 
 const defaultImage = "osrm/osrm-backend"
+
+const OperatorPausedAnnotation = "osrm.itayankri/operator.paused"
+
+// Phase is the current phase of the deployment
+type Phase string
+
+const (
+	// PhaseBuildingMap signals that the map building phase is in progress
+	PhaseBuildingMap Phase = "BuildingMap"
+
+	// PhaseDeployingWorkers signals that the workers are being deployed
+	PhaseDeployingWorkers Phase = "DeployingWorkers"
+
+	// PhaseWorkersDeployed signals that the resources are successfully deployed
+	PhaseWorkersDeployed Phase = "WorkersDeployed"
+
+	// PhaseDeleting signals that the resources are being removed
+	PhaseDeleting Phase = "Deleting"
+
+	// PhaseDeleted signals that the resources are deleted
+	PhaseDeleted Phase = "Deleted"
+
+	// PhaseError signals that the deployment is in an error state
+	PhaseError Phase = "Error"
+
+	// PhaseEmpty is an uninitialized phase
+	PhaseEmpty Phase = ""
+)
 
 // EDIT THIS FILE!  THIS IS SCAFFOLDING FOR YOU TO OWN!
 // NOTE: json tags are required.  Any new fields you add must have json tags for the fields to be serialized.
@@ -71,26 +101,58 @@ type PersistenceSpec struct {
 
 // OSRMClusterStatus defines the observed state of OSRMCluster
 type OSRMClusterStatus struct {
-	// INSERT ADDITIONAL STATUS FIELD - define observed state of cluster
-	// Important: Run "make" to regenerate code after modifying this file
+	// Paused is true when the operator notices paused annotation.
+	Paused bool `json:"paused,omitempty"`
+
+	// ObservedGeneration is the latest generation observed by the operator.
+	ObservedGeneration int64 `json:"observedGeneration,omitempty"`
+
+	Phase Phase `json:"phase,omitempty"`
 
 	Conditions []metav1.Condition `json:"conditions,omitempty"`
 }
 
-func (clusterStatus *OSRMClusterStatus) SetCondition(
-	conditionType string,
-	conditionStatus metav1.ConditionStatus,
-	reason string,
-	messages ...string,
-) {
-	for i := range clusterStatus.Conditions {
-		if clusterStatus.Conditions[i].Type == conditionType {
-			if clusterStatus.Conditions[i].Status != conditionStatus {
-				clusterStatus.Conditions[i].LastTransitionTime = metav1.Now()
+func (osrmClusterStatus *OSRMClusterStatus) SetConditions(resources []runtime.Object) {
+	var oldAvailableCondition *metav1.Condition
+	var oldAllReplicasReadyCondition *metav1.Condition
+	var oldReconciliationSuccessCondition *metav1.Condition
+
+	for _, condition := range osrmClusterStatus.Conditions {
+		switch condition.Type {
+		case status.ConditionAllReplicasReady:
+			oldAllReplicasReadyCondition = condition.DeepCopy()
+		case status.ConditionAvailable:
+			oldAvailableCondition = condition.DeepCopy()
+		case status.ConditionReconciliationSuccess:
+			oldReconciliationSuccessCondition = condition.DeepCopy()
+		}
+	}
+
+	var reconciliationSuccessCondition metav1.Condition
+	if oldReconciliationSuccessCondition != nil {
+		reconciliationSuccessCondition = *oldReconciliationSuccessCondition
+	} else {
+		reconciliationSuccessCondition = status.ReconcileSuccessCondition(metav1.ConditionUnknown, "Initialising", "")
+	}
+
+	availableCondition := status.AvailableCondition(resources, oldAvailableCondition)
+	allReplicasReadyCondition := status.AllReplicasReadyCondition(resources, oldAllReplicasReadyCondition)
+	osrmClusterStatus.Conditions = []metav1.Condition{
+		availableCondition,
+		allReplicasReadyCondition,
+		reconciliationSuccessCondition,
+	}
+}
+
+func (status *OSRMClusterStatus) SetCondition(condition metav1.Condition) {
+	for i := range status.Conditions {
+		if status.Conditions[i].Type == condition.Type {
+			if status.Conditions[i].Status != condition.Status {
+				status.Conditions[i].LastTransitionTime = metav1.Now()
 			}
-			clusterStatus.Conditions[i].Status = conditionStatus
-			clusterStatus.Conditions[i].Reason = reason
-			clusterStatus.Conditions[i].Message = strings.Join(messages, ". ")
+			status.Conditions[i].Status = condition.Status
+			status.Conditions[i].Reason = condition.Reason
+			status.Conditions[i].Message = condition.Message
 			break
 		}
 	}
@@ -106,6 +168,11 @@ type OSRMCluster struct {
 
 	Spec   OSRMClusterSpec   `json:"spec,omitempty"`
 	Status OSRMClusterStatus `json:"status,omitempty"`
+}
+
+func (cluster *OSRMCluster) ChildResourceName(service string, suffix string) string {
+	nameWithService := strings.TrimSuffix(strings.Join([]string{cluster.ObjectMeta.Name, service}, "-"), "-")
+	return strings.TrimSuffix(strings.Join([]string{nameWithService, suffix}, "-"), "-")
 }
 
 //+kubebuilder:object:root=true

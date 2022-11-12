@@ -1,0 +1,24 @@
+apiVersion: osrm.itayankri/v1alpha1
+kind: OSRMCluster
+metadata:
+  name: multi-profile-example
+spec:
+  pbfUrl: https://download.geofabrik.de/asia/israel-and-palestine-latest.osm.pbf
+  profiles:
+  - name: car
+    endpointName: driving
+    minReplicas: 1
+    maxReplicas: 10
+  - name: bicycle
+    endpointName: cycling
+    minReplicas: 1
+    maxReplicas: 4
+  - name: foot
+    endpointName: foot
+    minReplicas: 1
+    maxReplicas: 2
+  service:
+    exposingServices: ["route", "table", "match"]
+  persistence:
+    storage: "100Mi"
+    storageClassName: standard
