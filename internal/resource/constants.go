@@ -12,8 +12,8 @@ const (
 const osrmContainerName = "osrm-backend"
 const osrmDataVolumeName = "osrm-data"
 const osrmDataPath = "/data"
-const osrmPartitionedData = "/partitioned"
-const osrmCustomizedData = "/customized"
+const osrmPartitionedData = "partitioned"
+const osrmCustomizedData = "customized"
 
 const GatewaySuffix = "gateway"
 const PersistentVolumeClaimSuffix = ""

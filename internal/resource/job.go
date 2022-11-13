@@ -68,7 +68,9 @@ func (builder *JobBuilder) Update(object client.Object) error {
 						},
 						Args: []string{
 							fmt.Sprintf(`
-								cd %s/%s && \
+								cd %s && \
+								mkdir %s %s && \
+								cd %s
 								curl -O %s && \
 								osrm-extract -p /opt/%s.lua %s && \
 								osrm-partition %s && \
@@ -78,6 +80,8 @@ func (builder *JobBuilder) Update(object client.Object) error {
 								osrm-customize %s
 							`,
 								osrmDataPath,
+								osrmPartitionedData,
+								osrmCustomizedData,
 								osrmPartitionedData,
 								builder.Instance.Spec.PBFURL,
 								builder.profile.Name,

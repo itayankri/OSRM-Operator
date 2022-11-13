@@ -93,6 +93,13 @@ spec:
                             https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/'
                           type: object
                       type: object
+                    speedUpdates:
+                      properties:
+                        schedule:
+                          type: string
+                        url:
+                          type: string
+                      type: object
                   type: object
                 type: array
               service:
