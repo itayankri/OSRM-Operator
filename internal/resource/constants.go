@@ -12,10 +12,13 @@ const (
 const osrmContainerName = "osrm-backend"
 const osrmDataVolumeName = "osrm-data"
 const osrmDataPath = "/data"
+const osrmPartitionedData = "/partitioned"
+const osrmCustomizedData = "/customized"
 
 const GatewaySuffix = "gateway"
 const PersistentVolumeClaimSuffix = ""
 const JobSuffix = "map-initializer"
+const CronJobSuffix = "speed-updates"
 const DeploymentSuffix = ""
 const HorizontalPodAutoscalerSuffix = ""
 const ServiceSuffix = ""
