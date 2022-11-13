@@ -2,6 +2,7 @@ package resource
 
 import (
 	"fmt"
+	"strings"
 
 	osrmv1alpha1 "github.com/itayankri/OSRM-Operator/api/v1alpha1"
 	"github.com/itayankri/OSRM-Operator/internal/status"
@@ -37,6 +38,9 @@ func (builder *CronJobBuilder) Build() (client.Object, error) {
 
 func (builder *CronJobBuilder) Update(object client.Object) error {
 	cronJob := object.(*batchv1.CronJob)
+	pbfFileName := builder.Instance.Spec.GetPbfFileName()
+	osrmFileName := strings.ReplaceAll(pbfFileName, "osm.pbf", "osrm")
+	speedUpdatesFileName := builder.profile.SpeedUpdates.GetFileURL()
 
 	cronJob.Spec = batchv1.CronJobSpec{
 		Schedule: builder.profile.SpeedUpdates.Schedule,
@@ -65,11 +69,17 @@ func (builder *CronJobBuilder) Update(object client.Object) error {
 								},
 								Args: []string{
 									fmt.Sprintf(`
-										cd %s && \
+										apt update && \
+										apt --assume-yes install curl && \
+										cd %s/%s && \
 										curl -O %s && \
+										osrm-customize %s --segment-speed-file %s
 									`,
 										osrmDataPath,
+										osrmCustomizedData,
 										builder.profile.SpeedUpdates.URL,
+										osrmFileName,
+										speedUpdatesFileName,
 									),
 								},
 								VolumeMounts: []corev1.VolumeMount{

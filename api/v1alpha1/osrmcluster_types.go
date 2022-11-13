@@ -17,7 +17,9 @@ limitations under the License.
 package v1alpha1
 
 import (
+	"fmt"
 	"strings"
+	"time"
 
 	"github.com/itayankri/OSRM-Operator/internal/status"
 	corev1 "k8s.io/api/core/v1"
@@ -116,6 +118,13 @@ func (spec *ServiceSpec) GetType() corev1.ServiceType {
 type SpeedUpdatesSpec struct {
 	URL      string `json:"url,omitempty"`
 	Schedule string `json:"schedule,omitempty"`
+}
+
+func (spec *SpeedUpdatesSpec) GetFileURL() string {
+	oneHourFromNow := time.Now().Add(time.Hour * time.Duration(1))
+	weekday := int(oneHourFromNow.Weekday())
+	hour, _, _ := oneHourFromNow.Clock()
+	return fmt.Sprintf("%s/%d/%d", spec.URL, weekday, hour)
 }
 
 type PersistenceSpec struct {
