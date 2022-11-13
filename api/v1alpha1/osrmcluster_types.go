@@ -20,6 +20,7 @@ import (
 	"strings"
 
 	"github.com/itayankri/OSRM-Operator/internal/status"
+	corev1 "k8s.io/api/core/v1"
 	resource "k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	runtime "k8s.io/apimachinery/pkg/runtime"
@@ -84,14 +85,31 @@ func (spec *OSRMClusterSpec) GetPbfFileName() string {
 type ProfilesSpec []*ProfileSpec
 
 type ProfileSpec struct {
-	Name         string `json:"name,omitempty"`
-	EndpointName string `json:"endpointName,omitempty"`
-	MinReplicas  *int32 `json:"minReplicas,omitempty"`
-	MaxReplicas  *int32 `json:"maxReplicas,omitempty"`
+	Name         string                       `json:"name,omitempty"`
+	EndpointName string                       `json:"endpointName,omitempty"`
+	MinReplicas  *int32                       `json:"minReplicas,omitempty"`
+	MaxReplicas  *int32                       `json:"maxReplicas,omitempty"`
+	Resources    *corev1.ResourceRequirements `json:"resources,omitempty"`
+}
+
+func (spec *ProfileSpec) GetResources() *corev1.ResourceRequirements {
+	if spec.Resources == nil {
+		return &corev1.ResourceRequirements{}
+	}
+	return spec.Resources
 }
 
 type ServiceSpec struct {
-	ExposingServices []string `json:"exposingServices,omitempty"`
+	Type             *corev1.ServiceType `json:"type,omitempty"`
+	Annotations      map[string]string   `json:"annotations,omitempty"`
+	ExposingServices []string            `json:"exposingServices,omitempty"`
+}
+
+func (spec *ServiceSpec) GetType() corev1.ServiceType {
+	if spec.Type != nil {
+		return *spec.Type
+	}
+	return corev1.ServiceTypeClusterIP
 }
 
 type PersistenceSpec struct {
