@@ -69,7 +69,7 @@ func (builder *JobBuilder) Update(object client.Object) error {
 						Args: []string{
 							fmt.Sprintf(`
 								apt update && \
-								apt --assume-yes install wget && \
+								apt --assume-yes install curl && \
 								cd %s && \
 								mkdir %s %s && \
 								cd %s
