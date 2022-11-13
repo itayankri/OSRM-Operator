@@ -90,6 +90,7 @@ type ProfileSpec struct {
 	MinReplicas  *int32                       `json:"minReplicas,omitempty"`
 	MaxReplicas  *int32                       `json:"maxReplicas,omitempty"`
 	Resources    *corev1.ResourceRequirements `json:"resources,omitempty"`
+	SpeedUpdates *SpeedUpdatesSpec            `json:"speedUpdates,omitempty"`
 }
 
 func (spec *ProfileSpec) GetResources() *corev1.ResourceRequirements {
@@ -110,6 +111,11 @@ func (spec *ServiceSpec) GetType() corev1.ServiceType {
 		return *spec.Type
 	}
 	return corev1.ServiceTypeClusterIP
+}
+
+type SpeedUpdatesSpec struct {
+	URL      string `json:"url,omitempty"`
+	Schedule string `json:"schedule,omitempty"`
 }
 
 type PersistenceSpec struct {
