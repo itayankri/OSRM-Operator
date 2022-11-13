@@ -92,10 +92,10 @@ func (builder *CronJobBuilder) Update(object client.Object) error {
 						},
 						Volumes: []corev1.Volume{
 							{
-								Name: builder.Instance.Name,
+								Name: osrmDataVolumeName,
 								VolumeSource: corev1.VolumeSource{
 									PersistentVolumeClaim: &corev1.PersistentVolumeClaimVolumeSource{
-										ClaimName: builder.Instance.Name,
+										ClaimName: builder.Instance.ChildResourceName(builder.profile.Name, PersistentVolumeClaimSuffix),
 										ReadOnly:  false,
 									},
 								},
