@@ -3,7 +3,7 @@ kind: OSRMCluster
 metadata:
   name: multi-profile-example
 spec:
-  pbfUrl: https://download.geofabrik.de/asia/israel-and-palestine-latest.osm.pbf
+  pbfUrl: https://download.geofabrik.de/australia-oceania/marshall-islands-latest.osm.pbf
   profiles:
   - name: car
     endpointName: driving

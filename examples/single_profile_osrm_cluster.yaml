@@ -3,7 +3,7 @@ kind: OSRMCluster
 metadata:
   name: single-profile-example
 spec:
-  pbfUrl: https://download.geofabrik.de/asia/israel-and-palestine-latest.osm.pbf
+  pbfUrl: https://download.geofabrik.de/australia-oceania/marshall-islands-latest.osm.pbf
   profiles:
   - name: foot
     endpointName: foot
@@ -12,5 +12,5 @@ spec:
   service:
     exposingServices: ["route", "table", "match"]
   persistence:
-    storage: "100Mi"
+    storage: "1000Mi"
     storageClassName: standard
