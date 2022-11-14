@@ -40,7 +40,7 @@ func (builder *CronJobBuilder) Update(object client.Object) error {
 	cronJob := object.(*batchv1.CronJob)
 	pbfFileName := builder.Instance.Spec.GetPbfFileName()
 	osrmFileName := strings.ReplaceAll(pbfFileName, "osm.pbf", "osrm")
-	speedUpdatesFileName := builder.profile.SpeedUpdates.GetFileURL()
+	speedUpdatesFileURL := builder.profile.SpeedUpdates.GetFileURL()
 
 	cronJob.Spec = batchv1.CronJobSpec{
 		Schedule: builder.profile.SpeedUpdates.Schedule,
@@ -72,18 +72,35 @@ func (builder *CronJobBuilder) Update(object client.Object) error {
 										apt update && \
 										apt --assume-yes install curl && \
 										cd %s/%s && \
-										rm -rf *
-										curl -O %s && \
+										rm -rf * && \
+										curl -O %s -o speeds.csv && \
 										cp ../%s .
-										osrm-customize %s --segment-speed-file %s
+										osrm-customize %s --segment-speed-file speeds.csv
 									`,
 										osrmDataPath,
 										osrmCustomizedData,
-										builder.profile.SpeedUpdates.URL,
+										speedUpdatesFileURL,
 										osrmPartitionedData,
 										osrmFileName,
-										speedUpdatesFileName,
 									),
+								},
+								Env: []corev1.EnvVar{
+									{
+										Name:  "ROOT_DIR",
+										Value: osrmDataPath,
+									},
+									{
+										Name:  "PARTITIONED_DATA_DIR",
+										Value: osrmPartitionedData,
+									},
+									{
+										Name:  "CUSTOMIZED_DATA_DIR",
+										Value: osrmCustomizedData,
+									},
+									{
+										Name:  "URL",
+										Value: builder.profile.SpeedUpdates.URL,
+									},
 								},
 								VolumeMounts: []corev1.VolumeMount{
 									{

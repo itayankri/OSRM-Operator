@@ -124,7 +124,7 @@ func (spec *SpeedUpdatesSpec) GetFileURL() string {
 	oneHourFromNow := time.Now().Add(time.Hour * time.Duration(1))
 	weekday := int(oneHourFromNow.Weekday())
 	hour, _, _ := oneHourFromNow.Clock()
-	return fmt.Sprintf("%s/%d/%d", spec.URL, weekday, hour)
+	return fmt.Sprintf("%s/%d/%d.csv", spec.URL, weekday, hour)
 }
 
 type PersistenceSpec struct {
