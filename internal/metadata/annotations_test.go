@@ -17,7 +17,7 @@ var _ = Describe("Annotations", func() {
 		})
 
 		It("Should return a merged map of annotations", func() {
-			const testAnnotationKey = "valhalla"
+			const testAnnotationKey = "osrm"
 			const testAnnotationValue = "operator"
 			annotations := map[string]string{testAnnotationKey: testAnnotationValue}
 			reconciledAnnotations := metadata.ReconcileAnnotations(baseAnnotations, annotations)
