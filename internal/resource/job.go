@@ -72,13 +72,13 @@ func (builder *JobBuilder) Update(object client.Object) error {
 								apt --assume-yes install curl && \
 								cd %s && \
 								mkdir %s %s && \
-								cd %s
+								cd %s && \
 								curl -O %s && \
 								osrm-extract -p /opt/%s.lua %s && \
 								osrm-partition %s && \
 								cd ../%s && \
 								rm -rf * &&\
-								cp ../%s/* .
+								cp ../%s/* . && \
 								osrm-customize %s
 							`,
 								osrmDataPath,
