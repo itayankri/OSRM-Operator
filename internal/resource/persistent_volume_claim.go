@@ -33,7 +33,7 @@ func (builder *PersistentVolumeClaimBuilder) Build() (client.Object, error) {
 			Namespace: builder.Instance.Namespace,
 		},
 		Spec: corev1.PersistentVolumeClaimSpec{
-			AccessModes: []corev1.PersistentVolumeAccessMode{corev1.ReadWriteMany},
+			AccessModes: []corev1.PersistentVolumeAccessMode{corev1.ReadOnlyMany},
 			Resources: corev1.ResourceRequirements{
 				Requests: map[corev1.ResourceName]resource.Quantity{
 					corev1.ResourceStorage: *builder.Instance.Spec.Persistence.Storage,
