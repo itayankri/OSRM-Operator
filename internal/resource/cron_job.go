@@ -72,12 +72,15 @@ func (builder *CronJobBuilder) Update(object client.Object) error {
 										apt update && \
 										apt --assume-yes install curl && \
 										cd %s/%s && \
+										rm -rf *
 										curl -O %s && \
+										cp ../%s .
 										osrm-customize %s --segment-speed-file %s
 									`,
 										osrmDataPath,
 										osrmCustomizedData,
 										builder.profile.SpeedUpdates.URL,
+										osrmPartitionedData,
 										osrmFileName,
 										speedUpdatesFileName,
 									),
