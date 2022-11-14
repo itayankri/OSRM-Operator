@@ -74,7 +74,7 @@ func (builder *CronJobBuilder) Update(object client.Object) error {
 										cd %s/%s && \
 										rm -rf * && \
 										curl -O %s -o speeds.csv && \
-										cp ../%s . && \
+										cp -r ../%s . && \
 										osrm-customize %s --segment-speed-file speeds.csv
 									`,
 										osrmDataPath,
