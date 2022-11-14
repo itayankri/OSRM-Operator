@@ -26,6 +26,7 @@ import (
 	resource "k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	runtime "k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/util/intstr"
 )
 
 const defaultImage = "osrm/osrm-backend"
@@ -93,6 +94,14 @@ type ProfileSpec struct {
 	MaxReplicas  *int32                       `json:"maxReplicas,omitempty"`
 	Resources    *corev1.ResourceRequirements `json:"resources,omitempty"`
 	SpeedUpdates *SpeedUpdatesSpec            `json:"speedUpdates,omitempty"`
+}
+
+func (spec *ProfileSpec) GetMinAvailable() *intstr.IntOrString {
+	if spec.MinReplicas != nil {
+		return &intstr.IntOrString{IntVal: *spec.MinReplicas}
+	}
+
+	return &intstr.IntOrString{IntVal: 1}
 }
 
 func (spec *ProfileSpec) GetResources() *corev1.ResourceRequirements {

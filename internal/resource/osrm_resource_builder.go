@@ -31,12 +31,13 @@ func (builder *OSRMResourceBuilder) ResourceBuilders() []ResourceBuilder {
 	builders := []ResourceBuilder{}
 	for _, profile := range builder.Instance.Spec.Profiles {
 		builders = append(builders, []ResourceBuilder{
+			builder.PersistentVolumeClaim(profile),
+			builder.Job(profile),
 			builder.Deployment(profile),
 			builder.Service(profile),
-			builder.Job(profile),
 			builder.CronJob(profile),
+			builder.PodDisruptionBudget(profile),
 			builder.HorizontalPodAutoscaler(profile),
-			builder.PersistentVolumeClaim(profile),
 		}...)
 	}
 
