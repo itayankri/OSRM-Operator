@@ -73,7 +73,7 @@ func (builder *CronJobBuilder) Update(object client.Object) error {
 										apt --assume-yes install curl && \
 										cd %s/%s && \
 										rm -rf * && \
-										curl -O %s -o speeds.csv && \
+										curl %s -o speeds.csv && \
 										cp -r ../%s/* . && \
 										osrm-customize %s --segment-speed-file speeds.csv
 									`,
