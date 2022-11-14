@@ -6,7 +6,6 @@ import (
 
 	osrmv1alpha1 "github.com/itayankri/OSRM-Operator/api/v1alpha1"
 	"github.com/itayankri/OSRM-Operator/internal/metadata"
-	"github.com/itayankri/OSRM-Operator/internal/status"
 	batchv1 "k8s.io/api/batch/v1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
@@ -125,8 +124,5 @@ func (builder *JobBuilder) Update(object client.Object) error {
 }
 
 func (builder *JobBuilder) ShouldDeploy(resources []runtime.Object) bool {
-	return status.IsPersistentVolumeClaimBound(
-		builder.Instance.ChildResourceName(builder.profile.Name, PersistentVolumeClaimSuffix),
-		resources,
-	)
+	return true
 }
