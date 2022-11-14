@@ -21,6 +21,7 @@ const JobSuffix = "map-initializer"
 const CronJobSuffix = "speed-updates"
 const DeploymentSuffix = ""
 const HorizontalPodAutoscalerSuffix = ""
+const PodDisruptionBudgetSuffix = ""
 const ServiceSuffix = ""
 const ConfigMapSuffix = ""
 
