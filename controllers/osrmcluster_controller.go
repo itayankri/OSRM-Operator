@@ -58,7 +58,7 @@ func NewOSRMClusterReconciler(client client.Client, scheme *runtime.Scheme) *OSR
 	return &OSRMClusterReconciler{
 		Client: client,
 		Scheme: scheme,
-		log:    ctrl.Log.WithName("controller").WithName("valhalla"),
+		log:    ctrl.Log.WithName("controller").WithName("OSRM"),
 	}
 }
 

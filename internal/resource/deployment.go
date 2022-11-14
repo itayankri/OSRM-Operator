@@ -75,10 +75,11 @@ func (builder *DeploymentBuilder) Update(object client.Object) error {
 						},
 						Args: []string{
 							fmt.Sprintf(`
-								cd %s && \
+								cd %s/%s && \
 								osrm-routed %s --algorithm mld
 							`,
 								osrmDataPath,
+								osrmCustomizedData,
 								osrmFileName,
 							),
 						},

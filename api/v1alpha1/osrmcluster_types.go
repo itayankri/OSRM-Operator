@@ -17,7 +17,9 @@ limitations under the License.
 package v1alpha1
 
 import (
+	"fmt"
 	"strings"
+	"time"
 
 	"github.com/itayankri/OSRM-Operator/internal/status"
 	corev1 "k8s.io/api/core/v1"
@@ -90,6 +92,7 @@ type ProfileSpec struct {
 	MinReplicas  *int32                       `json:"minReplicas,omitempty"`
 	MaxReplicas  *int32                       `json:"maxReplicas,omitempty"`
 	Resources    *corev1.ResourceRequirements `json:"resources,omitempty"`
+	SpeedUpdates *SpeedUpdatesSpec            `json:"speedUpdates,omitempty"`
 }
 
 func (spec *ProfileSpec) GetResources() *corev1.ResourceRequirements {
@@ -110,6 +113,18 @@ func (spec *ServiceSpec) GetType() corev1.ServiceType {
 		return *spec.Type
 	}
 	return corev1.ServiceTypeClusterIP
+}
+
+type SpeedUpdatesSpec struct {
+	URL      string `json:"url,omitempty"`
+	Schedule string `json:"schedule,omitempty"`
+}
+
+func (spec *SpeedUpdatesSpec) GetFileURL() string {
+	oneHourFromNow := time.Now().Add(time.Hour * time.Duration(1))
+	weekday := int(oneHourFromNow.Weekday())
+	hour, _, _ := oneHourFromNow.Clock()
+	return fmt.Sprintf("%s/%d/%d.csv", spec.URL, weekday, hour)
 }
 
 type PersistenceSpec struct {
