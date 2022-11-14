@@ -7,11 +7,8 @@ spec:
   profiles:
   - name: foot
     endpointName: foot
-    minReplicas: 2
+    minReplicas: 1
     maxReplicas: 4
-    speedUpdates:
-      url: https://storage.cloud.google.com/revel_eta_prediction/hourly_speed_data
-      schedule: "30 * * * *"
   service:
     exposingServices: ["route", "table", "match"]
   persistence:
