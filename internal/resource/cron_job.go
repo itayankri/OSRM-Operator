@@ -52,7 +52,7 @@ func (builder *CronJobBuilder) Update(object client.Object) error {
 						Containers: []corev1.Container{
 							{
 								Name:  builder.Instance.ChildResourceName(builder.profile.Name, CronJobSuffix),
-								Image: builder.Instance.Spec.GetImage(),
+								Image: builder.profile.GetSpeedUpdatesImage(),
 								Resources: corev1.ResourceRequirements{
 									Requests: map[corev1.ResourceName]resource.Quantity{
 										"memory": resource.MustParse("100M"),
