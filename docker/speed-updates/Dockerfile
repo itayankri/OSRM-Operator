@@ -3,7 +3,7 @@ FROM osrm/osrm-backend:latest
 RUN apt update
 RUN apt --assume-yes install curl
 
-COPY entrypoint.sh entrypoint.sh
-RUN chmod +x entrypoint.sh
+COPY run.sh run.sh
+RUN chmod +x run.sh
 
-ENTRYPOINT ["/entrypoint.sh"]
+ENTRYPOINT ["/run.sh"]
