@@ -145,7 +145,7 @@ func (builder *DeploymentBuilder) setAnnotations(deployment *appsv1.Deployment, 
 
 				if shouldUpdateAnnotations {
 					annotations := map[string]string{lastTrafficUpdatetimeAnnotation: cron.Status.LastSuccessfulTime.Format(time.RFC3339)}
-					deployment.Annotations = metadata.ReconcileAnnotations(
+					deployment.Spec.Template.ObjectMeta.Annotations = metadata.ReconcileAnnotations(
 						deployment.Annotations,
 						annotations,
 					)
