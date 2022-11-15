@@ -23,6 +23,11 @@ if [[ -z "${URL}" ]]; then
   exit 1
 fi
 
+if [[ -z "${OSRM_FILE_NAME}" ]]; then
+  echo "OSRM_FILE_NAME environemnt variable must be provided"
+  exit 1
+fi
+
 cd $ROOT_DIR/$CUSTOMIZED_DATA_DIR
 
 echo "Deleting old customised map data"
@@ -40,4 +45,4 @@ echo "Downloading speed updated CSV from $FULL_URL"
 curl -O $FULL_URL -o speeds.csv
 
 echo "Customizing map data"
-osrm-customize %s --segment-speed-file speeds.csv
+osrm-customize $OSRM_FILE_NAME --segment-speed-file speeds.csv
