@@ -86,6 +86,10 @@ func (spec *OSRMClusterSpec) GetPbfFileName() string {
 	return split[len(split)-1]
 }
 
+func (spec *OSRMClusterSpec) GetOsrmFileName() string {
+	return strings.ReplaceAll(spec.GetPbfFileName(), "osm.pbf", "osrm")
+}
+
 type ProfilesSpec []*ProfileSpec
 
 type ProfileSpec struct {

@@ -77,8 +77,8 @@ func (builder *CronJobBuilder) Update(object client.Object) error {
 										Value: builder.profile.SpeedUpdates.URL,
 									},
 									{
-										Name:  "PBF_NAME",
-										Value: builder.Instance.Spec.GetPbfFileName(),
+										Name:  "OSRM_FILE_NAME",
+										Value: builder.Instance.Spec.GetOsrmFileName(),
 									},
 								},
 								VolumeMounts: []corev1.VolumeMount{

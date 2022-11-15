@@ -2,7 +2,6 @@ package resource
 
 import (
 	"fmt"
-	"strings"
 
 	osrmv1alpha1 "github.com/itayankri/OSRM-Operator/api/v1alpha1"
 	"github.com/itayankri/OSRM-Operator/internal/metadata"
@@ -38,7 +37,7 @@ func (builder *JobBuilder) Build() (client.Object, error) {
 
 func (builder *JobBuilder) Update(object client.Object) error {
 	pbfFileName := builder.Instance.Spec.GetPbfFileName()
-	osrmFileName := strings.ReplaceAll(pbfFileName, "osm.pbf", "osrm")
+	osrmFileName := builder.Instance.Spec.GetOsrmFileName()
 	job := object.(*batchv1.Job)
 
 	job.Labels = metadata.GetLabels(builder.Instance.Name, builder.Instance.Labels)
