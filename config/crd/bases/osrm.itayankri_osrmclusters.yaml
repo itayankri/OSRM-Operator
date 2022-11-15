@@ -95,6 +95,8 @@ spec:
                       type: object
                     speedUpdates:
                       properties:
+                        image:
+                          type: string
                         schedule:
                           type: string
                         url:

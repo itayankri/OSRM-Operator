@@ -3,11 +3,13 @@ package resource
 import (
 	"fmt"
 	"strings"
+	"time"
 
 	osrmv1alpha1 "github.com/itayankri/OSRM-Operator/api/v1alpha1"
 	"github.com/itayankri/OSRM-Operator/internal/metadata"
 	"github.com/itayankri/OSRM-Operator/internal/status"
 	appsv1 "k8s.io/api/apps/v1"
+	batchv1 "k8s.io/api/batch/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -36,7 +38,7 @@ func (builder *DeploymentBuilder) Build() (client.Object, error) {
 	}, nil
 }
 
-func (builder *DeploymentBuilder) Update(object client.Object) error {
+func (builder *DeploymentBuilder) Update(object client.Object, siblings []runtime.Object) error {
 	name := builder.Instance.ChildResourceName(builder.profile.Name, DeploymentSuffix)
 	deployment := object.(*appsv1.Deployment)
 	pbfFileName := builder.Instance.Spec.GetPbfFileName()
@@ -106,6 +108,8 @@ func (builder *DeploymentBuilder) Update(object client.Object) error {
 		},
 	}
 
+	builder.setAnnotations(deployment, siblings)
+
 	if err := controllerutil.SetControllerReference(builder.Instance, deployment, builder.Scheme); err != nil {
 		return fmt.Errorf("failed setting controller reference: %v", err)
 	}
@@ -122,4 +126,31 @@ func (builder *DeploymentBuilder) ShouldDeploy(resources []runtime.Object) bool 
 			builder.Instance.ChildResourceName(builder.profile.Name, JobSuffix),
 			resources,
 		)
+}
+
+func (builder *DeploymentBuilder) setAnnotations(deployment *appsv1.Deployment, siblings []runtime.Object) {
+	shouldUpdateAnnotations := false
+	for _, resource := range siblings {
+		if cron, ok := resource.(*batchv1.CronJob); ok {
+			if cron.ObjectMeta.Name == builder.Instance.ChildResourceName(builder.profile.Name, CronJobSuffix) {
+				annotationValue, annotationExists := deployment.Spec.Template.ObjectMeta.Annotations[lastTrafficUpdateTimeAnnotation]
+				if !annotationExists {
+					shouldUpdateAnnotations = true
+				} else {
+					lastDeploymentRollout, _ := time.Parse(time.RFC3339, annotationValue)
+					if cron.Status.LastSuccessfulTime.After(lastDeploymentRollout) {
+						shouldUpdateAnnotations = true
+					}
+				}
+
+				if shouldUpdateAnnotations {
+					annotations := map[string]string{lastTrafficUpdateTimeAnnotation: cron.Status.LastSuccessfulTime.Format(time.RFC3339)}
+					deployment.Spec.Template.ObjectMeta.Annotations = metadata.ReconcileAnnotations(
+						deployment.Spec.Template.ObjectMeta.Annotations,
+						annotations,
+					)
+				}
+			}
+		}
+	}
 }

@@ -27,3 +27,5 @@ const ConfigMapSuffix = ""
 
 const nginxConfigurationTemplateName = "nginx.tmpl"
 const gatewayImage = "nginx"
+
+const lastTrafficUpdateTimeAnnotation = "osrmcluster.itayankri/lastTrafficUpdateTime"
