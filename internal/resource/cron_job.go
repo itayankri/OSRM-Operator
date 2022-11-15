@@ -2,7 +2,6 @@ package resource
 
 import (
 	"fmt"
-	"strings"
 
 	osrmv1alpha1 "github.com/itayankri/OSRM-Operator/api/v1alpha1"
 	"github.com/itayankri/OSRM-Operator/internal/status"
@@ -38,9 +37,6 @@ func (builder *CronJobBuilder) Build() (client.Object, error) {
 
 func (builder *CronJobBuilder) Update(object client.Object) error {
 	cronJob := object.(*batchv1.CronJob)
-	pbfFileName := builder.Instance.Spec.GetPbfFileName()
-	osrmFileName := strings.ReplaceAll(pbfFileName, "osm.pbf", "osrm")
-	speedUpdatesFileURL := builder.profile.SpeedUpdates.GetFileURL()
 
 	cronJob.Spec = batchv1.CronJobSpec{
 		Schedule: builder.profile.SpeedUpdates.Schedule,
@@ -63,27 +59,6 @@ func (builder *CronJobBuilder) Update(object client.Object) error {
 										"cpu":    resource.MustParse("100m"),
 									},
 								},
-								Command: []string{
-									"/bin/sh",
-									"-c",
-								},
-								Args: []string{
-									fmt.Sprintf(`
-										apt update && \
-										apt --assume-yes install curl && \
-										cd %s/%s && \
-										rm -rf * && \
-										curl %s -o speeds.csv && \
-										cp -r ../%s/* . && \
-										osrm-customize %s --segment-speed-file speeds.csv
-									`,
-										osrmDataPath,
-										osrmCustomizedData,
-										speedUpdatesFileURL,
-										osrmPartitionedData,
-										osrmFileName,
-									),
-								},
 								Env: []corev1.EnvVar{
 									{
 										Name:  "ROOT_DIR",
@@ -100,6 +75,10 @@ func (builder *CronJobBuilder) Update(object client.Object) error {
 									{
 										Name:  "URL",
 										Value: builder.profile.SpeedUpdates.URL,
+									},
+									{
+										Name:  "PBF_NAME",
+										Value: builder.Instance.Spec.GetPbfFileName(),
 									},
 								},
 								VolumeMounts: []corev1.VolumeMount{
