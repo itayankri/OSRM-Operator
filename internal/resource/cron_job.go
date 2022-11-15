@@ -35,7 +35,7 @@ func (builder *CronJobBuilder) Build() (client.Object, error) {
 	}, nil
 }
 
-func (builder *CronJobBuilder) Update(object client.Object) error {
+func (builder *CronJobBuilder) Update(object client.Object, siblings []runtime.Object) error {
 	cronJob := object.(*batchv1.CronJob)
 
 	cronJob.Spec = batchv1.CronJobSpec{

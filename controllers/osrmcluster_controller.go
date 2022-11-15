@@ -202,7 +202,7 @@ func (r *OSRMClusterReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 			err = clientretry.RetryOnConflict(clientretry.DefaultRetry, func() error {
 				var apiError error
 				operationResult, apiError = controllerutil.CreateOrUpdate(ctx, r.Client, resource, func() error {
-					return builder.Update(resource)
+					return builder.Update(resource, childResources)
 				})
 				return apiError
 			})
