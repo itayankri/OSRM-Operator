@@ -42,7 +42,7 @@ HOUR=$(expr $(date -d "$ONE_HOUR_FROM_NOW" +"%u") - 1)
 FULL_URL="$URL/$DAY_OF_WEEK/$HOUR.csv"
 
 echo "Downloading speed updated CSV from $FULL_URL"
-curl -O $FULL_URL -o speeds.csv
+curl $FULL_URL -o speeds.csv
 
 echo "Customizing map data"
 osrm-customize $OSRM_FILE_NAME --segment-speed-file speeds.csv
