@@ -30,7 +30,7 @@ import (
 )
 
 const defaultImage = "osrm/osrm-backend"
-const defaultSpeedUpdatesFetcherImage = "itayankri/osrm-speed-updates-fetcher"
+const defaultSpeedUpdatesFetcherImage = "itayankri/osrm-speed-updates"
 
 const OperatorPausedAnnotation = "osrm.itayankri/operator.paused"
 
