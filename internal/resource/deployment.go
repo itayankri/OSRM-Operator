@@ -133,7 +133,7 @@ func (builder *DeploymentBuilder) setAnnotations(deployment *appsv1.Deployment, 
 	for _, resource := range siblings {
 		if cron, ok := resource.(*batchv1.CronJob); ok {
 			if cron.ObjectMeta.Name == builder.Instance.ChildResourceName(builder.profile.Name, CronJobSuffix) {
-				annotationValue, annotationExists := deployment.Annotations[lastTrafficUpdatetimeAnnotation]
+				annotationValue, annotationExists := deployment.Spec.Template.ObjectMeta.Annotations[lastTrafficUpdatetimeAnnotation]
 				if !annotationExists {
 					shouldUpdateAnnotations = true
 				} else {
