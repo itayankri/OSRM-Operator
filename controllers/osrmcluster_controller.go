@@ -479,6 +479,7 @@ func (r *OSRMClusterReconciler) SetupWithManager(mgr ctrl.Manager) error {
 		For(&osrmv1alpha1.OSRMCluster{}).
 		Owns(&appsv1.Deployment{}).
 		Owns(&corev1.PersistentVolumeClaim{}).
+		Owns(&policyv1beta1.PodDisruptionBudget{}).
 		Owns(&batchv1.Job{}).
 		Owns(&batchv1.CronJob{}).
 		Owns(&corev1.Service{}).
