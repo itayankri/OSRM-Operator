@@ -39,6 +39,7 @@ import (
 	batchv1 "k8s.io/api/batch/v1"
 	corev1 "k8s.io/api/core/v1"
 	networkingv1 "k8s.io/api/networking/v1"
+	policyv1beta1 "k8s.io/api/policy/v1beta1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	clientretry "k8s.io/client-go/util/retry"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
@@ -201,7 +202,7 @@ func (r *OSRMClusterReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 			err = clientretry.RetryOnConflict(clientretry.DefaultRetry, func() error {
 				var apiError error
 				operationResult, apiError = controllerutil.CreateOrUpdate(ctx, r.Client, resource, func() error {
-					return builder.Update(resource)
+					return builder.Update(resource, childResources)
 				})
 				return apiError
 			})
@@ -375,6 +376,18 @@ func (r *OSRMClusterReconciler) getChildResources(ctx context.Context, instance 
 			children = append(children, job)
 		}
 
+		cronJob := &batchv1.CronJob{}
+		if err := r.Client.Get(ctx, types.NamespacedName{
+			Name:      instance.ChildResourceName(profileSpec.Name, resource.CronJobSuffix),
+			Namespace: instance.Namespace,
+		}, cronJob); err != nil {
+			if !errors.IsNotFound(err) {
+				return nil, err
+			}
+		} else {
+			children = append(children, cronJob)
+		}
+
 		deployment := &appsv1.Deployment{}
 		if err := r.Client.Get(ctx, types.NamespacedName{
 			Name:      instance.ChildResourceName(profileSpec.Name, resource.DeploymentSuffix),
@@ -397,6 +410,18 @@ func (r *OSRMClusterReconciler) getChildResources(ctx context.Context, instance 
 			}
 		} else {
 			children = append(children, hpa)
+		}
+
+		pdb := &policyv1beta1.PodDisruptionBudget{}
+		if err := r.Client.Get(ctx, types.NamespacedName{
+			Name:      instance.ChildResourceName(profileSpec.Name, resource.PodDisruptionBudgetSuffix),
+			Namespace: instance.Namespace,
+		}, pdb); err != nil {
+			if !errors.IsNotFound(err) {
+				return nil, err
+			}
+		} else {
+			children = append(children, pdb)
 		}
 
 		service := &corev1.Service{}
@@ -454,6 +479,7 @@ func (r *OSRMClusterReconciler) SetupWithManager(mgr ctrl.Manager) error {
 		For(&osrmv1alpha1.OSRMCluster{}).
 		Owns(&appsv1.Deployment{}).
 		Owns(&corev1.PersistentVolumeClaim{}).
+		Owns(&policyv1beta1.PodDisruptionBudget{}).
 		Owns(&batchv1.Job{}).
 		Owns(&batchv1.CronJob{}).
 		Owns(&corev1.Service{}).

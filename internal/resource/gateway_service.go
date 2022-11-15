@@ -35,7 +35,7 @@ func (builder *GatewayServiceBuilder) Build() (client.Object, error) {
 	}, nil
 }
 
-func (builder *GatewayServiceBuilder) Update(object client.Object) error {
+func (builder *GatewayServiceBuilder) Update(object client.Object, siblings []runtime.Object) error {
 	service := object.(*corev1.Service)
 
 	service.Labels = metadata.GetLabels(builder.Instance.Name, builder.Instance.Labels)
