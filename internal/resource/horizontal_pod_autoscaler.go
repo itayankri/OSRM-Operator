@@ -34,7 +34,7 @@ func (builder *HorizontalPodAutoscalerBuilder) Build() (client.Object, error) {
 	}, nil
 }
 
-func (builder *HorizontalPodAutoscalerBuilder) Update(object client.Object) error {
+func (builder *HorizontalPodAutoscalerBuilder) Update(object client.Object, siblings []runtime.Object) error {
 	name := builder.Instance.ChildResourceName(builder.profile.Name, HorizontalPodAutoscalerSuffix)
 	hpa := object.(*autoscalingv1.HorizontalPodAutoscaler)
 
