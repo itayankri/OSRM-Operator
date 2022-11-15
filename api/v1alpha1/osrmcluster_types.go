@@ -30,6 +30,7 @@ import (
 )
 
 const defaultImage = "osrm/osrm-backend"
+const defaultSpeedUpdatesFetcherImage = "itayankri/osrm-speed-updates-fetcher"
 
 const OperatorPausedAnnotation = "osrm.itayankri/operator.paused"
 
@@ -104,6 +105,13 @@ func (spec *ProfileSpec) GetMinAvailable() *intstr.IntOrString {
 	return &intstr.IntOrString{IntVal: 1}
 }
 
+func (spec *ProfileSpec) GetSpeedUpdatesImage() string {
+	if spec.SpeedUpdates != nil && spec.SpeedUpdates.Image != nil {
+		return *spec.SpeedUpdates.Image
+	}
+	return defaultSpeedUpdatesFetcherImage
+}
+
 func (spec *ProfileSpec) GetResources() *corev1.ResourceRequirements {
 	if spec.Resources == nil {
 		return &corev1.ResourceRequirements{}
@@ -125,8 +133,9 @@ func (spec *ServiceSpec) GetType() corev1.ServiceType {
 }
 
 type SpeedUpdatesSpec struct {
-	URL      string `json:"url,omitempty"`
-	Schedule string `json:"schedule,omitempty"`
+	URL      string  `json:"url,omitempty"`
+	Schedule string  `json:"schedule,omitempty"`
+	Image    *string `json:"image,omitempty"`
 }
 
 func (spec *SpeedUpdatesSpec) GetFileURL() string {
