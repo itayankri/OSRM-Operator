@@ -31,6 +31,7 @@ import (
 
 const defaultImage = "osrm/osrm-backend"
 const defaultSpeedUpdatesFetcherImage = "itayankri/osrm-speed-updates"
+const defaultBuilderImage = "itayankri/osrm-builder"
 
 const OperatorPausedAnnotation = "osrm.itayankri/operator.paused"
 
@@ -79,6 +80,10 @@ func (spec *OSRMClusterSpec) GetImage() string {
 		return *spec.Image
 	}
 	return defaultImage
+}
+
+func (spec *OSRMClusterSpec) GetBuilderImage() string {
+	return defaultBuilderImage
 }
 
 func (spec *OSRMClusterSpec) GetPbfFileName() string {

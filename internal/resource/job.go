@@ -51,7 +51,7 @@ func (builder *JobBuilder) Update(object client.Object, siblings []runtime.Objec
 				Containers: []corev1.Container{
 					{
 						Name:  builder.Instance.ChildResourceName(builder.profile.Name, JobSuffix),
-						Image: builder.Instance.Spec.GetImage(),
+						Image: builder.Instance.Spec.GetBuilderImage(),
 						Resources: corev1.ResourceRequirements{
 							Requests: map[corev1.ResourceName]resource.Quantity{
 								"memory": resource.MustParse("1Gi"),
