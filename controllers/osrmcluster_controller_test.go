@@ -6,6 +6,7 @@ import (
 	"time"
 
 	osrmv1alpha1 "github.com/itayankri/OSRM-Operator/api/v1alpha1"
+	osrmResource "github.com/itayankri/OSRM-Operator/internal/resource"
 	"github.com/itayankri/OSRM-Operator/internal/status"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
@@ -33,7 +34,7 @@ var _ = Describe("OSRMClusterController", func() {
 			Expect(k8sClient.Delete(ctx, instance)).To(Succeed())
 		})
 
-		It("uses resource requirements from profile spec when provided", func() {
+		FIt("uses resource requirements from profile spec when provided", func() {
 			instance = generateOSRMCluster("resource-requirements-config")
 			expectedResources := corev1.ResourceRequirements{
 				Limits: map[corev1.ResourceName]resource.Quantity{
@@ -46,7 +47,7 @@ var _ = Describe("OSRMClusterController", func() {
 			instance.Spec.Profiles[0].Resources = &expectedResources
 			Expect(k8sClient.Create(ctx, instance)).To(Succeed())
 			waitForDeployment(ctx, instance, k8sClient)
-			deployment := deployment(ctx, *instance.Spec.Profiles[0], "")
+			deployment := deployment(ctx, instance.Name, instance.Spec.Profiles[0].Name, osrmResource.DeploymentSuffix)
 			actualResources := deployment.Spec.Template.Spec.Containers[0].Resources
 			Expect(actualResources).To(Equal(expectedResources))
 		})
@@ -81,7 +82,7 @@ var _ = Describe("OSRMClusterController", func() {
 			})).To(Succeed())
 
 			Eventually(func() corev1.ResourceList {
-				deployment := deployment(ctx, *instance.Spec.Profiles[0], "")
+				deployment := deployment(ctx, instance.Name, instance.Spec.Profiles[0].Name, osrmResource.DeploymentSuffix)
 				resourceRequirements = deployment.Spec.Template.Spec.Containers[0].Resources
 				return resourceRequirements.Requests
 			}, 3).Should(HaveKeyWithValue(corev1.ResourceCPU, expectedRequirements.Requests[corev1.ResourceCPU]))
@@ -103,26 +104,26 @@ var _ = Describe("OSRMClusterController", func() {
 		})
 
 		It("recreates child resources after deletion", func() {
-			oldService := service(ctx, *instance.Spec.Profiles[0], "")
-			oldDeployment := deployment(ctx, *instance.Spec.Profiles[0], "")
-			oldHpa := hpa(ctx, *instance.Spec.Profiles[0], "")
+			oldService := service(ctx, instance.Name, instance.Spec.Profiles[0].Name, osrmResource.ServiceSuffix)
+			oldDeployment := deployment(ctx, instance.Name, instance.Spec.Profiles[0].Name, osrmResource.DeploymentSuffix)
+			oldHpa := hpa(ctx, instance.Name, instance.Spec.Profiles[0].Name, osrmResource.HorizontalPodAutoscalerSuffix)
 
 			Expect(k8sClient.Delete(ctx, oldService)).NotTo(HaveOccurred())
 			Expect(k8sClient.Delete(ctx, oldHpa)).NotTo(HaveOccurred())
 			Expect(k8sClient.Delete(ctx, oldDeployment)).NotTo(HaveOccurred())
 
 			Eventually(func() bool {
-				deployment := deployment(ctx, *instance.Spec.Profiles[0], "")
+				deployment := deployment(ctx, instance.Name, instance.Spec.Profiles[0].Name, osrmResource.DeploymentSuffix)
 				return string(deployment.UID) != string(oldDeployment.UID)
 			}, 5).Should(BeTrue())
 
 			Eventually(func() bool {
-				svc := service(ctx, *instance.Spec.Profiles[0], "")
+				svc := service(ctx, instance.Name, instance.Spec.Profiles[0].Name, osrmResource.ServiceSuffix)
 				return string(svc.UID) != string(oldService.UID)
 			}, 5).Should(BeTrue())
 
 			Eventually(func() bool {
-				hpa := hpa(ctx, *instance.Spec.Profiles[0], "")
+				hpa := hpa(ctx, instance.Name, instance.Spec.Profiles[0].Name, osrmResource.HorizontalPodAutoscalerSuffix)
 				return string(hpa.UID) != string(oldHpa.UID)
 			}, 5).Should(BeTrue())
 		})
@@ -204,7 +205,7 @@ var _ = Describe("OSRMClusterController", func() {
 			})).To(Succeed())
 
 			Eventually(func() int32 {
-				return *hpa(ctx, *instance.Spec.Profiles[0], "").Spec.MinReplicas
+				return *hpa(ctx, instance.Name, instance.Spec.Profiles[0].Name, osrmResource.HorizontalPodAutoscalerSuffix).Spec.MinReplicas
 			}, MapBuildingTimeout).Should(Equal(originalMinReplicas))
 
 			Expect(updateWithRetry(instance, func(v *osrmv1alpha1.OSRMCluster) {
@@ -212,7 +213,7 @@ var _ = Describe("OSRMClusterController", func() {
 			})).To(Succeed())
 
 			Eventually(func() int32 {
-				return *hpa(ctx, *instance.Spec.Profiles[0], "").Spec.MinReplicas
+				return *hpa(ctx, instance.Name, instance.Spec.Profiles[0].Name, osrmResource.HorizontalPodAutoscalerSuffix).Spec.MinReplicas
 			}, 10*time.Second).Should(Equal(minReplicas))
 		})
 	})
@@ -300,8 +301,11 @@ func waitForDeployment(ctx context.Context, instance *osrmv1alpha1.OSRMCluster, 
 	}, MapBuildingTimeout, 1*time.Second).Should(Equal("ready"))
 }
 
-func hpa(ctx context.Context, profile osrmv1alpha1.ProfileSpec, hpaName string) *autoscalingv1.HorizontalPodAutoscaler {
-	name := fmt.Sprintf("%s-%s", profile.Name, hpaName)
+func hpa(ctx context.Context, clusterName string, profileName string, suffix string) *autoscalingv1.HorizontalPodAutoscaler {
+	name := fmt.Sprintf("%s-%s", clusterName, profileName)
+	if len(suffix) > 0 {
+		name = fmt.Sprintf("%s-%s", name, suffix)
+	}
 	hpa := &autoscalingv1.HorizontalPodAutoscaler{}
 	EventuallyWithOffset(1, func() error {
 		if err := k8sClient.Get(
@@ -316,8 +320,11 @@ func hpa(ctx context.Context, profile osrmv1alpha1.ProfileSpec, hpaName string) 
 	return hpa
 }
 
-func service(ctx context.Context, profile osrmv1alpha1.ProfileSpec, svcName string) *corev1.Service {
-	name := fmt.Sprintf("%s-%s", profile.Name, svcName)
+func service(ctx context.Context, clusterName string, profileName string, suffix string) *corev1.Service {
+	name := fmt.Sprintf("%s-%s", clusterName, profileName)
+	if len(suffix) > 0 {
+		name = fmt.Sprintf("%s-%s", name, suffix)
+	}
 	svc := &corev1.Service{}
 	EventuallyWithOffset(1, func() error {
 		if err := k8sClient.Get(
@@ -332,8 +339,11 @@ func service(ctx context.Context, profile osrmv1alpha1.ProfileSpec, svcName stri
 	return svc
 }
 
-func deployment(ctx context.Context, profile osrmv1alpha1.ProfileSpec, deploymentName string) *appsv1.Deployment {
-	name := fmt.Sprintf("%s-%s", profile.Name, deploymentName)
+func deployment(ctx context.Context, clusterName string, profileName string, suffix string) *appsv1.Deployment {
+	name := fmt.Sprintf("%s-%s", clusterName, profileName)
+	if len(suffix) > 0 {
+		name = fmt.Sprintf("%s-%s", name, suffix)
+	}
 	deployment := &appsv1.Deployment{}
 	EventuallyWithOffset(1, func() error {
 		if err := k8sClient.Get(
