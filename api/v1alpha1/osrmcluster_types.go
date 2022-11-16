@@ -155,9 +155,9 @@ func (spec *SpeedUpdatesSpec) GetFileURL() string {
 }
 
 type PersistenceSpec struct {
-	StorageClassName string             `json:"storageClassName,omitempty"`
-	Storage          *resource.Quantity `json:"storage,omitempty"`
-	AccessMode       *corev1.PersistentVolumeAccessMode
+	StorageClassName string                             `json:"storageClassName,omitempty"`
+	Storage          *resource.Quantity                 `json:"storage,omitempty"`
+	AccessMode       *corev1.PersistentVolumeAccessMode `json:"accessMode,omitempty"`
 }
 
 func (spec *PersistenceSpec) GetAccessMode() corev1.PersistentVolumeAccessMode {
