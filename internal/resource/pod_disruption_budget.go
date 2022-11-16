@@ -5,7 +5,7 @@ import (
 
 	osrmv1alpha1 "github.com/itayankri/OSRM-Operator/api/v1alpha1"
 	"github.com/itayankri/OSRM-Operator/internal/status"
-	policyv1beta1 "k8s.io/api/policy/v1beta1"
+	policyv1 "k8s.io/api/policy/v1beta1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -25,7 +25,7 @@ func (builder *OSRMResourceBuilder) PodDisruptionBudget(profile *osrmv1alpha1.Pr
 }
 
 func (builder *PodDisruptionBudgetBuilder) Build() (client.Object, error) {
-	return &policyv1beta1.PodDisruptionBudget{
+	return &policyv1.PodDisruptionBudget{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      builder.Instance.ChildResourceName(builder.profile.Name, PodDisruptionBudgetSuffix),
 			Namespace: builder.Instance.Namespace,
@@ -35,7 +35,7 @@ func (builder *PodDisruptionBudgetBuilder) Build() (client.Object, error) {
 
 func (builder *PodDisruptionBudgetBuilder) Update(object client.Object, siblings []runtime.Object) error {
 	name := builder.Instance.ChildResourceName(builder.profile.Name, PodDisruptionBudgetSuffix)
-	pdb := object.(*policyv1beta1.PodDisruptionBudget)
+	pdb := object.(*policyv1.PodDisruptionBudget)
 
 	pdb.Spec.MinAvailable = builder.profile.GetMinAvailable()
 	pdb.Spec.Selector = &metav1.LabelSelector{
