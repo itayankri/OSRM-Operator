@@ -237,8 +237,10 @@ func generateOSRMCluster(name string) *osrmv1alpha1.OSRMCluster {
 			},
 			Profiles: []*osrmv1alpha1.ProfileSpec{
 				{
-					MinReplicas: &minReplicas,
-					MaxReplicas: &maxReplicas,
+					Name:         "car",
+					EndpointName: "driving",
+					MinReplicas:  &minReplicas,
+					MaxReplicas:  &maxReplicas,
 					Resources: &corev1.ResourceRequirements{
 						Limits: corev1.ResourceList{
 							corev1.ResourceCPU:    resource.MustParse("100m"),
