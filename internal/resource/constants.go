@@ -17,7 +17,7 @@ const osrmCustomizedData = "customized"
 
 const GatewaySuffix = "gateway"
 const PersistentVolumeClaimSuffix = ""
-const JobSuffix = "map-initializer"
+const JobSuffix = "map-builder"
 const CronJobSuffix = "speed-updates"
 const DeploymentSuffix = ""
 const HorizontalPodAutoscalerSuffix = ""
