@@ -14,5 +14,5 @@ spec:
     exposingServices: ["route", "table", "match"]
   persistence:
     storage: "1Gi"
-    storageClassName: premium-rwx
+    storageClassName: standard-rwx
     accessMode: ReadWriteMany
