@@ -84,10 +84,6 @@ func (builder *JobBuilder) Update(object client.Object, siblings []runtime.Objec
 								Value: builder.profile.Name,
 							},
 						},
-						Command: []string{
-							"/bin/sh",
-							"-c",
-						},
 						VolumeMounts: []corev1.VolumeMount{
 							{
 								Name:      osrmDataVolumeName,
