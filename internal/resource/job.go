@@ -60,37 +60,35 @@ func (builder *JobBuilder) Update(object client.Object, siblings []runtime.Objec
 								"cpu":    resource.MustParse("1"),
 							},
 						},
+						Env: []corev1.EnvVar{
+							{
+								Name:  "ROOT_DIR",
+								Value: osrmDataPath,
+							},
+							{
+								Name:  "PARTITIONED_DATA_DIR",
+								Value: osrmPartitionedData,
+							},
+							{
+								Name:  "CUSTOMIZED_DATA_DIR",
+								Value: osrmCustomizedData,
+							},
+							{
+								Name:  "PBF_URL",
+								Value: builder.Instance.Spec.PBFURL,
+							},
+							{
+								Name:  "OSRM_FILE_NAME",
+								Value: builder.Instance.Spec.GetOsrmFileName(),
+							},
+							{
+								Name:  "PROFILE",
+								Value: builder.profile.Name,
+							},
+						},
 						Command: []string{
 							"/bin/sh",
 							"-c",
-						},
-						Args: []string{
-							fmt.Sprintf(`
-								apt update && \
-								apt --assume-yes install curl && \
-								cd %s && \
-								mkdir %s %s && \
-								cd %s && \
-								curl -O %s && \
-								osrm-extract -p /opt/%s.lua %s && \
-								osrm-partition %s && \
-								cd ../%s && \
-								rm -rf * &&\
-								cp ../%s/* . && \
-								osrm-customize %s
-							`,
-								osrmDataPath,
-								osrmPartitionedData,
-								osrmCustomizedData,
-								osrmPartitionedData,
-								builder.Instance.Spec.PBFURL,
-								builder.profile.Name,
-								pbfFileName,
-								osrmFileName,
-								osrmCustomizedData,
-								osrmPartitionedData,
-								osrmFileName,
-							),
 						},
 						VolumeMounts: []corev1.VolumeMount{
 							{
