@@ -28,25 +28,21 @@ if [[ -z "${PROFILE}" ]]; then
   exit 1
 fi
 
-if [[ -z "${OSRM_FILE_NAME}" ]]; then
-  echo "OSRM_FILE_NAME environemnt variable must be provided"
-  exit 1
-fi
-
 PBF_FILE_NAME=$(basename $PBF_URL)
+OSRM_FILE_NAME="${PBF_FILE_NAME/osm.pbf/osrm}"
 
 cd $ROOT_DIR
 mkdir $PARTITIONED_DATA_DIR $CUSTOMIZED_DATA_DIR
 cd $PARTITIONED_DATA_DIR
 
 echo "Downloading PBF file from $PBF_URL"
-curl -O PBF_URL
+curl -O $PBF_URL
 
 echo "Extracting PBF"
-osrm-extract -p /opt/$PROFILE.lua %s && \
+osrm-extract -p /opt/$PROFILE.lua $PBF_FILE_NAME && \
 
 echo "Partitioning map data"
-osrm-partition $PBF_FILE_NAME
+osrm-partition $OSRM_FILE_NAME
 
 cd ../$CUSTOMIZED_DATA_DIR
 

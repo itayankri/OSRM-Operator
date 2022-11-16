@@ -76,10 +76,6 @@ func (builder *JobBuilder) Update(object client.Object, siblings []runtime.Objec
 								Value: builder.Instance.Spec.PBFURL,
 							},
 							{
-								Name:  "OSRM_FILE_NAME",
-								Value: builder.Instance.Spec.GetOsrmFileName(),
-							},
-							{
 								Name:  "PROFILE",
 								Value: builder.profile.Name,
 							},
