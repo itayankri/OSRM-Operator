@@ -39,7 +39,7 @@ import (
 	batchv1 "k8s.io/api/batch/v1"
 	corev1 "k8s.io/api/core/v1"
 	networkingv1 "k8s.io/api/networking/v1"
-	policyv1beta1 "k8s.io/api/policy/v1beta1"
+	policyv1 "k8s.io/api/policy/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	clientretry "k8s.io/client-go/util/retry"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
@@ -412,7 +412,7 @@ func (r *OSRMClusterReconciler) getChildResources(ctx context.Context, instance 
 			children = append(children, hpa)
 		}
 
-		pdb := &policyv1beta1.PodDisruptionBudget{}
+		pdb := &policyv1.PodDisruptionBudget{}
 		if err := r.Client.Get(ctx, types.NamespacedName{
 			Name:      instance.ChildResourceName(profileSpec.Name, resource.PodDisruptionBudgetSuffix),
 			Namespace: instance.Namespace,
@@ -479,7 +479,7 @@ func (r *OSRMClusterReconciler) SetupWithManager(mgr ctrl.Manager) error {
 		For(&osrmv1alpha1.OSRMCluster{}).
 		Owns(&appsv1.Deployment{}).
 		Owns(&corev1.PersistentVolumeClaim{}).
-		Owns(&policyv1beta1.PodDisruptionBudget{}).
+		Owns(&policyv1.PodDisruptionBudget{}).
 		Owns(&batchv1.Job{}).
 		Owns(&batchv1.CronJob{}).
 		Owns(&corev1.Service{}).

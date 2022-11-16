@@ -14,23 +14,25 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package controllers
+package controllers_test
 
 import (
+	"context"
 	"path/filepath"
 	"testing"
 
+	osrmv1alpha1 "github.com/itayankri/OSRM-Operator/api/v1alpha1"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
+	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/kubernetes/scheme"
 	"k8s.io/client-go/rest"
+	"k8s.io/client-go/util/retry"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/envtest"
 	"sigs.k8s.io/controller-runtime/pkg/envtest/printer"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
-
-	osrmv1alpha1 "github.com/itayankri/OSRM-Operator/api/v1alpha1"
 	//+kubebuilder:scaffold:imports
 )
 
@@ -39,7 +41,18 @@ import (
 
 var cfg *rest.Config
 var k8sClient client.Client
+var clientSet *kubernetes.Clientset
 var testEnv *envtest.Environment
+var ctx context.Context
+var updateWithRetry = func(v *osrmv1alpha1.OSRMCluster, callback func(v *osrmv1alpha1.OSRMCluster)) error {
+	return retry.RetryOnConflict(retry.DefaultRetry, func() error {
+		if err := k8sClient.Get(ctx, client.ObjectKeyFromObject(v), v); err != nil {
+			return err
+		}
+		callback(v)
+		return k8sClient.Update(ctx, v)
+	})
+}
 
 func TestAPIs(t *testing.T) {
 	RegisterFailHandler(Fail)
@@ -70,6 +83,11 @@ var _ = BeforeSuite(func() {
 	k8sClient, err = client.New(cfg, client.Options{Scheme: scheme.Scheme})
 	Expect(err).NotTo(HaveOccurred())
 	Expect(k8sClient).NotTo(BeNil())
+
+	clientSet, err = kubernetes.NewForConfig(cfg)
+	Expect(err).NotTo(HaveOccurred())
+
+	ctx = context.Background()
 
 }, 60)
 
