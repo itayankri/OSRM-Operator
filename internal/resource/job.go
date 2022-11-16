@@ -36,8 +36,6 @@ func (builder *JobBuilder) Build() (client.Object, error) {
 }
 
 func (builder *JobBuilder) Update(object client.Object, siblings []runtime.Object) error {
-	pbfFileName := builder.Instance.Spec.GetPbfFileName()
-	osrmFileName := builder.Instance.Spec.GetOsrmFileName()
 	job := object.(*batchv1.Job)
 
 	job.Labels = metadata.GetLabels(builder.Instance.Name, builder.Instance.Labels)
@@ -53,44 +51,34 @@ func (builder *JobBuilder) Update(object client.Object, siblings []runtime.Objec
 				Containers: []corev1.Container{
 					{
 						Name:  builder.Instance.ChildResourceName(builder.profile.Name, JobSuffix),
-						Image: builder.Instance.Spec.GetImage(),
+						Image: builder.Instance.Spec.GetBuilderImage(),
 						Resources: corev1.ResourceRequirements{
 							Requests: map[corev1.ResourceName]resource.Quantity{
 								"memory": resource.MustParse("1Gi"),
 								"cpu":    resource.MustParse("1"),
 							},
 						},
-						Command: []string{
-							"/bin/sh",
-							"-c",
-						},
-						Args: []string{
-							fmt.Sprintf(`
-								apt update && \
-								apt --assume-yes install curl && \
-								cd %s && \
-								mkdir %s %s && \
-								cd %s && \
-								curl -O %s && \
-								osrm-extract -p /opt/%s.lua %s && \
-								osrm-partition %s && \
-								cd ../%s && \
-								rm -rf * &&\
-								cp ../%s/* . && \
-								osrm-customize %s
-							`,
-								osrmDataPath,
-								osrmPartitionedData,
-								osrmCustomizedData,
-								osrmPartitionedData,
-								builder.Instance.Spec.PBFURL,
-								builder.profile.Name,
-								pbfFileName,
-								osrmFileName,
-								osrmCustomizedData,
-								osrmPartitionedData,
-								osrmFileName,
-							),
+						Env: []corev1.EnvVar{
+							{
+								Name:  "ROOT_DIR",
+								Value: osrmDataPath,
+							},
+							{
+								Name:  "PARTITIONED_DATA_DIR",
+								Value: osrmPartitionedData,
+							},
+							{
+								Name:  "CUSTOMIZED_DATA_DIR",
+								Value: osrmCustomizedData,
+							},
+							{
+								Name:  "PBF_URL",
+								Value: builder.Instance.Spec.PBFURL,
+							},
+							{
+								Name:  "PROFILE",
+								Value: builder.profile.Name,
+							},
 						},
 						VolumeMounts: []corev1.VolumeMount{
 							{
