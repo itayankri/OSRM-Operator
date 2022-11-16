@@ -1,0 +1,17 @@
+apiVersion: osrm.itayankri/v1alpha1
+kind: OSRMCluster
+metadata:
+  name: new-york-vanilla
+spec:
+  pbfUrl: https://download.geofabrik.de/north-america/us/new-york-latest.osm.pbf
+  profiles:
+  - name: car
+    endpointName: driving
+    minReplicas: 1
+    maxReplicas: 4
+  service:
+    type: LoadBalancer
+    exposingServices: ["route", "table", "match"]
+  persistence:
+    storage: "6Gi"
+    storageClassName: standard
