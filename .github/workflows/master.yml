@@ -30,12 +30,12 @@ jobs:
         dockerhub-username: ${{ secrets.DOCKERHUB_USERNAME }}
         dockerhub-token: ${{ secrets.DOCKERHUB_TOKEN }}
 
-  e2e-tests:
+  integration-tests:
     needs: ["build"]
-    name: E2E tests
+    name: Integration tests
     timeout-minutes: 15
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v2
     - name: Run tests
-      uses: ./.github/actions/e2e-test
+      uses: ./.github/actions/integration-test
