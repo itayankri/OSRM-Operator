@@ -34,7 +34,7 @@ var _ = Describe("OSRMClusterController", func() {
 			Expect(k8sClient.Delete(ctx, instance)).To(Succeed())
 		})
 
-		FIt("uses resource requirements from profile spec when provided", func() {
+		It("uses resource requirements from profile spec when provided", func() {
 			instance = generateOSRMCluster("resource-requirements-config")
 			expectedResources := corev1.ResourceRequirements{
 				Limits: map[corev1.ResourceName]resource.Quantity{
@@ -138,7 +138,7 @@ var _ = Describe("OSRMClusterController", func() {
 			Expect(k8sClient.Delete(ctx, instance)).To(Succeed())
 		})
 
-		It("Should keep ReconcileSuccess condition updated", func() {
+		FIt("Should keep ReconcileSuccess condition updated", func() {
 			By("setting to False when spec is not valid", func() {
 				// It is impossible to create a deployment with -1 replicas. Thus we expect reconcilication to fail.
 				instance.Spec.Profiles[0].MinReplicas = pointer.Int32Ptr(-1)
@@ -158,7 +158,7 @@ var _ = Describe("OSRMClusterController", func() {
 						}
 					}
 					return metav1.ConditionUnknown
-				}, 60*time.Second).Should(Equal(metav1.ConditionFalse))
+				}, 180*time.Second).Should(Equal(metav1.ConditionFalse))
 			})
 
 			By("setting to True when spec is valid", func() {
