@@ -129,26 +129,14 @@ func (builder *DeploymentBuilder) ShouldDeploy(resources []runtime.Object) bool 
 }
 
 func (builder *DeploymentBuilder) setAnnotations(deployment *appsv1.Deployment, siblings []runtime.Object) {
-	shouldUpdateAnnotations := false
 	for _, resource := range siblings {
 		if cron, ok := resource.(*batchv1.CronJob); ok {
 			if cron.ObjectMeta.Name == builder.Instance.ChildResourceName(builder.profile.Name, CronJobSuffix) {
-				annotationValue, annotationExists := deployment.Spec.Template.ObjectMeta.Annotations[lastTrafficUpdateTimeAnnotation]
-				if !annotationExists {
-					shouldUpdateAnnotations = true
-				} else {
-					lastDeploymentRollout, _ := time.Parse(time.RFC3339, annotationValue)
-					if cron.Status.LastSuccessfulTime.After(lastDeploymentRollout) {
-						shouldUpdateAnnotations = true
+				if cron.Status.LastSuccessfulTime != nil {
+					if deployment.Spec.Template.ObjectMeta.Annotations == nil {
+						deployment.Spec.Template.ObjectMeta.Annotations = map[string]string{}
 					}
-				}
-
-				if shouldUpdateAnnotations {
-					annotations := map[string]string{lastTrafficUpdateTimeAnnotation: cron.Status.LastSuccessfulTime.Format(time.RFC3339)}
-					deployment.Spec.Template.ObjectMeta.Annotations = metadata.ReconcileAnnotations(
-						deployment.Spec.Template.ObjectMeta.Annotations,
-						annotations,
-					)
+					deployment.Spec.Template.ObjectMeta.Annotations[lastTrafficUpdateTimeAnnotation] = cron.Status.LastSuccessfulTime.Format(time.RFC3339)
 				}
 			}
 		}
