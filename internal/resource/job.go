@@ -36,8 +36,6 @@ func (builder *JobBuilder) Build() (client.Object, error) {
 }
 
 func (builder *JobBuilder) Update(object client.Object, siblings []runtime.Object) error {
-	pbfFileName := builder.Instance.Spec.GetPbfFileName()
-	osrmFileName := builder.Instance.Spec.GetOsrmFileName()
 	job := object.(*batchv1.Job)
 
 	job.Labels = metadata.GetLabels(builder.Instance.Name, builder.Instance.Labels)
