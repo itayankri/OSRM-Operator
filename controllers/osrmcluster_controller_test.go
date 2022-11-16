@@ -138,7 +138,7 @@ var _ = Describe("OSRMClusterController", func() {
 			Expect(k8sClient.Delete(ctx, instance)).To(Succeed())
 		})
 
-		FIt("Should keep ReconcileSuccess condition updated", func() {
+		It("Should keep ReconcileSuccess condition updated", func() {
 			By("setting to False when spec is not valid", func() {
 				// It is impossible to create a deployment with -1 replicas. Thus we expect reconcilication to fail.
 				instance.Spec.Profiles[0].MinReplicas = pointer.Int32Ptr(-1)
