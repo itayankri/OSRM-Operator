@@ -222,6 +222,7 @@ var _ = Describe("OSRMClusterController", func() {
 func generateOSRMCluster(name string) *osrmv1alpha1.OSRMCluster {
 	storage := resource.MustParse("10Mi")
 	image := "osrm/osrm-backend"
+	accessMode := corev1.ReadWriteOnce
 	minReplicas := int32(1)
 	maxReplicas := int32(3)
 	osrmCluster := &osrmv1alpha1.OSRMCluster{
@@ -235,6 +236,7 @@ func generateOSRMCluster(name string) *osrmv1alpha1.OSRMCluster {
 			Persistence: osrmv1alpha1.PersistenceSpec{
 				StorageClassName: "nfs-csi",
 				Storage:          &storage,
+				AccessMode:       &accessMode,
 			},
 			Profiles: []*osrmv1alpha1.ProfileSpec{
 				{

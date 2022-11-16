@@ -1,0 +1,18 @@
+apiVersion: osrm.itayankri/v1alpha1
+kind: OSRMCluster
+metadata:
+  name: marshall-islands-vanilla
+spec:
+  pbfUrl: https://download.geofabrik.de/australia-oceania/marshall-islands-latest.osm.pbf
+  profiles:
+  - name: car
+    endpointName: driving
+    minReplicas: 2
+    maxReplicas: 4
+  service:
+    type: LoadBalancer
+    exposingServices: ["route", "table", "match"]
+  persistence:
+    storage: "1Gi"
+    storageClassName: premium-rwo
+    accessMode: ReadWriteMany
