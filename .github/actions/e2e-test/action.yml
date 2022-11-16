@@ -45,5 +45,5 @@ runs:
       sleep 5
       kubectl logs $(kubectl get pods | grep nfs | awk '{print $1}')
       make install deploy
-      kubectl -n osrm-operator-system wait --for condition=Available deployment/osrm-controller-manager --timeout=60s
+      kubectl -n osrm-system wait --for condition=Available deployment/osrm-controller-manager --timeout=60s
       make e2e-test
