@@ -17,3 +17,4 @@ spec:
   persistence:
     storage: "1000Mi"
     storageClassName: standard
+    accessMode: ReadWriteOnce

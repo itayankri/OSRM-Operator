@@ -15,3 +15,4 @@ spec:
   persistence:
     storage: "6Gi"
     storageClassName: standard
+    accessMode: ReadWriteOnce
