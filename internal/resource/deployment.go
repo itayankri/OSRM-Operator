@@ -132,10 +132,12 @@ func (builder *DeploymentBuilder) setAnnotations(deployment *appsv1.Deployment, 
 	for _, resource := range siblings {
 		if cron, ok := resource.(*batchv1.CronJob); ok {
 			if cron.ObjectMeta.Name == builder.Instance.ChildResourceName(builder.profile.Name, CronJobSuffix) {
-				if deployment.Spec.Template.ObjectMeta.Annotations == nil {
-					deployment.Spec.Template.ObjectMeta.Annotations = map[string]string{}
+				if cron.Status.LastSuccessfulTime != nil {
+					if deployment.Spec.Template.ObjectMeta.Annotations == nil {
+						deployment.Spec.Template.ObjectMeta.Annotations = map[string]string{}
+					}
+					deployment.Spec.Template.ObjectMeta.Annotations[lastTrafficUpdateTimeAnnotation] = cron.Status.LastSuccessfulTime.Format(time.RFC3339)
 				}
-				deployment.Spec.Template.ObjectMeta.Annotations[lastTrafficUpdateTimeAnnotation] = cron.Status.LastSuccessfulTime.Format(time.RFC3339)
 			}
 		}
 	}
