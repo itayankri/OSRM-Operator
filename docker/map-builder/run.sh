@@ -44,6 +44,7 @@ osrm-extract -p /opt/$PROFILE.lua $PBF_FILE_NAME && \
 echo "Partitioning map data"
 osrm-partition $OSRM_FILE_NAME
 
+cp * ../$CUSTOMIZED_DATA_DIR
 cd ../$CUSTOMIZED_DATA_DIR
 
 echo "Customizing map data"
