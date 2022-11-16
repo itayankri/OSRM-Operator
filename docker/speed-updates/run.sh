@@ -19,7 +19,7 @@ if [[ -z "${CUSTOMIZED_DATA_DIR}" ]]; then
 fi
 
 if [[ -z "${URL}" ]]; then
-  echo "ROOT_DIR environemnt variable must be provided"
+  echo "URL environemnt variable must be provided"
   exit 1
 fi
 
@@ -41,7 +41,7 @@ DAY_OF_WEEK=$(date -d "$ONE_HOUR_FROM_NOW" +"%H" | sed 's/^0*//')
 HOUR=$(expr $(date -d "$ONE_HOUR_FROM_NOW" +"%u") - 1)
 FULL_URL="$URL/$DAY_OF_WEEK/$HOUR.csv"
 
-echo "Downloading speed updated CSV from $FULL_URL"
+echo "Downloading speed updates CSV from $FULL_URL"
 curl $FULL_URL -o speeds.csv
 
 echo "Customizing map data"
