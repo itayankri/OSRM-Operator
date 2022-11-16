@@ -40,3 +40,4 @@ spec:
   persistence:
     storage: 100Mi
     storageClassName: standard
+    accessMode: ReadWriteOnce

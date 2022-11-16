@@ -157,6 +157,14 @@ func (spec *SpeedUpdatesSpec) GetFileURL() string {
 type PersistenceSpec struct {
 	StorageClassName string             `json:"storageClassName,omitempty"`
 	Storage          *resource.Quantity `json:"storage,omitempty"`
+	AccessMode       *corev1.PersistentVolumeAccessMode
+}
+
+func (spec *PersistenceSpec) GetAccessMode() corev1.PersistentVolumeAccessMode {
+	if spec.AccessMode != nil {
+		return *spec.AccessMode
+	}
+	return corev1.ReadWriteMany
 }
 
 // OSRMClusterStatus defines the observed state of OSRMCluster
