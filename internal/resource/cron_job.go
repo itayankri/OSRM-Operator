@@ -7,7 +7,6 @@ import (
 	"github.com/itayankri/OSRM-Operator/internal/status"
 	batchv1 "k8s.io/api/batch/v1"
 	corev1 "k8s.io/api/core/v1"
-	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -51,14 +50,9 @@ func (builder *CronJobBuilder) Update(object client.Object, siblings []runtime.O
 						RestartPolicy: corev1.RestartPolicyOnFailure,
 						Containers: []corev1.Container{
 							{
-								Name:  builder.Instance.ChildResourceName(builder.profile.Name, CronJobSuffix),
-								Image: builder.profile.GetSpeedUpdatesImage(),
-								Resources: corev1.ResourceRequirements{
-									Requests: map[corev1.ResourceName]resource.Quantity{
-										"memory": resource.MustParse("100M"),
-										"cpu":    resource.MustParse("100m"),
-									},
-								},
+								Name:      builder.Instance.ChildResourceName(builder.profile.Name, CronJobSuffix),
+								Image:     builder.profile.GetSpeedUpdatesImage(),
+								Resources: *builder.profile.SpeedUpdates.GetResources(),
 								Env: []corev1.EnvVar{
 									{
 										Name:  "ROOT_DIR",
