@@ -142,9 +142,10 @@ func (spec *ServiceSpec) GetType() corev1.ServiceType {
 }
 
 type SpeedUpdatesSpec struct {
-	URL      string  `json:"url,omitempty"`
-	Schedule string  `json:"schedule,omitempty"`
-	Image    *string `json:"image,omitempty"`
+	URL       string                       `json:"url,omitempty"`
+	Schedule  string                       `json:"schedule,omitempty"`
+	Image     *string                      `json:"image,omitempty"`
+	Resources *corev1.ResourceRequirements `json:"resources,omitempty"`
 }
 
 func (spec *SpeedUpdatesSpec) GetFileURL() string {
@@ -152,6 +153,13 @@ func (spec *SpeedUpdatesSpec) GetFileURL() string {
 	weekday := int(oneHourFromNow.Weekday())
 	hour, _, _ := oneHourFromNow.Clock()
 	return fmt.Sprintf("%s/%d/%d.csv", spec.URL, weekday, hour)
+}
+
+func (spec *SpeedUpdatesSpec) GetResources() *corev1.ResourceRequirements {
+	if spec.Resources == nil {
+		return &corev1.ResourceRequirements{}
+	}
+	return spec.Resources
 }
 
 type PersistenceSpec struct {
