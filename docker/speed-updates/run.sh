@@ -37,8 +37,8 @@ echo "Copying fresh partitioned map data"
 cp -r ../$PARTITIONED_DATA_DIR/* .
 
 ONE_HOUR_FROM_NOW=$(date -d "+1 hour")
-DAY_OF_WEEK=$(date -d "$ONE_HOUR_FROM_NOW" +"%H" | sed 's/^0*//')
-HOUR=$(expr $(date -d "$ONE_HOUR_FROM_NOW" +"%u") - 1)
+HOUR=$(date -d "$ONE_HOUR_FROM_NOW" +"%H" | sed 's/^0*//')
+DAY_OF_WEEK=$(expr $(date -d "$ONE_HOUR_FROM_NOW" +"%u") - 1)
 FULL_URL="$URL/$DAY_OF_WEEK/$HOUR.csv"
 
 echo "Downloading speed updates CSV from $FULL_URL"
