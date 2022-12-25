@@ -64,7 +64,7 @@ func generateNginxConf(instance *osrmv1alpha1.OSRMCluster, profiles []*osrmv1alp
 	
 	}
 	http {
-		large_client_header_buffers 4 32k;
+		large_client_header_buffers 4 128k;
 		server {
 			listen 80;
 			server_name _;
