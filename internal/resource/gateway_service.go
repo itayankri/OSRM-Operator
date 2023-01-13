@@ -58,6 +58,10 @@ func (builder *GatewayServiceBuilder) Update(object client.Object, siblings []ru
 	service.Spec.Type = builder.Instance.Spec.Service.GetType()
 	builder.setAnnotations(service)
 
+	if builder.Instance.Spec.Service.LoadBalancerIP != nil {
+		service.Spec.LoadBalancerIP = *builder.Instance.Spec.Service.LoadBalancerIP
+	}
+
 	if err := controllerutil.SetControllerReference(builder.Instance, service, builder.Scheme); err != nil {
 		return fmt.Errorf("failed setting controller reference: %v", err)
 	}
