@@ -132,6 +132,7 @@ type ServiceSpec struct {
 	Type             *corev1.ServiceType `json:"type,omitempty"`
 	Annotations      map[string]string   `json:"annotations,omitempty"`
 	ExposingServices []string            `json:"exposingServices,omitempty"`
+	LoadBalancerIP   *string             `json:"loadBalancerIP,omitempty"`
 }
 
 func (spec *ServiceSpec) GetType() corev1.ServiceType {

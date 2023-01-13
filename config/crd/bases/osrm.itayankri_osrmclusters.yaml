@@ -144,6 +144,8 @@ spec:
                     items:
                       type: string
                     type: array
+                  loadBalancerIP:
+                    type: string
                   type:
                     description: Service Type string describes ingress methods for
                       a service
