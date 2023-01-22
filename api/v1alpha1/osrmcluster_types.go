@@ -73,6 +73,7 @@ type OSRMClusterSpec struct {
 	Service     ServiceSpec     `json:"service,omitempty"`
 	Image       *string         `json:"image,omitempty"`
 	Persistence PersistenceSpec `json:"persistence,omitempty"`
+	MapBuilder  MapBuilderSpec  `json:"mapBuilder,omitempty"`
 }
 
 func (spec *OSRMClusterSpec) GetImage() string {
@@ -80,10 +81,6 @@ func (spec *OSRMClusterSpec) GetImage() string {
 		return *spec.Image
 	}
 	return defaultImage
-}
-
-func (spec *OSRMClusterSpec) GetBuilderImage() string {
-	return defaultBuilderImage
 }
 
 func (spec *OSRMClusterSpec) GetPbfFileName() string {
@@ -124,6 +121,30 @@ func (spec *ProfileSpec) GetSpeedUpdatesImage() string {
 func (spec *ProfileSpec) GetResources() *corev1.ResourceRequirements {
 	if spec.Resources == nil {
 		return &corev1.ResourceRequirements{}
+	}
+	return spec.Resources
+}
+
+type MapBuilderSpec struct {
+	Image     *string                      `json:"image,omitempty"`
+	Resources *corev1.ResourceRequirements `json:"resources,omitempty"`
+}
+
+func (spec *MapBuilderSpec) GetImage() string {
+	if spec.Image != nil {
+		return *spec.Image
+	}
+	return defaultBuilderImage
+}
+
+func (spec *MapBuilderSpec) GetResources() *corev1.ResourceRequirements {
+	if spec.Resources == nil {
+		return &corev1.ResourceRequirements{
+			Requests: map[corev1.ResourceName]resource.Quantity{
+				"memory": resource.MustParse("1Gi"),
+				"cpu":    resource.MustParse("1"),
+			},
+		}
 	}
 	return spec.Resources
 }
