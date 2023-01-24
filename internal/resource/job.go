@@ -7,7 +7,6 @@ import (
 	"github.com/itayankri/OSRM-Operator/internal/metadata"
 	batchv1 "k8s.io/api/batch/v1"
 	corev1 "k8s.io/api/core/v1"
-	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -50,14 +49,9 @@ func (builder *JobBuilder) Update(object client.Object, siblings []runtime.Objec
 				RestartPolicy: corev1.RestartPolicyOnFailure,
 				Containers: []corev1.Container{
 					{
-						Name:  builder.Instance.ChildResourceName(builder.profile.Name, JobSuffix),
-						Image: builder.Instance.Spec.GetBuilderImage(),
-						Resources: corev1.ResourceRequirements{
-							Requests: map[corev1.ResourceName]resource.Quantity{
-								"memory": resource.MustParse("1Gi"),
-								"cpu":    resource.MustParse("1"),
-							},
-						},
+						Name:      builder.Instance.ChildResourceName(builder.profile.Name, JobSuffix),
+						Image:     builder.Instance.Spec.MapBuilder.GetImage(),
+						Resources: *builder.Instance.Spec.MapBuilder.GetResources(),
 						Env: []corev1.EnvVar{
 							{
 								Name:  "ROOT_DIR",
