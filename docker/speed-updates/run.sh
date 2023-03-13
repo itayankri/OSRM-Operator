@@ -39,10 +39,24 @@ cp -r ../$PARTITIONED_DATA_DIR/* .
 ONE_HOUR_FROM_NOW=$(date -d "+1 hour")
 HOUR=$(date -d "$ONE_HOUR_FROM_NOW" +"%H" | sed 's/^0*//')
 DAY_OF_WEEK=$(expr $(date -d "$ONE_HOUR_FROM_NOW" +"%u") - 1)
-FULL_URL="$URL/$DAY_OF_WEEK/$HOUR.csv"
 
-echo "Downloading speed updates CSV from $FULL_URL"
-curl $FULL_URL -o speeds.csv
+PARTITION="day_of_week=$DAY_OF_WEEK/hour_of_day=$HOUR/"
 
-echo "Customizing map data"
-osrm-customize $OSRM_FILE_NAME --segment-speed-file speeds.csv
+OBJECTS=`curl -X GET "$URL/?prefix=$PARTITION" | jq -r '.items'`
+
+for row in $(echo "$OBJECTS" | jq -r '.[] | @base64'); do
+    _jq() {
+     echo ${row} | base64 --decode | jq -r ${1}
+    }
+
+    if [[ $(_jq '.selfLink') == *.csv ]]
+    then
+      FULL_URL=$(_jq '.selfLink')
+
+      echo "Downloading speed updates CSV from $FULL_URL"
+      curl $FULL_URL -o speeds.csv
+
+      echo "Customizing map data"
+      osrm-customize $OSRM_FILE_NAME --segment-speed-file speeds.csv
+    fi
+done
