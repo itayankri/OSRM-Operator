@@ -58,5 +58,6 @@ for row in $(echo "$OBJECTS" | jq -r '.[] | @base64'); do
 
       echo "Customizing map data"
       osrm-customize $OSRM_FILE_NAME --segment-speed-file speeds.csv
+      break
     fi
 done
