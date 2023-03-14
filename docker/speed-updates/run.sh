@@ -42,7 +42,7 @@ DAY_OF_WEEK=$(expr $(date -d "$ONE_HOUR_FROM_NOW" +"%u") - 1)
 
 PARTITION="day_of_week=$DAY_OF_WEEK/hour_of_day=$HOUR/"
 
-OBJECTS=`curl -X GET "$URL/?prefix=$PARTITION" | jq -r '.items'`
+OBJECTS=`curl -X GET "$URL/$PARTITION" | jq -r '.items'`
 
 for row in $(echo "$OBJECTS" | jq -r '.[] | @base64'); do
     _jq() {
