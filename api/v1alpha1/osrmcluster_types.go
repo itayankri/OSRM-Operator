@@ -17,9 +17,7 @@ limitations under the License.
 package v1alpha1
 
 import (
-	"fmt"
 	"strings"
-	"time"
 
 	"github.com/itayankri/OSRM-Operator/internal/status"
 	corev1 "k8s.io/api/core/v1"
@@ -169,13 +167,7 @@ type SpeedUpdatesSpec struct {
 	Schedule  string                       `json:"schedule,omitempty"`
 	Image     *string                      `json:"image,omitempty"`
 	Resources *corev1.ResourceRequirements `json:"resources,omitempty"`
-}
-
-func (spec *SpeedUpdatesSpec) GetFileURL() string {
-	oneHourFromNow := time.Now().Add(time.Hour * time.Duration(1))
-	weekday := int(oneHourFromNow.Weekday())
-	hour, _, _ := oneHourFromNow.Clock()
-	return fmt.Sprintf("%s/%d/%d.csv", spec.URL, weekday, hour)
+	Env       []corev1.EnvVar              `json:"env,omitempty"`
 }
 
 func (spec *SpeedUpdatesSpec) GetResources() *corev1.ResourceRequirements {
@@ -183,6 +175,13 @@ func (spec *SpeedUpdatesSpec) GetResources() *corev1.ResourceRequirements {
 		return &corev1.ResourceRequirements{}
 	}
 	return spec.Resources
+}
+
+func (spec *SpeedUpdatesSpec) GetEnv() []corev1.EnvVar {
+	if spec.Env == nil {
+		return []corev1.EnvVar{}
+	}
+	return spec.Env
 }
 
 type PersistenceSpec struct {
