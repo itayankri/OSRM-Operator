@@ -161,6 +161,8 @@ spec:
                           type: object
                         schedule:
                           type: string
+                        suspend:
+                          type: boolean
                         url:
                           type: string
                       type: object
