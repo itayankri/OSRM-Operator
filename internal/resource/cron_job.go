@@ -38,6 +38,7 @@ func (builder *CronJobBuilder) Update(object client.Object, siblings []runtime.O
 	cronJob := object.(*batchv1.CronJob)
 
 	cronJob.Spec = batchv1.CronJobSpec{
+		Suspend:  builder.profile.SpeedUpdates.Suspend,
 		Schedule: builder.profile.SpeedUpdates.Schedule,
 		JobTemplate: batchv1.JobTemplateSpec{
 			ObjectMeta: metav1.ObjectMeta{
