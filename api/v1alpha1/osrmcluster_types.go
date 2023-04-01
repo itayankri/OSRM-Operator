@@ -95,6 +95,7 @@ type ProfilesSpec []*ProfileSpec
 type ProfileSpec struct {
 	Name         string                       `json:"name,omitempty"`
 	EndpointName string                       `json:"endpointName,omitempty"`
+	OSRMProfile  *string                      `json:"osrmProfile,omitempty"`
 	MinReplicas  *int32                       `json:"minReplicas,omitempty"`
 	MaxReplicas  *int32                       `json:"maxReplicas,omitempty"`
 	Resources    *corev1.ResourceRequirements `json:"resources,omitempty"`
@@ -121,6 +122,13 @@ func (spec *ProfileSpec) GetResources() *corev1.ResourceRequirements {
 		return &corev1.ResourceRequirements{}
 	}
 	return spec.Resources
+}
+
+func (spec *ProfileSpec) GetProfile() string {
+	if spec.OSRMProfile == nil {
+		return spec.Name
+	}
+	return *spec.OSRMProfile
 }
 
 type MapBuilderSpec struct {
