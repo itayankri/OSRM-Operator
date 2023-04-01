@@ -164,6 +164,7 @@ func (spec *ServiceSpec) GetType() corev1.ServiceType {
 }
 
 type SpeedUpdatesSpec struct {
+	Suspend   *bool                        `json:"disable,omitempty"`
 	URL       string                       `json:"url,omitempty"`
 	Schedule  string                       `json:"schedule,omitempty"`
 	Image     *string                      `json:"image,omitempty"`
