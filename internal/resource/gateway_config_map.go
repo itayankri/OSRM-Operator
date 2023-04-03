@@ -89,13 +89,14 @@ func getNginxLocations(instance *osrmv1alpha1.OSRMCluster, profiles []*osrmv1alp
 }
 
 func formatNginxLocation(instance *osrmv1alpha1.OSRMCluster, profile osrmv1alpha1.ProfileSpec, osrmService string) string {
-	path := fmt.Sprintf("%s/v1/%s/", osrmService, profile.EndpointName)
+	internalPath := fmt.Sprintf("%s/v1/%s", osrmService, profile.GetInternalEndpoint())
+	externalPath := fmt.Sprintf("%s/v1/%s", osrmService, profile.EndpointName)
 	serviceName := instance.ChildResourceName(profile.Name, "")
 	envVar := serviceToEnvVariable(serviceName)
 	return fmt.Sprintf(`
 			location /%s {
-				proxy_pass http://${%s};
-			}`, path, envVar)
+				proxy_pass http://${%s}/%s;
+			}`, externalPath, internalPath, envVar)
 }
 
 func (builder *ConfigMapBuilder) ShouldDeploy(resources []runtime.Object) bool {

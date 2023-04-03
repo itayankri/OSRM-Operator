@@ -91,6 +91,8 @@ spec:
                   properties:
                     endpointName:
                       type: string
+                    internalEndpoint:
+                      type: string
                     maxReplicas:
                       format: int32
                       type: integer
