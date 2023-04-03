@@ -93,13 +93,14 @@ func (spec *OSRMClusterSpec) GetOsrmFileName() string {
 type ProfilesSpec []*ProfileSpec
 
 type ProfileSpec struct {
-	Name         string                       `json:"name,omitempty"`
-	EndpointName string                       `json:"endpointName,omitempty"`
-	OSRMProfile  *string                      `json:"osrmProfile,omitempty"`
-	MinReplicas  *int32                       `json:"minReplicas,omitempty"`
-	MaxReplicas  *int32                       `json:"maxReplicas,omitempty"`
-	Resources    *corev1.ResourceRequirements `json:"resources,omitempty"`
-	SpeedUpdates *SpeedUpdatesSpec            `json:"speedUpdates,omitempty"`
+	Name             string                       `json:"name,omitempty"`
+	EndpointName     string                       `json:"endpointName,omitempty"`
+	InternalEndpoint *string                      `json:"internalEndpoint,omitempty"`
+	OSRMProfile      *string                      `json:"osrmProfile,omitempty"`
+	MinReplicas      *int32                       `json:"minReplicas,omitempty"`
+	MaxReplicas      *int32                       `json:"maxReplicas,omitempty"`
+	Resources        *corev1.ResourceRequirements `json:"resources,omitempty"`
+	SpeedUpdates     *SpeedUpdatesSpec            `json:"speedUpdates,omitempty"`
 }
 
 func (spec *ProfileSpec) GetMinAvailable() *intstr.IntOrString {
@@ -129,6 +130,13 @@ func (spec *ProfileSpec) GetProfile() string {
 		return spec.Name
 	}
 	return *spec.OSRMProfile
+}
+
+func (spec *ProfileSpec) GetInternalEndpoint() string {
+	if spec.InternalEndpoint == nil {
+		return spec.EndpointName
+	}
+	return *spec.InternalEndpoint
 }
 
 type MapBuilderSpec struct {
