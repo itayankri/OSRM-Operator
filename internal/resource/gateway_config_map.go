@@ -96,7 +96,7 @@ func formatNginxLocation(instance *osrmv1alpha1.OSRMCluster, profile osrmv1alpha
 	return fmt.Sprintf(`
 			location /%s {
 				proxy_pass http://${%s}/%s;
-			}`, externalPath, internalPath, envVar)
+			}`, externalPath, envVar, internalPath)
 }
 
 func (builder *ConfigMapBuilder) ShouldDeploy(resources []runtime.Object) bool {
