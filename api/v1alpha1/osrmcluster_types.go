@@ -17,9 +17,7 @@ limitations under the License.
 package v1alpha1
 
 import (
-	"fmt"
 	"strings"
-	"time"
 
 	"github.com/itayankri/OSRM-Operator/internal/status"
 	corev1 "k8s.io/api/core/v1"
@@ -95,12 +93,14 @@ func (spec *OSRMClusterSpec) GetOsrmFileName() string {
 type ProfilesSpec []*ProfileSpec
 
 type ProfileSpec struct {
-	Name         string                       `json:"name,omitempty"`
-	EndpointName string                       `json:"endpointName,omitempty"`
-	MinReplicas  *int32                       `json:"minReplicas,omitempty"`
-	MaxReplicas  *int32                       `json:"maxReplicas,omitempty"`
-	Resources    *corev1.ResourceRequirements `json:"resources,omitempty"`
-	SpeedUpdates *SpeedUpdatesSpec            `json:"speedUpdates,omitempty"`
+	Name             string                       `json:"name,omitempty"`
+	EndpointName     string                       `json:"endpointName,omitempty"`
+	InternalEndpoint *string                      `json:"internalEndpoint,omitempty"`
+	OSRMProfile      *string                      `json:"osrmProfile,omitempty"`
+	MinReplicas      *int32                       `json:"minReplicas,omitempty"`
+	MaxReplicas      *int32                       `json:"maxReplicas,omitempty"`
+	Resources        *corev1.ResourceRequirements `json:"resources,omitempty"`
+	SpeedUpdates     *SpeedUpdatesSpec            `json:"speedUpdates,omitempty"`
 }
 
 func (spec *ProfileSpec) GetMinAvailable() *intstr.IntOrString {
@@ -123,6 +123,20 @@ func (spec *ProfileSpec) GetResources() *corev1.ResourceRequirements {
 		return &corev1.ResourceRequirements{}
 	}
 	return spec.Resources
+}
+
+func (spec *ProfileSpec) GetProfile() string {
+	if spec.OSRMProfile == nil {
+		return spec.Name
+	}
+	return *spec.OSRMProfile
+}
+
+func (spec *ProfileSpec) GetInternalEndpoint() string {
+	if spec.InternalEndpoint == nil {
+		return spec.EndpointName
+	}
+	return *spec.InternalEndpoint
 }
 
 type MapBuilderSpec struct {
@@ -164,17 +178,12 @@ func (spec *ServiceSpec) GetType() corev1.ServiceType {
 }
 
 type SpeedUpdatesSpec struct {
+	Suspend   *bool                        `json:"suspend,omitempty"`
 	URL       string                       `json:"url,omitempty"`
 	Schedule  string                       `json:"schedule,omitempty"`
 	Image     *string                      `json:"image,omitempty"`
 	Resources *corev1.ResourceRequirements `json:"resources,omitempty"`
-}
-
-func (spec *SpeedUpdatesSpec) GetFileURL() string {
-	oneHourFromNow := time.Now().Add(time.Hour * time.Duration(1))
-	weekday := int(oneHourFromNow.Weekday())
-	hour, _, _ := oneHourFromNow.Clock()
-	return fmt.Sprintf("%s/%d/%d.csv", spec.URL, weekday, hour)
+	Env       []corev1.EnvVar              `json:"env,omitempty"`
 }
 
 func (spec *SpeedUpdatesSpec) GetResources() *corev1.ResourceRequirements {
@@ -182,6 +191,13 @@ func (spec *SpeedUpdatesSpec) GetResources() *corev1.ResourceRequirements {
 		return &corev1.ResourceRequirements{}
 	}
 	return spec.Resources
+}
+
+func (spec *SpeedUpdatesSpec) GetEnv() []corev1.EnvVar {
+	if spec.Env == nil {
+		return []corev1.EnvVar{}
+	}
+	return spec.Env
 }
 
 type PersistenceSpec struct {

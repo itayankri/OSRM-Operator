@@ -71,7 +71,7 @@ func (builder *JobBuilder) Update(object client.Object, siblings []runtime.Objec
 							},
 							{
 								Name:  "PROFILE",
-								Value: builder.profile.Name,
+								Value: builder.profile.GetProfile(),
 							},
 						},
 						VolumeMounts: []corev1.VolumeMount{
