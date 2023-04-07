@@ -137,7 +137,7 @@ func (builder *GatewayDeploymentBuilder) setAnnotations(deployment *appsv1.Deplo
 				if deployment.Spec.Template.ObjectMeta.Annotations == nil {
 					deployment.Spec.Template.ObjectMeta.Annotations = map[string]string{}
 				}
-				deployment.Spec.Template.ObjectMeta.Annotations[gatewayConfigVersion] = cm.ObjectMeta.ResourceVersion
+				deployment.Spec.Template.ObjectMeta.Annotations[GatewayConfigVersion] = cm.ObjectMeta.ResourceVersion
 			}
 		}
 	}

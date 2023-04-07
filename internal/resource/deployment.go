@@ -136,7 +136,7 @@ func (builder *DeploymentBuilder) setAnnotations(deployment *appsv1.Deployment, 
 					if deployment.Spec.Template.ObjectMeta.Annotations == nil {
 						deployment.Spec.Template.ObjectMeta.Annotations = map[string]string{}
 					}
-					deployment.Spec.Template.ObjectMeta.Annotations[lastTrafficUpdateTimeAnnotation] = cron.Status.LastSuccessfulTime.Format(time.RFC3339)
+					deployment.Spec.Template.ObjectMeta.Annotations[LastTrafficUpdateTimeAnnotation] = cron.Status.LastSuccessfulTime.Format(time.RFC3339)
 				}
 			}
 		}
