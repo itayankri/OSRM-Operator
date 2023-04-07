@@ -94,7 +94,7 @@ var _ = Describe("OSRMClusterController", func() {
 
 	Context("ConfigMap updates", func() {
 		BeforeEach(func() {
-			instance = generateOSRMCluster("custom-resource-updates")
+			instance = generateOSRMCluster("configmap-updates")
 			Expect(k8sClient.Create(ctx, instance)).To(Succeed())
 			waitForDeployment(ctx, instance, k8sClient)
 		})
