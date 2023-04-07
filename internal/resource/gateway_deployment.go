@@ -115,6 +115,8 @@ func (builder *GatewayDeploymentBuilder) Update(object client.Object, siblings [
 		return fmt.Errorf("failed setting controller reference: %v", err)
 	}
 
+	builder.setAnnotations(deployment, siblings)
+
 	return nil
 }
 
@@ -126,4 +128,17 @@ func (builder *GatewayDeploymentBuilder) ShouldDeploy(resources []runtime.Object
 		}
 	}
 	return true
+}
+
+func (builder *GatewayDeploymentBuilder) setAnnotations(deployment *appsv1.Deployment, siblings []runtime.Object) {
+	for _, resource := range siblings {
+		if cm, ok := resource.(*corev1.ConfigMap); ok {
+			if cm.ObjectMeta.Name == builder.Instance.ObjectMeta.Name {
+				if deployment.Spec.Template.ObjectMeta.Annotations == nil {
+					deployment.Spec.Template.ObjectMeta.Annotations = map[string]string{}
+				}
+				deployment.Spec.Template.ObjectMeta.Annotations[gatewayConfigVersion] = cm.ObjectMeta.ResourceVersion
+			}
+		}
+	}
 }

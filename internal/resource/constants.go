@@ -29,3 +29,4 @@ const nginxConfigurationTemplateName = "nginx.tmpl"
 const gatewayImage = "nginx"
 
 const lastTrafficUpdateTimeAnnotation = "osrmcluster.itayankri/lastTrafficUpdateTime"
+const gatewayConfigVersion = "osrmcluter.itayankri/gatewayConfigVersion"
