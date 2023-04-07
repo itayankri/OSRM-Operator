@@ -116,7 +116,7 @@ var _ = Describe("OSRMClusterController", func() {
 				v.Spec.Profiles = append(v.Spec.Profiles, newProfile)
 			})).To(Succeed())
 
-			gateway = deployment(ctx, instance.Name, "", osrmResource.GatewaySuffix)
+			gateway = deployment(ctx, instance.Name, "", osrmResource.DeploymentSuffix)
 			newGatewayConfigVersionAnnotation := gateway.Annotations[osrmResource.GatewayConfigVersion]
 			Expect(gatewayConfigVersionAnnotation).ToNot(Equal(newGatewayConfigVersionAnnotation))
 		})
