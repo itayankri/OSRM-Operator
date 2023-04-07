@@ -109,7 +109,7 @@ var _ = Describe("OSRMClusterController", func() {
 				EndpointName: "custom-endpoint",
 			}
 
-			gateway := deployment(ctx, instance.Name, "", osrmResource.GatewaySuffix)
+			gateway := deployment(ctx, instance.Name, "", osrmResource.DeploymentSuffix)
 			gatewayConfigVersionAnnotation := gateway.Annotations[osrmResource.GatewayConfigVersion]
 
 			Expect(updateWithRetry(instance, func(v *osrmv1alpha1.OSRMCluster) {
