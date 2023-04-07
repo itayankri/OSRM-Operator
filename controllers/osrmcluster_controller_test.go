@@ -110,14 +110,14 @@ var _ = Describe("OSRMClusterController", func() {
 			}
 
 			gateway := deployment(ctx, instance.Name, "", osrmResource.DeploymentSuffix)
-			gatewayConfigVersionAnnotation := gateway.Annotations[osrmResource.GatewayConfigVersion]
+			gatewayConfigVersionAnnotation := gateway.Spec.Template.ObjectMeta.Annotations[osrmResource.GatewayConfigVersion]
 
 			Expect(updateWithRetry(instance, func(v *osrmv1alpha1.OSRMCluster) {
 				v.Spec.Profiles = append(v.Spec.Profiles, newProfile)
 			})).To(Succeed())
 
 			gateway = deployment(ctx, instance.Name, "", osrmResource.DeploymentSuffix)
-			newGatewayConfigVersionAnnotation := gateway.Annotations[osrmResource.GatewayConfigVersion]
+			newGatewayConfigVersionAnnotation := gateway.Spec.Template.ObjectMeta.Annotations[osrmResource.GatewayConfigVersion]
 			Expect(gatewayConfigVersionAnnotation).ToNot(Equal(newGatewayConfigVersionAnnotation))
 		})
 	})
