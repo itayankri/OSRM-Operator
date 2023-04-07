@@ -92,6 +92,36 @@ var _ = Describe("OSRMClusterController", func() {
 		})
 	})
 
+	Context("ConfigMap updates", func() {
+		BeforeEach(func() {
+			instance = generateOSRMCluster("custom-resource-updates")
+			Expect(k8sClient.Create(ctx, instance)).To(Succeed())
+			waitForDeployment(ctx, instance, k8sClient)
+		})
+
+		AfterEach(func() {
+			Expect(k8sClient.Delete(ctx, instance)).To(Succeed())
+		})
+
+		It("Should rollout gateway deployment after ConfigMap updates", func() {
+			newProfile := &osrmv1alpha1.ProfileSpec{
+				Name:         "new-profile",
+				EndpointName: "custom-endpoint",
+			}
+
+			gateway := deployment(ctx, instance.Name, "", osrmResource.GatewaySuffix)
+			gatewayConfigVersionAnnotation := gateway.Annotations[osrmResource.GatewayConfigVersion]
+
+			Expect(updateWithRetry(instance, func(v *osrmv1alpha1.OSRMCluster) {
+				v.Spec.Profiles = append(v.Spec.Profiles, newProfile)
+			})).To(Succeed())
+
+			gateway = deployment(ctx, instance.Name, "", osrmResource.GatewaySuffix)
+			newGatewayConfigVersionAnnotation := gateway.Annotations[osrmResource.GatewayConfigVersion]
+			Expect(gatewayConfigVersionAnnotation).ToNot(Equal(newGatewayConfigVersionAnnotation))
+		})
+	})
+
 	Context("Recreate child resources after deletion", func() {
 		BeforeEach(func() {
 			instance = generateOSRMCluster("recreate-children")
@@ -342,7 +372,11 @@ func service(ctx context.Context, clusterName string, profileName string, suffix
 }
 
 func deployment(ctx context.Context, clusterName string, profileName string, suffix string) *appsv1.Deployment {
-	name := fmt.Sprintf("%s-%s", clusterName, profileName)
+	name := clusterName
+	if len(profileName) > 0 {
+		name = fmt.Sprintf("%s-%s", clusterName, profileName)
+	}
+
 	if len(suffix) > 0 {
 		name = fmt.Sprintf("%s-%s", name, suffix)
 	}
