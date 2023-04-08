@@ -15,7 +15,7 @@ const osrmDataPath = "/data"
 const osrmPartitionedData = "partitioned"
 const osrmCustomizedData = "customized"
 
-const GatewaySuffix = "gateway"
+const GatewaySuffix = ""
 const PersistentVolumeClaimSuffix = ""
 const JobSuffix = "map-builder"
 const CronJobSuffix = "speed-updates"

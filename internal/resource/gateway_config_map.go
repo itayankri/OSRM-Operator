@@ -31,7 +31,7 @@ func (builder *OSRMResourceBuilder) ConfigMap(profiles []*osrmv1alpha1.ProfileSp
 func (builder *ConfigMapBuilder) Build() (client.Object, error) {
 	return &corev1.ConfigMap{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      builder.Instance.Name,
+			Name:      builder.Instance.ChildResourceName(GatewaySuffix, ConfigMapSuffix),
 			Namespace: builder.Instance.Namespace,
 		},
 	}, nil

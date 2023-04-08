@@ -133,7 +133,7 @@ func (builder *GatewayDeploymentBuilder) ShouldDeploy(resources []runtime.Object
 func (builder *GatewayDeploymentBuilder) setAnnotations(deployment *appsv1.Deployment, siblings []runtime.Object) {
 	for _, resource := range siblings {
 		if cm, ok := resource.(*corev1.ConfigMap); ok {
-			if cm.ObjectMeta.Name == builder.Instance.ObjectMeta.Name {
+			if cm.ObjectMeta.Name == builder.Instance.ChildResourceName(GatewaySuffix, ConfigMapSuffix) {
 				if deployment.Spec.Template.ObjectMeta.Annotations == nil {
 					deployment.Spec.Template.ObjectMeta.Annotations = map[string]string{}
 				}

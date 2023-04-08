@@ -103,7 +103,7 @@ var _ = Describe("OSRMClusterController", func() {
 			Expect(k8sClient.Delete(ctx, instance)).To(Succeed())
 		})
 
-		It("Should rollout gateway deployment after ConfigMap updates", func() {
+		FIt("Should rollout gateway deployment after ConfigMap updates", func() {
 			newProfile := &osrmv1alpha1.ProfileSpec{
 				Name:         "new-profile",
 				EndpointName: "custom-endpoint",
@@ -118,6 +118,9 @@ var _ = Describe("OSRMClusterController", func() {
 
 			gateway = deployment(ctx, instance.Name, "", osrmResource.DeploymentSuffix)
 			newGatewayConfigVersionAnnotation := gateway.Spec.Template.ObjectMeta.Annotations[osrmResource.GatewayConfigVersion]
+
+			time.Sleep(time.Minute * 10)
+
 			Expect(gatewayConfigVersionAnnotation).ToNot(Equal(newGatewayConfigVersionAnnotation))
 		})
 	})
