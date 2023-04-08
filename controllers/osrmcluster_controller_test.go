@@ -104,19 +104,25 @@ var _ = Describe("OSRMClusterController", func() {
 		})
 
 		FIt("Should rollout gateway deployment after ConfigMap updates", func() {
+			osrmProfile := "foot"
+			internalEndpoint := "walking"
 			newProfile := &osrmv1alpha1.ProfileSpec{
-				Name:         "new-profile",
-				EndpointName: "custom-endpoint",
+				Name:             "new-profile",
+				EndpointName:     "custom-endpoint",
+				InternalEndpoint: &internalEndpoint,
+				OSRMProfile:      &osrmProfile,
 			}
 
 			gateway := deployment(ctx, instance.Name, "", osrmResource.DeploymentSuffix)
 			gatewayConfigVersionAnnotation := gateway.Spec.Template.ObjectMeta.Annotations[osrmResource.GatewayConfigVersion]
 
+			time.Sleep(time.Second * 15)
+
 			Expect(updateWithRetry(instance, func(v *osrmv1alpha1.OSRMCluster) {
 				v.Spec.Profiles = append(v.Spec.Profiles, newProfile)
 			})).To(Succeed())
 
-			time.Sleep(time.Minute * 5)
+			time.Sleep(time.Second * 15)
 
 			Eventually(func() string {
 				return deployment(ctx, instance.Name, "", osrmResource.DeploymentSuffix).Spec.Template.ObjectMeta.Annotations[osrmResource.GatewayConfigVersion]
@@ -287,6 +293,9 @@ func generateOSRMCluster(name string) *osrmv1alpha1.OSRMCluster {
 						},
 					},
 				},
+			},
+			Service: osrmv1alpha1.ServiceSpec{
+				ExposingServices: []string{"route"},
 			},
 		},
 	}
