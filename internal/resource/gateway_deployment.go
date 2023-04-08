@@ -1,7 +1,7 @@
 package resource
 
 import (
-	"crypto/md5"
+	"crypto/sha256"
 	"fmt"
 
 	osrmv1alpha1 "github.com/itayankri/OSRM-Operator/api/v1alpha1"
@@ -136,7 +136,7 @@ func (builder *GatewayDeploymentBuilder) setAnnotations(deployment *appsv1.Deplo
 		if cm, ok := resource.(*corev1.ConfigMap); ok {
 			if cm.ObjectMeta.Name == builder.Instance.ChildResourceName(GatewaySuffix, ConfigMapSuffix) {
 				nginxConfig := cm.Data[nginxConfigurationTemplateName]
-				nginxConfigHash := md5.Sum([]byte(nginxConfig))
+				nginxConfigHash := sha256.Sum256([]byte(nginxConfig))
 				if deployment.Spec.Template.ObjectMeta.Annotations == nil {
 					deployment.Spec.Template.ObjectMeta.Annotations = map[string]string{}
 				}
