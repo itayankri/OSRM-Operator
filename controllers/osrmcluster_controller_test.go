@@ -92,6 +92,72 @@ var _ = Describe("OSRMClusterController", func() {
 		})
 	})
 
+	Context("ConfigMap updates", func() {
+		testNumber := 0
+		BeforeEach(func() {
+			instance = generateOSRMCluster(fmt.Sprintf("configmap-updates-%d", testNumber))
+			testNumber += 1
+			Expect(k8sClient.Create(ctx, instance)).To(Succeed())
+			waitForDeployment(ctx, instance, k8sClient)
+		})
+
+		AfterEach(func() {
+			Expect(k8sClient.Delete(ctx, instance)).To(Succeed())
+		})
+
+		It("Should rollout gateway deployment after adding a new profile", func() {
+			osrmProfile := "foot"
+			internalEndpoint := "walking"
+			minReplicas := int32(1)
+			maxReplicas := int32(2)
+			newProfile := &osrmv1alpha1.ProfileSpec{
+				Name:             "new-profile",
+				EndpointName:     "custom-endpoint",
+				InternalEndpoint: &internalEndpoint,
+				OSRMProfile:      &osrmProfile,
+				MinReplicas:      &minReplicas,
+				MaxReplicas:      &maxReplicas,
+			}
+
+			gateway := deployment(ctx, instance.Name, "", osrmResource.DeploymentSuffix)
+			gatewayConfigVersionAnnotation := gateway.Spec.Template.ObjectMeta.Annotations[osrmResource.GatewayConfigVersion]
+
+			Expect(updateWithRetry(instance, func(v *osrmv1alpha1.OSRMCluster) {
+				v.Spec.Profiles = append(v.Spec.Profiles, newProfile)
+			})).To(Succeed())
+
+			Eventually(func() string {
+				return deployment(ctx, instance.Name, "", osrmResource.DeploymentSuffix).Spec.Template.ObjectMeta.Annotations[osrmResource.GatewayConfigVersion]
+			}, 180*time.Second).ShouldNot(Equal(gatewayConfigVersionAnnotation))
+		})
+
+		It("Should rollout gateway deployment after modifying ExposingServices", func() {
+			gateway := deployment(ctx, instance.Name, "", osrmResource.DeploymentSuffix)
+			gatewayConfigVersionAnnotation := gateway.Spec.Template.ObjectMeta.Annotations[osrmResource.GatewayConfigVersion]
+
+			Expect(updateWithRetry(instance, func(v *osrmv1alpha1.OSRMCluster) {
+				v.Spec.Service.ExposingServices = append(v.Spec.Service.ExposingServices, "table")
+			})).To(Succeed())
+
+			Eventually(func() string {
+				return deployment(ctx, instance.Name, "", osrmResource.DeploymentSuffix).Spec.Template.ObjectMeta.Annotations[osrmResource.GatewayConfigVersion]
+			}, 180*time.Second).ShouldNot(Equal(gatewayConfigVersionAnnotation))
+		})
+
+		It("Should rollout gateway deployment after editing a profile's EndpointName", func() {
+			gateway := deployment(ctx, instance.Name, "", osrmResource.DeploymentSuffix)
+			gatewayConfigVersionAnnotation := gateway.Spec.Template.ObjectMeta.Annotations[osrmResource.GatewayConfigVersion]
+
+			Expect(updateWithRetry(instance, func(v *osrmv1alpha1.OSRMCluster) {
+				v.Spec.Profiles[0].EndpointName = "ankri"
+			})).To(Succeed())
+
+			Eventually(func() string {
+				return deployment(ctx, instance.Name, "", osrmResource.DeploymentSuffix).Spec.Template.ObjectMeta.Annotations[osrmResource.GatewayConfigVersion]
+			}, 180*time.Second).ShouldNot(Equal(gatewayConfigVersionAnnotation))
+		})
+	})
+
 	Context("Recreate child resources after deletion", func() {
 		BeforeEach(func() {
 			instance = generateOSRMCluster("recreate-children")
@@ -256,6 +322,9 @@ func generateOSRMCluster(name string) *osrmv1alpha1.OSRMCluster {
 					},
 				},
 			},
+			Service: osrmv1alpha1.ServiceSpec{
+				ExposingServices: []string{"route"},
+			},
 		},
 	}
 	return osrmCluster
@@ -342,7 +411,11 @@ func service(ctx context.Context, clusterName string, profileName string, suffix
 }
 
 func deployment(ctx context.Context, clusterName string, profileName string, suffix string) *appsv1.Deployment {
-	name := fmt.Sprintf("%s-%s", clusterName, profileName)
+	name := clusterName
+	if len(profileName) > 0 {
+		name = fmt.Sprintf("%s-%s", clusterName, profileName)
+	}
+
 	if len(suffix) > 0 {
 		name = fmt.Sprintf("%s-%s", name, suffix)
 	}

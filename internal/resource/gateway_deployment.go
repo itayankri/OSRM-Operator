@@ -1,6 +1,7 @@
 package resource
 
 import (
+	"crypto/sha256"
 	"fmt"
 
 	osrmv1alpha1 "github.com/itayankri/OSRM-Operator/api/v1alpha1"
@@ -115,6 +116,8 @@ func (builder *GatewayDeploymentBuilder) Update(object client.Object, siblings [
 		return fmt.Errorf("failed setting controller reference: %v", err)
 	}
 
+	builder.setAnnotations(deployment, siblings)
+
 	return nil
 }
 
@@ -126,4 +129,19 @@ func (builder *GatewayDeploymentBuilder) ShouldDeploy(resources []runtime.Object
 		}
 	}
 	return true
+}
+
+func (builder *GatewayDeploymentBuilder) setAnnotations(deployment *appsv1.Deployment, siblings []runtime.Object) {
+	for _, resource := range siblings {
+		if cm, ok := resource.(*corev1.ConfigMap); ok {
+			if cm.ObjectMeta.Name == builder.Instance.ChildResourceName(GatewaySuffix, ConfigMapSuffix) {
+				nginxConfig := cm.Data[nginxConfigurationTemplateName]
+				nginxConfigHash := sha256.Sum256([]byte(nginxConfig))
+				if deployment.Spec.Template.ObjectMeta.Annotations == nil {
+					deployment.Spec.Template.ObjectMeta.Annotations = map[string]string{}
+				}
+				deployment.Spec.Template.ObjectMeta.Annotations[GatewayConfigVersion] = fmt.Sprintf("%x", nginxConfigHash)
+			}
+		}
+	}
 }
