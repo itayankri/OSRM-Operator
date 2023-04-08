@@ -103,30 +103,30 @@ var _ = Describe("OSRMClusterController", func() {
 			Expect(k8sClient.Delete(ctx, instance)).To(Succeed())
 		})
 
-		FIt("Should rollout gateway deployment after ConfigMap updates", func() {
+		It("Should rollout gateway deployment after ConfigMap updates", func() {
 			osrmProfile := "foot"
 			internalEndpoint := "walking"
+			minReplicas := int32(1)
+			maxReplicas := int32(2)
 			newProfile := &osrmv1alpha1.ProfileSpec{
 				Name:             "new-profile",
 				EndpointName:     "custom-endpoint",
 				InternalEndpoint: &internalEndpoint,
 				OSRMProfile:      &osrmProfile,
+				MinReplicas:      &minReplicas,
+				MaxReplicas:      &maxReplicas,
 			}
 
 			gateway := deployment(ctx, instance.Name, "", osrmResource.DeploymentSuffix)
 			gatewayConfigVersionAnnotation := gateway.Spec.Template.ObjectMeta.Annotations[osrmResource.GatewayConfigVersion]
 
-			time.Sleep(time.Second * 15)
-
 			Expect(updateWithRetry(instance, func(v *osrmv1alpha1.OSRMCluster) {
 				v.Spec.Profiles = append(v.Spec.Profiles, newProfile)
 			})).To(Succeed())
 
-			time.Sleep(time.Second * 15)
-
 			Eventually(func() string {
 				return deployment(ctx, instance.Name, "", osrmResource.DeploymentSuffix).Spec.Template.ObjectMeta.Annotations[osrmResource.GatewayConfigVersion]
-			}).ShouldNot(Equal(gatewayConfigVersionAnnotation))
+			}, 180*time.Second).ShouldNot(Equal(gatewayConfigVersionAnnotation))
 		})
 	})
 
