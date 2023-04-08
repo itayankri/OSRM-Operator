@@ -141,6 +141,19 @@ var _ = Describe("OSRMClusterController", func() {
 				return deployment(ctx, instance.Name, "", osrmResource.DeploymentSuffix).Spec.Template.ObjectMeta.Annotations[osrmResource.GatewayConfigVersion]
 			}, 180*time.Second).ShouldNot(Equal(gatewayConfigVersionAnnotation))
 		})
+
+		It("Should rollout gateway deployment after editing a profile's EndpointName", func() {
+			gateway := deployment(ctx, instance.Name, "", osrmResource.DeploymentSuffix)
+			gatewayConfigVersionAnnotation := gateway.Spec.Template.ObjectMeta.Annotations[osrmResource.GatewayConfigVersion]
+
+			Expect(updateWithRetry(instance, func(v *osrmv1alpha1.OSRMCluster) {
+				v.Spec.Profiles[0].EndpointName = "ankri"
+			})).To(Succeed())
+
+			Eventually(func() string {
+				return deployment(ctx, instance.Name, "", osrmResource.DeploymentSuffix).Spec.Template.ObjectMeta.Annotations[osrmResource.GatewayConfigVersion]
+			}, 180*time.Second).ShouldNot(Equal(gatewayConfigVersionAnnotation))
+		})
 	})
 
 	Context("Recreate child resources after deletion", func() {
