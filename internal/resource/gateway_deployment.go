@@ -2,6 +2,7 @@ package resource
 
 import (
 	"crypto/sha256"
+	"encoding/base64"
 	"fmt"
 
 	osrmv1alpha1 "github.com/itayankri/OSRM-Operator/api/v1alpha1"
@@ -143,7 +144,7 @@ func (builder *GatewayDeploymentBuilder) setAnnotations(deployment *appsv1.Deplo
 				if deployment.Spec.Template.ObjectMeta.Annotations == nil {
 					deployment.Spec.Template.ObjectMeta.Annotations = map[string]string{}
 				}
-				deployment.Spec.Template.ObjectMeta.Annotations[GatewayConfigVersion] = string(nginxConfigHash)
+				deployment.Spec.Template.ObjectMeta.Annotations[GatewayConfigVersion] = base64.URLEncoding.EncodeToString(nginxConfigHash)
 			}
 		}
 	}

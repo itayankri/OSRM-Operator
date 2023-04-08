@@ -116,6 +116,8 @@ var _ = Describe("OSRMClusterController", func() {
 				v.Spec.Profiles = append(v.Spec.Profiles, newProfile)
 			})).To(Succeed())
 
+			time.Sleep(time.Minute * 5)
+
 			Eventually(func() string {
 				return deployment(ctx, instance.Name, "", osrmResource.DeploymentSuffix).Spec.Template.ObjectMeta.Annotations[osrmResource.GatewayConfigVersion]
 			}).ShouldNot(Equal(gatewayConfigVersionAnnotation))

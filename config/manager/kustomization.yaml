@@ -13,4 +13,4 @@ kind: Kustomization
 images:
 - name: controller
   newName: itayankri/osrm-operator
-  newTag: "2973e63"
+  newTag: f0f3e59
