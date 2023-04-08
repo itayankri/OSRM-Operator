@@ -103,7 +103,7 @@ var _ = Describe("OSRMClusterController", func() {
 			Expect(k8sClient.Delete(ctx, instance)).To(Succeed())
 		})
 
-		It("Should rollout gateway deployment after ConfigMap updates", func() {
+		It("Should rollout gateway deployment after adding a new profile", func() {
 			osrmProfile := "foot"
 			internalEndpoint := "walking"
 			minReplicas := int32(1)
@@ -122,6 +122,19 @@ var _ = Describe("OSRMClusterController", func() {
 
 			Expect(updateWithRetry(instance, func(v *osrmv1alpha1.OSRMCluster) {
 				v.Spec.Profiles = append(v.Spec.Profiles, newProfile)
+			})).To(Succeed())
+
+			Eventually(func() string {
+				return deployment(ctx, instance.Name, "", osrmResource.DeploymentSuffix).Spec.Template.ObjectMeta.Annotations[osrmResource.GatewayConfigVersion]
+			}, 180*time.Second).ShouldNot(Equal(gatewayConfigVersionAnnotation))
+		})
+
+		It("Should rollout gateway deployment after modifying ExposingServices", func() {
+			gateway := deployment(ctx, instance.Name, "", osrmResource.DeploymentSuffix)
+			gatewayConfigVersionAnnotation := gateway.Spec.Template.ObjectMeta.Annotations[osrmResource.GatewayConfigVersion]
+
+			Expect(updateWithRetry(instance, func(v *osrmv1alpha1.OSRMCluster) {
+				v.Spec.Service.ExposingServices = append(v.Spec.Service.ExposingServices, "table")
 			})).To(Succeed())
 
 			Eventually(func() string {
