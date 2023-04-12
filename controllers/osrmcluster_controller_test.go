@@ -301,12 +301,12 @@ var _ = Describe("OSRMClusterController", func() {
 			Expect(k8sClient.Delete(ctx, instance)).To(Succeed())
 		})
 
-		FIt("Should add an internal label with the custom resource's generation to all child resources", func() {
+		It("Should add an internal label with the custom resource's generation to all child resources", func() {
 			resources := getGatewayResources(ctx, instance)
 			resources = append(resources, getProfileResources(ctx, instance.Spec.Profiles[0])...)
 
 			for _, resource := range resources {
-				By(fmt.Sprintf("creating %s", resource.GetName()), func() {
+				By(fmt.Sprintf("checking label on %s after cluster creation", resource.GetName()), func() {
 					label, labelExists := resource.GetLabels()[metadata.GenerationLabel]
 					Expect(labelExists).To(BeTrue())
 					Expect(label).To(Equal("1"))
@@ -317,16 +317,17 @@ var _ = Describe("OSRMClusterController", func() {
 				v.Spec.Service.ExposingServices = append(v.Spec.Service.ExposingServices, "table")
 			})).To(Succeed())
 
-			resources = getGatewayResources(ctx, instance)
-			resources = append(resources, getProfileResources(ctx, instance.Spec.Profiles[0])...)
-
-			for _, resource := range resources {
-				By(fmt.Sprintf("updating label on %s", resource.GetName()), func() {
+			Eventually(func() bool {
+				resources = getGatewayResources(ctx, instance)
+				resources = append(resources, getProfileResources(ctx, instance.Spec.Profiles[0])...)
+				for _, resource := range resources {
 					label, labelExists := resource.GetLabels()[metadata.GenerationLabel]
-					Expect(labelExists).To(BeTrue())
-					Expect(label).To(Equal("2"))
-				})
-			}
+					if !labelExists || label != "2" {
+						return false
+					}
+				}
+				return true
+			}, 180*time.Second).Should(BeTrue())
 		})
 
 		It("Should delete all child resources that has a different generation than the custom resource", func() {
