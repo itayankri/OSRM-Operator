@@ -214,7 +214,7 @@ func (r *OSRMClusterReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 		}
 	}
 
-	// r.garbageCollection(ctx, instance)
+	r.garbageCollection(ctx, instance)
 
 	r.setReconciliationSuccess(ctx, instance, metav1.ConditionTrue, "Success", "Reconciliation completed")
 	logger.Info("Finished reconciling")

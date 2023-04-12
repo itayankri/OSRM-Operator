@@ -31,6 +31,7 @@ func (builder *ServiceBuilder) Build() (client.Object, error) {
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      builder.Instance.ChildResourceName(builder.profile.Name, ServiceSuffix),
 			Namespace: builder.Instance.Namespace,
+			Labels:    metadata.GetLabels(builder.Instance, builder.Instance.Labels),
 		},
 	}, nil
 }

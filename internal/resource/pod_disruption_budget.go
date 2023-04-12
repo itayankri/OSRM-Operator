@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	osrmv1alpha1 "github.com/itayankri/OSRM-Operator/api/v1alpha1"
+	"github.com/itayankri/OSRM-Operator/internal/metadata"
 	"github.com/itayankri/OSRM-Operator/internal/status"
 	policyv1 "k8s.io/api/policy/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -29,6 +30,7 @@ func (builder *PodDisruptionBudgetBuilder) Build() (client.Object, error) {
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      builder.Instance.ChildResourceName(builder.profile.Name, PodDisruptionBudgetSuffix),
 			Namespace: builder.Instance.Namespace,
+			Labels:    metadata.GetLabels(builder.Instance, builder.Instance.Labels),
 		},
 	}, nil
 }
@@ -36,7 +38,7 @@ func (builder *PodDisruptionBudgetBuilder) Build() (client.Object, error) {
 func (builder *PodDisruptionBudgetBuilder) Update(object client.Object, siblings []runtime.Object) error {
 	name := builder.Instance.ChildResourceName(builder.profile.Name, PodDisruptionBudgetSuffix)
 	pdb := object.(*policyv1.PodDisruptionBudget)
-
+	pdb.ObjectMeta.Labels = metadata.GetLabels(builder.Instance, builder.Instance.Labels)
 	pdb.Spec.MinAvailable = builder.profile.GetMinAvailable()
 	pdb.Spec.Selector = &metav1.LabelSelector{
 		MatchLabels: map[string]string{

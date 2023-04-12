@@ -302,8 +302,7 @@ var _ = Describe("OSRMClusterController", func() {
 		})
 
 		FIt("Should add an internal label with the custom resource's generation to all child resources", func() {
-			resources := []client.Object{}
-			resources = append(resources, getGatewayResources(ctx, instance)...)
+			resources := getGatewayResources(ctx, instance)
 			resources = append(resources, getProfileResources(ctx, instance.Spec.Profiles[0])...)
 
 			for _, resource := range resources {
@@ -316,14 +315,33 @@ var _ = Describe("OSRMClusterController", func() {
 				v.Spec.Service.ExposingServices = append(v.Spec.Service.ExposingServices, "table")
 			})).To(Succeed())
 
-			resources = []client.Object{}
-			resources = append(resources, getGatewayResources(ctx, instance)...)
+			resources = getGatewayResources(ctx, instance)
 			resources = append(resources, getProfileResources(ctx, instance.Spec.Profiles[0])...)
 
 			for _, resource := range resources {
 				label, labelExists := resource.GetLabels()[metadata.GenerationLabel]
 				Expect(labelExists).To(BeTrue())
 				Expect(label).To(Equal("2"))
+			}
+		})
+
+		FIt("Should delete all child resources that has a different generation than the custom resource", func() {
+			firstGenerationProfileResources := getProfileResources(ctx, instance.Spec.Profiles[0])
+
+			Expect(updateWithRetry(instance, func(v *osrmv1alpha1.OSRMCluster) {
+				v.Spec.Profiles[0].Name = "foot"
+			})).To(Succeed())
+
+			secondGenerationChildResources := getProfileResources(ctx, instance.Spec.Profiles[0])
+
+			currentResourcesDict := map[string]bool{}
+
+			for _, resource := range secondGenerationChildResources {
+				currentResourcesDict[resource.GetName()] = true
+			}
+
+			for _, resource := range firstGenerationProfileResources {
+				Expect(currentResourcesDict[resource.GetName()]).ToNot(BeTrue())
 			}
 		})
 	})
@@ -335,72 +353,97 @@ func getGatewayResources(ctx context.Context, instance *osrmv1alpha1.OSRMCluster
 	resources := []client.Object{}
 
 	go func() {
-		defer wg.Done()
+		defer func() {
+			wg.Done()
+			GinkgoRecover()
+		}()
 		gatewayService := service(ctx, instance.Name, "", osrmResource.ServiceSuffix)
 		resources = append(resources, gatewayService)
 	}()
 
 	go func() {
-		defer wg.Done()
+		defer func() {
+			wg.Done()
+			GinkgoRecover()
+		}()
 		gatewayDeployment := deployment(ctx, instance.Name, "", osrmResource.DeploymentSuffix)
 		resources = append(resources, gatewayDeployment)
 	}()
 
 	go func() {
-		defer wg.Done()
+		defer func() {
+			wg.Done()
+			GinkgoRecover()
+		}()
 		gatewayConfigMap := configMap(ctx, instance.Name, "", osrmResource.ConfigMapSuffix)
 		resources = append(resources, gatewayConfigMap)
 	}()
+
+	wg.Wait()
 
 	return resources
 }
 
 func getProfileResources(ctx context.Context, profile *osrmv1alpha1.ProfileSpec) []client.Object {
 	wg := sync.WaitGroup{}
-	wg.Add(7)
+	wg.Add(6)
 	resources := []client.Object{}
 
 	go func() {
-		defer wg.Done()
+		defer func() {
+			wg.Done()
+			GinkgoRecover()
+		}()
 		profileService := service(ctx, instance.Name, instance.Spec.Profiles[0].Name, osrmResource.ServiceSuffix)
 		resources = append(resources, profileService)
 	}()
 
 	go func() {
-		defer wg.Done()
+		defer func() {
+			wg.Done()
+			GinkgoRecover()
+		}()
 		profileDeployment := deployment(ctx, instance.Name, instance.Spec.Profiles[0].Name, osrmResource.DeploymentSuffix)
 		resources = append(resources, profileDeployment)
 	}()
 
 	go func() {
-		defer wg.Done()
+		defer func() {
+			wg.Done()
+			GinkgoRecover()
+		}()
 		profileHpa := hpa(ctx, instance.Name, instance.Spec.Profiles[0].Name, osrmResource.HorizontalPodAutoscalerSuffix)
 		resources = append(resources, profileHpa)
 	}()
 
 	go func() {
-		defer wg.Done()
+		defer func() {
+			wg.Done()
+			GinkgoRecover()
+		}()
 		profileJob := job(ctx, instance.Name, instance.Spec.Profiles[0].Name, osrmResource.JobSuffix)
 		resources = append(resources, profileJob)
 	}()
 
 	go func() {
-		defer wg.Done()
-		profileCronJob := cronJob(ctx, instance.Name, instance.Spec.Profiles[0].Name, osrmResource.CronJobSuffix)
-		resources = append(resources, profileCronJob)
-	}()
-
-	go func() {
-		defer wg.Done()
+		defer func() {
+			wg.Done()
+			GinkgoRecover()
+		}()
 		profilePvc := pvc(ctx, instance.Name, instance.Spec.Profiles[0].Name, osrmResource.PersistentVolumeClaimSuffix)
 		resources = append(resources, profilePvc)
 	}()
 
 	go func() {
-		defer wg.Done()
+		defer func() {
+			wg.Done()
+			GinkgoRecover()
+		}()
 		profilePdb := pdb(ctx, instance.Name, instance.Spec.Profiles[0].Name, osrmResource.PodDisruptionBudgetSuffix)
 		resources = append(resources, profilePdb)
 	}()
+
+	wg.Wait()
 
 	return resources
 }
@@ -601,29 +644,6 @@ func job(ctx context.Context, clusterName string, profileName string, suffix str
 		return nil
 	}, MapBuildingTimeout).Should(Succeed())
 	return job
-}
-
-func cronJob(ctx context.Context, clusterName string, profileName string, suffix string) *batchv1.CronJob {
-	name := clusterName
-	if len(profileName) > 0 {
-		name = fmt.Sprintf("%s-%s", clusterName, profileName)
-	}
-
-	if len(suffix) > 0 {
-		name = fmt.Sprintf("%s-%s", name, suffix)
-	}
-	cronJob := &batchv1.CronJob{}
-	EventuallyWithOffset(1, func() error {
-		if err := k8sClient.Get(
-			ctx,
-			types.NamespacedName{Name: name, Namespace: defaultNamespace},
-			cronJob,
-		); err != nil {
-			return err
-		}
-		return nil
-	}, MapBuildingTimeout).Should(Succeed())
-	return cronJob
 }
 
 func pdb(ctx context.Context, clusterName string, profileName string, suffix string) *policyv1.PodDisruptionBudget {

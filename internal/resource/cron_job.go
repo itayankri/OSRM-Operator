@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	osrmv1alpha1 "github.com/itayankri/OSRM-Operator/api/v1alpha1"
+	"github.com/itayankri/OSRM-Operator/internal/metadata"
 	"github.com/itayankri/OSRM-Operator/internal/status"
 	batchv1 "k8s.io/api/batch/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -30,6 +31,7 @@ func (builder *CronJobBuilder) Build() (client.Object, error) {
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      builder.Instance.ChildResourceName(builder.profile.Name, CronJobSuffix),
 			Namespace: builder.Instance.Namespace,
+			Labels:    metadata.GetLabels(builder.Instance, builder.Instance.Labels),
 		},
 	}, nil
 }
