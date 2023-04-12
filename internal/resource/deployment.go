@@ -46,7 +46,7 @@ func (builder *DeploymentBuilder) Update(object client.Object, siblings []runtim
 	osrmFileName := strings.ReplaceAll(pbfFileName, "osm.pbf", "osrm")
 	profileSpec := getProfileSpec(builder.profile.Name, builder.Instance)
 
-	deployment.Labels = metadata.GetLabels(builder.Instance, builder.Instance.Labels)
+	deployment.ObjectMeta.Labels = metadata.GetLabels(builder.Instance, builder.Instance.Labels)
 
 	deployment.Spec = appsv1.DeploymentSpec{
 		Replicas: profileSpec.MinReplicas,

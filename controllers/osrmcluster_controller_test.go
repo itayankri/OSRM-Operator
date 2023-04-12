@@ -306,9 +306,11 @@ var _ = Describe("OSRMClusterController", func() {
 			resources = append(resources, getProfileResources(ctx, instance.Spec.Profiles[0])...)
 
 			for _, resource := range resources {
-				label, labelExists := resource.GetLabels()[metadata.GenerationLabel]
-				Expect(labelExists).To(BeTrue())
-				Expect(label).To(Equal("1"))
+				By(fmt.Sprintf("creating %s", resource.GetName()), func() {
+					label, labelExists := resource.GetLabels()[metadata.GenerationLabel]
+					Expect(labelExists).To(BeTrue())
+					Expect(label).To(Equal("1"))
+				})
 			}
 
 			Expect(updateWithRetry(instance, func(v *osrmv1alpha1.OSRMCluster) {
@@ -319,9 +321,11 @@ var _ = Describe("OSRMClusterController", func() {
 			resources = append(resources, getProfileResources(ctx, instance.Spec.Profiles[0])...)
 
 			for _, resource := range resources {
-				label, labelExists := resource.GetLabels()[metadata.GenerationLabel]
-				Expect(labelExists).To(BeTrue())
-				Expect(label).To(Equal("2"))
+				By(fmt.Sprintf("updating label on %s", resource.GetName()), func() {
+					label, labelExists := resource.GetLabels()[metadata.GenerationLabel]
+					Expect(labelExists).To(BeTrue())
+					Expect(label).To(Equal("2"))
+				})
 			}
 		})
 

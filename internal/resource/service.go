@@ -41,7 +41,7 @@ func (builder *ServiceBuilder) Update(object client.Object, siblings []runtime.O
 
 	service := object.(*corev1.Service)
 
-	service.Labels = metadata.GetLabels(builder.Instance, builder.Instance.Labels)
+	service.ObjectMeta.Labels = metadata.GetLabels(builder.Instance, builder.Instance.Labels)
 
 	service.Spec.Type = corev1.ServiceTypeClusterIP
 	service.Spec.Ports = []corev1.ServicePort{

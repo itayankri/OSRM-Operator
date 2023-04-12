@@ -51,7 +51,7 @@ func (builder *PersistentVolumeClaimBuilder) Build() (client.Object, error) {
 func (builder *PersistentVolumeClaimBuilder) Update(object client.Object, siblings []runtime.Object) error {
 	pvc := object.(*corev1.PersistentVolumeClaim)
 
-	pvc.Labels = metadata.GetLabels(builder.Instance, builder.Instance.Labels)
+	pvc.ObjectMeta.Labels = metadata.GetLabels(builder.Instance, builder.Instance.Labels)
 
 	if err := controllerutil.SetControllerReference(builder.Instance, pvc, builder.Scheme); err != nil {
 		return fmt.Errorf("failed setting controller reference: %v", err)

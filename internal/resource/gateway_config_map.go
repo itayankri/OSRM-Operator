@@ -40,7 +40,7 @@ func (builder *ConfigMapBuilder) Build() (client.Object, error) {
 
 func (builder *ConfigMapBuilder) Update(object client.Object, siblings []runtime.Object) error {
 	configMap := object.(*corev1.ConfigMap)
-	configMap.Labels = metadata.GetLabels(builder.Instance, builder.Instance.Labels)
+	configMap.ObjectMeta.Labels = metadata.GetLabels(builder.Instance, builder.Instance.Labels)
 
 	if configMap.Data == nil {
 		configMap.Data = make(map[string]string)

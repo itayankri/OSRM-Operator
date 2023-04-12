@@ -39,7 +39,7 @@ func (builder *GatewayServiceBuilder) Build() (client.Object, error) {
 func (builder *GatewayServiceBuilder) Update(object client.Object, siblings []runtime.Object) error {
 	service := object.(*corev1.Service)
 
-	service.Labels = metadata.GetLabels(builder.Instance, builder.Instance.Labels)
+	service.ObjectMeta.Labels = metadata.GetLabels(builder.Instance, builder.Instance.Labels)
 
 	service.Spec.Ports = []corev1.ServicePort{
 		{
