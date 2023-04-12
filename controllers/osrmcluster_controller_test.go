@@ -325,7 +325,7 @@ var _ = Describe("OSRMClusterController", func() {
 			}
 		})
 
-		FIt("Should delete all child resources that has a different generation than the custom resource", func() {
+		It("Should delete all child resources that has a different generation than the custom resource", func() {
 			firstGenerationProfileResources := getProfileResources(ctx, instance.Spec.Profiles[0])
 
 			Expect(updateWithRetry(instance, func(v *osrmv1alpha1.OSRMCluster) {

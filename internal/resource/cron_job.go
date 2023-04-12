@@ -39,6 +39,8 @@ func (builder *CronJobBuilder) Build() (client.Object, error) {
 func (builder *CronJobBuilder) Update(object client.Object, siblings []runtime.Object) error {
 	cronJob := object.(*batchv1.CronJob)
 
+	cronJob.ObjectMeta.Labels = metadata.GetLabels(builder.Instance, builder.Instance.Labels)
+
 	cronJob.Spec = batchv1.CronJobSpec{
 		Suspend:  builder.profile.SpeedUpdates.Suspend,
 		Schedule: builder.profile.SpeedUpdates.Schedule,
