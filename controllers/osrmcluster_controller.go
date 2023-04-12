@@ -214,6 +214,8 @@ func (r *OSRMClusterReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 		}
 	}
 
+	// r.garbageCollection(ctx, instance)
+
 	r.setReconciliationSuccess(ctx, instance, metav1.ConditionTrue, "Success", "Reconciliation completed")
 	logger.Info("Finished reconciling")
 	return ctrl.Result{}, nil
@@ -438,6 +440,11 @@ func (r *OSRMClusterReconciler) getChildResources(ctx context.Context, instance 
 	}
 
 	return children, nil
+}
+
+func (r *OSRMClusterReconciler) garbageCollection(ctx context.Context, instance *osrmv1alpha1.OSRMCluster) error {
+
+	return nil
 }
 
 func (r *OSRMClusterReconciler) cleanup(ctx context.Context, instance *osrmv1alpha1.OSRMCluster) error {

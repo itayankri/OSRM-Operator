@@ -1,33 +1,26 @@
 package metadata
 
 import (
+	"strconv"
 	"strings"
+
+	osrmv1alpha1 "github.com/itayankri/OSRM-Operator/api/v1alpha1"
 )
 
-type label map[string]string
+const GenerationLabel = "osrmcluster.itayankri/generation"
 
-func Label(instanceName string) label {
-	return label{
-		"app.kubernetes.io/name":      instanceName,
-		"app.kubernetes.io/component": "osrm",
-		"app.kubernetes.io/part-of":   "osrm",
+func GetLabels(instance *osrmv1alpha1.OSRMCluster, instanceLabels map[string]string) map[string]string {
+	labels := map[string]string{
+		"app.kubernetes.io/name":    instance.Name,
+		"app.kubernetes.io/part-of": "osrmcluster",
+		GenerationLabel:             strconv.FormatInt(instance.ObjectMeta.Generation, 10),
 	}
-}
-
-func GetLabels(instanceName string, instanceLabels map[string]string) label {
-	allLabels := Label(instanceName)
 
 	for label, value := range instanceLabels {
 		if !strings.HasPrefix(label, "app.kubernetes.io") {
-			allLabels[label] = value
+			labels[label] = value
 		}
 	}
 
-	return allLabels
-}
-
-func LabelSelector(instanceName string) label {
-	return label{
-		"app.kubernetes.io/name": instanceName,
-	}
+	return labels
 }

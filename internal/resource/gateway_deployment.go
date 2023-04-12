@@ -41,7 +41,7 @@ func (builder *GatewayDeploymentBuilder) Build() (client.Object, error) {
 
 func (builder *GatewayDeploymentBuilder) Update(object client.Object, siblings []runtime.Object) error {
 	deployment := object.(*appsv1.Deployment)
-	deployment.Labels = metadata.GetLabels(builder.Instance.Name, builder.Instance.Labels)
+	deployment.Labels = metadata.GetLabels(builder.Instance, builder.Instance.Labels)
 	deployment.Spec = appsv1.DeploymentSpec{
 		Replicas: &gatewayDefaultReplicas,
 		Selector: &metav1.LabelSelector{

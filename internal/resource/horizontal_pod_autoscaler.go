@@ -38,7 +38,7 @@ func (builder *HorizontalPodAutoscalerBuilder) Update(object client.Object, sibl
 	name := builder.Instance.ChildResourceName(builder.profile.Name, HorizontalPodAutoscalerSuffix)
 	hpa := object.(*autoscalingv1.HorizontalPodAutoscaler)
 
-	hpa.Labels = metadata.GetLabels(builder.Instance.Name, builder.Instance.Labels)
+	hpa.Labels = metadata.GetLabels(builder.Instance, builder.Instance.Labels)
 
 	targetCPUUtilizationPercentage := int32(85)
 	profileSpec := getProfileSpec(builder.profile.Name, builder.Instance)
