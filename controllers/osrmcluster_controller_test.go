@@ -3,16 +3,20 @@ package controllers_test
 import (
 	"context"
 	"fmt"
+	"sync"
 	"time"
 
 	osrmv1alpha1 "github.com/itayankri/OSRM-Operator/api/v1alpha1"
+	"github.com/itayankri/OSRM-Operator/internal/metadata"
 	osrmResource "github.com/itayankri/OSRM-Operator/internal/resource"
 	"github.com/itayankri/OSRM-Operator/internal/status"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	appsv1 "k8s.io/api/apps/v1"
 	autoscalingv1 "k8s.io/api/autoscaling/v1"
+	batchv1 "k8s.io/api/batch/v1"
 	corev1 "k8s.io/api/core/v1"
+	policyv1 "k8s.io/api/policy/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
@@ -283,7 +287,123 @@ var _ = Describe("OSRMClusterController", func() {
 			}, 10*time.Second).Should(Equal(minReplicas))
 		})
 	})
+
+	Context("Garbage Collection", func() {
+		testNumber := 0
+		BeforeEach(func() {
+			instance = generateOSRMCluster(fmt.Sprintf("garbage-collection-%d", testNumber))
+			testNumber += 1
+			Expect(k8sClient.Create(ctx, instance)).To(Succeed())
+			waitForDeployment(ctx, instance, k8sClient)
+		})
+
+		AfterEach(func() {
+			Expect(k8sClient.Delete(ctx, instance)).To(Succeed())
+		})
+
+		FIt("Should add an internal label with the custom resource's generation to all child resources", func() {
+			resources := []client.Object{}
+			resources = append(resources, getGatewayResources(ctx, instance)...)
+			resources = append(resources, getProfileResources(ctx, instance.Spec.Profiles[0])...)
+
+			for _, resource := range resources {
+				label, labelExists := resource.GetLabels()[metadata.GenerationLabel]
+				Expect(labelExists).To(BeTrue())
+				Expect(label).To(Equal("1"))
+			}
+
+			Expect(updateWithRetry(instance, func(v *osrmv1alpha1.OSRMCluster) {
+				v.Spec.Service.ExposingServices = append(v.Spec.Service.ExposingServices, "table")
+			})).To(Succeed())
+
+			resources = []client.Object{}
+			resources = append(resources, getGatewayResources(ctx, instance)...)
+			resources = append(resources, getProfileResources(ctx, instance.Spec.Profiles[0])...)
+
+			for _, resource := range resources {
+				label, labelExists := resource.GetLabels()[metadata.GenerationLabel]
+				Expect(labelExists).To(BeTrue())
+				Expect(label).To(Equal("2"))
+			}
+		})
+	})
 })
+
+func getGatewayResources(ctx context.Context, instance *osrmv1alpha1.OSRMCluster) []client.Object {
+	wg := sync.WaitGroup{}
+	wg.Add(3)
+	resources := []client.Object{}
+
+	go func() {
+		defer wg.Done()
+		gatewayService := service(ctx, instance.Name, "", osrmResource.ServiceSuffix)
+		resources = append(resources, gatewayService)
+	}()
+
+	go func() {
+		defer wg.Done()
+		gatewayDeployment := deployment(ctx, instance.Name, "", osrmResource.DeploymentSuffix)
+		resources = append(resources, gatewayDeployment)
+	}()
+
+	go func() {
+		defer wg.Done()
+		gatewayConfigMap := configMap(ctx, instance.Name, "", osrmResource.ConfigMapSuffix)
+		resources = append(resources, gatewayConfigMap)
+	}()
+
+	return resources
+}
+
+func getProfileResources(ctx context.Context, profile *osrmv1alpha1.ProfileSpec) []client.Object {
+	wg := sync.WaitGroup{}
+	wg.Add(7)
+	resources := []client.Object{}
+
+	go func() {
+		defer wg.Done()
+		profileService := service(ctx, instance.Name, instance.Spec.Profiles[0].Name, osrmResource.ServiceSuffix)
+		resources = append(resources, profileService)
+	}()
+
+	go func() {
+		defer wg.Done()
+		profileDeployment := deployment(ctx, instance.Name, instance.Spec.Profiles[0].Name, osrmResource.DeploymentSuffix)
+		resources = append(resources, profileDeployment)
+	}()
+
+	go func() {
+		defer wg.Done()
+		profileHpa := hpa(ctx, instance.Name, instance.Spec.Profiles[0].Name, osrmResource.HorizontalPodAutoscalerSuffix)
+		resources = append(resources, profileHpa)
+	}()
+
+	go func() {
+		defer wg.Done()
+		profileJob := job(ctx, instance.Name, instance.Spec.Profiles[0].Name, osrmResource.JobSuffix)
+		resources = append(resources, profileJob)
+	}()
+
+	go func() {
+		defer wg.Done()
+		profileCronJob := cronJob(ctx, instance.Name, instance.Spec.Profiles[0].Name, osrmResource.CronJobSuffix)
+		resources = append(resources, profileCronJob)
+	}()
+
+	go func() {
+		defer wg.Done()
+		profilePvc := pvc(ctx, instance.Name, instance.Spec.Profiles[0].Name, osrmResource.PersistentVolumeClaimSuffix)
+		resources = append(resources, profilePvc)
+	}()
+
+	go func() {
+		defer wg.Done()
+		profilePdb := pdb(ctx, instance.Name, instance.Spec.Profiles[0].Name, osrmResource.PodDisruptionBudgetSuffix)
+		resources = append(resources, profilePdb)
+	}()
+
+	return resources
+}
 
 func generateOSRMCluster(name string) *osrmv1alpha1.OSRMCluster {
 	storage := resource.MustParse("10Mi")
@@ -392,7 +512,11 @@ func hpa(ctx context.Context, clusterName string, profileName string, suffix str
 }
 
 func service(ctx context.Context, clusterName string, profileName string, suffix string) *corev1.Service {
-	name := fmt.Sprintf("%s-%s", clusterName, profileName)
+	name := clusterName
+	if len(profileName) > 0 {
+		name = fmt.Sprintf("%s-%s", clusterName, profileName)
+	}
+
 	if len(suffix) > 0 {
 		name = fmt.Sprintf("%s-%s", name, suffix)
 	}
@@ -431,4 +555,123 @@ func deployment(ctx context.Context, clusterName string, profileName string, suf
 		return nil
 	}, MapBuildingTimeout).Should(Succeed())
 	return deployment
+}
+
+func pvc(ctx context.Context, clusterName string, profileName string, suffix string) *corev1.PersistentVolumeClaim {
+	name := clusterName
+	if len(profileName) > 0 {
+		name = fmt.Sprintf("%s-%s", clusterName, profileName)
+	}
+
+	if len(suffix) > 0 {
+		name = fmt.Sprintf("%s-%s", name, suffix)
+	}
+	pvc := &corev1.PersistentVolumeClaim{}
+	EventuallyWithOffset(1, func() error {
+		if err := k8sClient.Get(
+			ctx,
+			types.NamespacedName{Name: name, Namespace: defaultNamespace},
+			pvc,
+		); err != nil {
+			return err
+		}
+		return nil
+	}, MapBuildingTimeout).Should(Succeed())
+	return pvc
+}
+
+func job(ctx context.Context, clusterName string, profileName string, suffix string) *batchv1.Job {
+	name := clusterName
+	if len(profileName) > 0 {
+		name = fmt.Sprintf("%s-%s", clusterName, profileName)
+	}
+
+	if len(suffix) > 0 {
+		name = fmt.Sprintf("%s-%s", name, suffix)
+	}
+	job := &batchv1.Job{}
+	EventuallyWithOffset(1, func() error {
+		if err := k8sClient.Get(
+			ctx,
+			types.NamespacedName{Name: name, Namespace: defaultNamespace},
+			job,
+		); err != nil {
+			return err
+		}
+		return nil
+	}, MapBuildingTimeout).Should(Succeed())
+	return job
+}
+
+func cronJob(ctx context.Context, clusterName string, profileName string, suffix string) *batchv1.CronJob {
+	name := clusterName
+	if len(profileName) > 0 {
+		name = fmt.Sprintf("%s-%s", clusterName, profileName)
+	}
+
+	if len(suffix) > 0 {
+		name = fmt.Sprintf("%s-%s", name, suffix)
+	}
+	cronJob := &batchv1.CronJob{}
+	EventuallyWithOffset(1, func() error {
+		if err := k8sClient.Get(
+			ctx,
+			types.NamespacedName{Name: name, Namespace: defaultNamespace},
+			cronJob,
+		); err != nil {
+			return err
+		}
+		return nil
+	}, MapBuildingTimeout).Should(Succeed())
+	return cronJob
+}
+
+func pdb(ctx context.Context, clusterName string, profileName string, suffix string) *policyv1.PodDisruptionBudget {
+	name := clusterName
+	if len(profileName) > 0 {
+		name = fmt.Sprintf("%s-%s", clusterName, profileName)
+	}
+
+	if len(suffix) > 0 {
+		name = fmt.Sprintf("%s-%s", name, suffix)
+	}
+	pdb := &policyv1.PodDisruptionBudget{}
+	EventuallyWithOffset(1, func() error {
+		if err := k8sClient.Get(
+			ctx,
+			types.NamespacedName{Name: name, Namespace: defaultNamespace},
+			pdb,
+		); err != nil {
+			return err
+		}
+		return nil
+	}, MapBuildingTimeout).Should(Succeed())
+	return pdb
+}
+
+func configMap(ctx context.Context, clusterName string, profileName string, suffix string) *corev1.ConfigMap {
+	name := clusterName
+	if len(profileName) > 0 {
+		name = fmt.Sprintf("%s-%s", clusterName, profileName)
+	}
+
+	if len(profileName) > 0 {
+		name = fmt.Sprintf("%s-%s", clusterName, profileName)
+	}
+
+	if len(suffix) > 0 {
+		name = fmt.Sprintf("%s-%s", name, suffix)
+	}
+	configMap := &corev1.ConfigMap{}
+	EventuallyWithOffset(1, func() error {
+		if err := k8sClient.Get(
+			ctx,
+			types.NamespacedName{Name: name, Namespace: defaultNamespace},
+			configMap,
+		); err != nil {
+			return err
+		}
+		return nil
+	}, MapBuildingTimeout).Should(Succeed())
+	return configMap
 }
