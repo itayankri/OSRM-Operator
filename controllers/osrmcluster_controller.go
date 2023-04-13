@@ -443,6 +443,18 @@ func (r *OSRMClusterReconciler) getChildResources(ctx context.Context, instance 
 }
 
 func (r *OSRMClusterReconciler) garbageCollection(ctx context.Context, instance *osrmv1alpha1.OSRMCluster) error {
+	cronJobs := &batchv1.CronJobList{}
+	err := r.Client.List(ctx, cronJobs, &client.ListOptions{
+		Namespace:     instance.Namespace,
+		LabelSelector: client.MatchingLabelsSelector{},
+	})
+
+	jobs := &batchv1.JobList{}
+	horizontalPodAutoscalers := &autoscalingv1.HorizontalPodAutoscalerList{}
+	podDisruptionBudgets := &policyv1.PodDisruptionBudgetList{}
+	services := &corev1.ServiceList{}
+	deployments := &appsv1.DeploymentList{}
+	persistentVolumeClaims := &corev1.PersistentVolumeClaimList{}
 
 	return nil
 }

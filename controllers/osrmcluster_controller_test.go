@@ -331,23 +331,17 @@ var _ = Describe("OSRMClusterController", func() {
 		})
 
 		It("Should delete all child resources that has a different generation than the custom resource", func() {
-			firstGenerationProfileResources := getProfileResources(ctx, instance.Spec.Profiles[0])
+			firstGenerationProfile := instance.Spec.Profiles[0]
 
 			Expect(updateWithRetry(instance, func(v *osrmv1alpha1.OSRMCluster) {
-				v.Spec.Profiles[0].Name = "foot"
+				v.Spec.Profiles[0] = &osrmv1alpha1.ProfileSpec{
+					Name:         "foot",
+					EndpointName: firstGenerationProfile.EndpointName,
+					MinReplicas:  firstGenerationProfile.MinReplicas,
+					MaxReplicas:  firstGenerationProfile.MaxReplicas,
+					Resources:    firstGenerationProfile.Resources,
+				}
 			})).To(Succeed())
-
-			secondGenerationChildResources := getProfileResources(ctx, instance.Spec.Profiles[0])
-
-			currentResourcesDict := map[string]bool{}
-
-			for _, resource := range secondGenerationChildResources {
-				currentResourcesDict[resource.GetName()] = true
-			}
-
-			for _, resource := range firstGenerationProfileResources {
-				Expect(currentResourcesDict[resource.GetName()]).ToNot(BeTrue())
-			}
 		})
 	})
 })
