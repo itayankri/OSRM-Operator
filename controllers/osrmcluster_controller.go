@@ -215,7 +215,11 @@ func (r *OSRMClusterReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 		}
 	}
 
-	r.garbageCollection(ctx, instance)
+	err = r.garbageCollection(ctx, instance)
+	if err != nil {
+		logger.Error(err, "Garbage collection failed for OSRMCluster %v/%v", instance.Namespace, instance.Name)
+		return ctrl.Result{RequeueAfter: time.Second * 10}, err
+	}
 
 	r.setReconciliationSuccess(ctx, instance, metav1.ConditionTrue, "Success", "Reconciliation completed")
 	logger.Info("Finished reconciling")
@@ -446,56 +450,80 @@ func (r *OSRMClusterReconciler) getChildResources(ctx context.Context, instance 
 func (r *OSRMClusterReconciler) garbageCollection(ctx context.Context, instance *osrmv1alpha1.OSRMCluster) error {
 	labelSelector := fmt.Sprintf("%s,%s notin (%d)", metadata.GenerationLabel, metadata.GenerationLabel, instance.ObjectMeta.Generation)
 
-	r.Client.Delete(ctx, &batchv1.CronJob{}, &client.DeleteAllOfOptions{
+	err := r.Client.Delete(ctx, &batchv1.CronJob{}, &client.DeleteAllOfOptions{
 		ListOptions: client.ListOptions{
 			Namespace: instance.Namespace,
 			Raw:       &metav1.ListOptions{LabelSelector: labelSelector},
 		},
 	})
 
-	r.Client.Delete(ctx, &batchv1.Job{}, &client.DeleteAllOfOptions{
+	if err != nil {
+		return err
+	}
+
+	err = r.Client.Delete(ctx, &batchv1.Job{}, &client.DeleteAllOfOptions{
 		ListOptions: client.ListOptions{
 			Namespace: instance.Namespace,
 			Raw:       &metav1.ListOptions{LabelSelector: labelSelector},
 		},
 	})
 
-	r.Client.Delete(ctx, &autoscalingv1.HorizontalPodAutoscaler{}, &client.DeleteAllOfOptions{
+	if err != nil {
+		return err
+	}
+
+	err = r.Client.Delete(ctx, &autoscalingv1.HorizontalPodAutoscaler{}, &client.DeleteAllOfOptions{
 		ListOptions: client.ListOptions{
 			Namespace: instance.Namespace,
 			Raw:       &metav1.ListOptions{LabelSelector: labelSelector},
 		},
 	})
 
-	r.Client.Delete(ctx, &policyv1.PodDisruptionBudget{}, &client.DeleteAllOfOptions{
+	if err != nil {
+		return err
+	}
+
+	err = r.Client.Delete(ctx, &policyv1.PodDisruptionBudget{}, &client.DeleteAllOfOptions{
 		ListOptions: client.ListOptions{
 			Namespace: instance.Namespace,
 			Raw:       &metav1.ListOptions{LabelSelector: labelSelector},
 		},
 	})
 
-	r.Client.Delete(ctx, &corev1.Service{}, &client.DeleteAllOfOptions{
+	if err != nil {
+		return err
+	}
+
+	err = r.Client.Delete(ctx, &corev1.Service{}, &client.DeleteAllOfOptions{
 		ListOptions: client.ListOptions{
 			Namespace: instance.Namespace,
 			Raw:       &metav1.ListOptions{LabelSelector: labelSelector},
 		},
 	})
 
-	r.Client.Delete(ctx, &appsv1.Deployment{}, &client.DeleteAllOfOptions{
+	if err != nil {
+		return err
+	}
+
+	err = r.Client.Delete(ctx, &appsv1.Deployment{}, &client.DeleteAllOfOptions{
 		ListOptions: client.ListOptions{
 			Namespace: instance.Namespace,
 			Raw:       &metav1.ListOptions{LabelSelector: labelSelector},
 		},
 	})
 
-	r.Client.Delete(ctx, &corev1.PersistentVolumeClaim{}, &client.DeleteAllOfOptions{
+	if err != nil {
+		return err
+	}
+
+	err = r.Client.Delete(ctx, &corev1.PersistentVolumeClaim{}, &client.DeleteAllOfOptions{
 		ListOptions: client.ListOptions{
 			Namespace: instance.Namespace,
 			Raw:       &metav1.ListOptions{LabelSelector: labelSelector},
 		},
 	})
 
-	return nil
+	return err
 }
 
 func (r *OSRMClusterReconciler) cleanup(ctx context.Context, instance *osrmv1alpha1.OSRMCluster) error {
