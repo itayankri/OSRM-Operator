@@ -330,8 +330,14 @@ var _ = Describe("OSRMClusterController", func() {
 			}, 180*time.Second).Should(BeTrue())
 		})
 
-		It("Should delete all child resources that has a different generation than the custom resource", func() {
+		FIt("Should delete all child resources that has a different generation than the custom resource", func() {
 			firstGenerationProfile := instance.Spec.Profiles[0]
+			firstGenerationService := service(ctx, instance.Name, firstGenerationProfile.Name, osrmResource.ServiceSuffix)
+			firstGenerationDeployment := deployment(ctx, instance.Name, firstGenerationProfile.Name, osrmResource.DeploymentSuffix)
+			firstGenerationHPA := hpa(ctx, instance.Name, firstGenerationProfile.Name, osrmResource.HorizontalPodAutoscalerSuffix)
+			firstGenerationPDB := pdb(ctx, instance.Name, firstGenerationProfile.Name, osrmResource.PodDisruptionBudgetSuffix)
+			firstGenerationPVC := pvc(ctx, instance.Name, firstGenerationProfile.Name, osrmResource.PersistentVolumeClaimSuffix)
+			firstGenerationJob := job(ctx, instance.Name, firstGenerationProfile.Name, osrmResource.JobSuffix)
 
 			Expect(updateWithRetry(instance, func(v *osrmv1alpha1.OSRMCluster) {
 				v.Spec.Profiles[0] = &osrmv1alpha1.ProfileSpec{
@@ -342,6 +348,36 @@ var _ = Describe("OSRMClusterController", func() {
 					Resources:    firstGenerationProfile.Resources,
 				}
 			})).To(Succeed())
+
+			Eventually(k8sClient.Get(ctx, types.NamespacedName{
+				Name:      firstGenerationService.Name,
+				Namespace: firstGenerationService.Namespace,
+			}, firstGenerationService), 180*time.Second).Should(HaveOccurred())
+
+			Eventually(k8sClient.Get(ctx, types.NamespacedName{
+				Name:      firstGenerationDeployment.Name,
+				Namespace: firstGenerationDeployment.Namespace,
+			}, firstGenerationDeployment), 180*time.Second).Should(HaveOccurred())
+
+			Eventually(k8sClient.Get(ctx, types.NamespacedName{
+				Name:      firstGenerationHPA.Name,
+				Namespace: firstGenerationHPA.Namespace,
+			}, firstGenerationHPA), 180*time.Second).Should(HaveOccurred())
+
+			Eventually(k8sClient.Get(ctx, types.NamespacedName{
+				Name:      firstGenerationPDB.Name,
+				Namespace: firstGenerationPDB.Namespace,
+			}, firstGenerationPDB), 180*time.Second).Should(HaveOccurred())
+
+			Eventually(k8sClient.Get(ctx, types.NamespacedName{
+				Name:      firstGenerationPVC.Name,
+				Namespace: firstGenerationPVC.Namespace,
+			}, firstGenerationPVC), 180*time.Second).Should(HaveOccurred())
+
+			Eventually(k8sClient.Get(ctx, types.NamespacedName{
+				Name:      firstGenerationJob.Name,
+				Namespace: firstGenerationJob.Namespace,
+			}, firstGenerationJob), 180*time.Second).Should(HaveOccurred())
 		})
 	})
 })

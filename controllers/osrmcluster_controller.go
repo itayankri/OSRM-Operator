@@ -32,6 +32,7 @@ import (
 
 	"github.com/go-logr/logr"
 	osrmv1alpha1 "github.com/itayankri/OSRM-Operator/api/v1alpha1"
+	"github.com/itayankri/OSRM-Operator/internal/metadata"
 	"github.com/itayankri/OSRM-Operator/internal/resource"
 	"github.com/itayankri/OSRM-Operator/internal/status"
 	appsv1 "k8s.io/api/apps/v1"
@@ -443,18 +444,56 @@ func (r *OSRMClusterReconciler) getChildResources(ctx context.Context, instance 
 }
 
 func (r *OSRMClusterReconciler) garbageCollection(ctx context.Context, instance *osrmv1alpha1.OSRMCluster) error {
-	cronJobs := &batchv1.CronJobList{}
-	err := r.Client.List(ctx, cronJobs, &client.ListOptions{
-		Namespace:     instance.Namespace,
-		LabelSelector: client.MatchingLabelsSelector{},
+	labelSelector := fmt.Sprintf("%s,%s notin (%d)", metadata.GenerationLabel, metadata.GenerationLabel, instance.ObjectMeta.Generation)
+
+	r.Client.Delete(ctx, &batchv1.CronJob{}, &client.DeleteAllOfOptions{
+		ListOptions: client.ListOptions{
+			Namespace: instance.Namespace,
+			Raw:       &metav1.ListOptions{LabelSelector: labelSelector},
+		},
 	})
 
-	jobs := &batchv1.JobList{}
-	horizontalPodAutoscalers := &autoscalingv1.HorizontalPodAutoscalerList{}
-	podDisruptionBudgets := &policyv1.PodDisruptionBudgetList{}
-	services := &corev1.ServiceList{}
-	deployments := &appsv1.DeploymentList{}
-	persistentVolumeClaims := &corev1.PersistentVolumeClaimList{}
+	r.Client.Delete(ctx, &batchv1.Job{}, &client.DeleteAllOfOptions{
+		ListOptions: client.ListOptions{
+			Namespace: instance.Namespace,
+			Raw:       &metav1.ListOptions{LabelSelector: labelSelector},
+		},
+	})
+
+	r.Client.Delete(ctx, &autoscalingv1.HorizontalPodAutoscaler{}, &client.DeleteAllOfOptions{
+		ListOptions: client.ListOptions{
+			Namespace: instance.Namespace,
+			Raw:       &metav1.ListOptions{LabelSelector: labelSelector},
+		},
+	})
+
+	r.Client.Delete(ctx, &policyv1.PodDisruptionBudget{}, &client.DeleteAllOfOptions{
+		ListOptions: client.ListOptions{
+			Namespace: instance.Namespace,
+			Raw:       &metav1.ListOptions{LabelSelector: labelSelector},
+		},
+	})
+
+	r.Client.Delete(ctx, &corev1.Service{}, &client.DeleteAllOfOptions{
+		ListOptions: client.ListOptions{
+			Namespace: instance.Namespace,
+			Raw:       &metav1.ListOptions{LabelSelector: labelSelector},
+		},
+	})
+
+	r.Client.Delete(ctx, &appsv1.Deployment{}, &client.DeleteAllOfOptions{
+		ListOptions: client.ListOptions{
+			Namespace: instance.Namespace,
+			Raw:       &metav1.ListOptions{LabelSelector: labelSelector},
+		},
+	})
+
+	r.Client.Delete(ctx, &corev1.PersistentVolumeClaim{}, &client.DeleteAllOfOptions{
+		ListOptions: client.ListOptions{
+			Namespace: instance.Namespace,
+			Raw:       &metav1.ListOptions{LabelSelector: labelSelector},
+		},
+	})
 
 	return nil
 }
