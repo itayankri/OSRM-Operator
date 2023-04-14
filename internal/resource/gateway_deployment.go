@@ -124,12 +124,12 @@ func (builder *GatewayDeploymentBuilder) Update(object client.Object, siblings [
 
 func (builder *GatewayDeploymentBuilder) ShouldDeploy(resources []runtime.Object) bool {
 	for _, profile := range builder.Instance.Spec.Profiles {
-		if !status.IsJobCompleted(builder.Instance.ChildResourceName(profile.Name, JobSuffix), resources) ||
-			!status.IsPersistentVolumeClaimBound(builder.Instance.ChildResourceName(profile.Name, PersistentVolumeClaimSuffix), resources) {
-			return false
+		if status.IsJobCompleted(builder.Instance.ChildResourceName(profile.Name, JobSuffix), resources) ||
+			status.IsPersistentVolumeClaimBound(builder.Instance.ChildResourceName(profile.Name, PersistentVolumeClaimSuffix), resources) {
+			return true
 		}
 	}
-	return true
+	return false
 }
 
 func (builder *GatewayDeploymentBuilder) setAnnotations(deployment *appsv1.Deployment, siblings []runtime.Object) {
