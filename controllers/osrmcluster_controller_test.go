@@ -331,7 +331,7 @@ var _ = Describe("OSRMClusterController", func() {
 			}, 180*time.Second).Should(BeTrue())
 		})
 
-		FIt("Should delete all child resources that has a different generation than the custom resource", func() {
+		It("Should delete all child resources that has a different generation than the custom resource", func() {
 			firstGenerationProfile := instance.Spec.Profiles[0]
 			firstGenerationService := service(ctx, instance.Name, firstGenerationProfile.Name, osrmResource.ServiceSuffix)
 			firstGenerationDeployment := deployment(ctx, instance.Name, firstGenerationProfile.Name, osrmResource.DeploymentSuffix)
