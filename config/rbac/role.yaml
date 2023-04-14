@@ -29,6 +29,7 @@ rules:
   - persistentvolumeclaims
   verbs:
   - create
+  - deletecollection
   - get
   - list
   - update
@@ -54,6 +55,7 @@ rules:
   - services
   verbs:
   - create
+  - deletecollection
   - get
   - list
   - update
@@ -64,6 +66,7 @@ rules:
   - deployments
   verbs:
   - create
+  - deletecollection
   - get
   - list
   - update
@@ -74,6 +77,7 @@ rules:
   - horizontalpodautoscalers
   verbs:
   - create
+  - deletecollection
   - get
   - list
   - update
@@ -84,6 +88,7 @@ rules:
   - cronjobs
   verbs:
   - create
+  - deletecollection
   - get
   - list
   - update
@@ -94,6 +99,7 @@ rules:
   - jobs
   verbs:
   - create
+  - deletecollection
   - get
   - list
   - update
@@ -140,6 +146,7 @@ rules:
   - poddisruptionbudgets
   verbs:
   - create
+  - deletecollection
   - get
   - list
   - update

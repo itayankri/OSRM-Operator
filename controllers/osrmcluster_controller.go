@@ -90,19 +90,19 @@ func isPaused(object metav1.Object) bool {
 // the rbac rule requires an empty row at the end to render
 // +kubebuilder:rbac:groups="",resources=pods/exec,verbs=create
 // +kubebuilder:rbac:groups="",resources=pods,verbs=update;get;list;watch
-// +kubebuilder:rbac:groups="",resources=services,verbs=get;list;watch;create;update
+// +kubebuilder:rbac:groups="",resources=services,verbs=get;list;watch;create;update;deletecollection
 // +kubebuilder:rbac:groups="",resources=configmaps,verbs=get;list;watch;create;update
-// +kubebuilder:rbac:groups="batch",resources=jobs,verbs=get;list;watch;create;update
-// +kubebuilder:rbac:groups="batch",resources=cronjobs,verbs=get;list;watch;create;update
-// +kubebuilder:rbac:groups="apps",resources=deployments,verbs=get;list;watch;create;update
-// +kubebuilder:rbac:groups="autoscaling",resources=horizontalpodautoscalers,verbs=get;list;watch;create;update
+// +kubebuilder:rbac:groups="batch",resources=jobs,verbs=get;list;watch;create;update;deletecollection
+// +kubebuilder:rbac:groups="batch",resources=cronjobs,verbs=get;list;watch;create;update;deletecollection
+// +kubebuilder:rbac:groups="apps",resources=deployments,verbs=get;list;watch;create;update;deletecollection
+// +kubebuilder:rbac:groups="autoscaling",resources=horizontalpodautoscalers,verbs=get;list;watch;create;update;deletecollection
 // +kubebuilder:rbac:groups="networking.k8s.io",resources=ingresses,verbs=get;list;watch;create;update
 // +kubebuilder:rbac:groups="",resources=endpoints,verbs=get;watch;list
-// +kubebuilder:rbac:groups="policy",resources=poddisruptionbudgets,verbs=get;list;watch;create;update
+// +kubebuilder:rbac:groups="policy",resources=poddisruptionbudgets,verbs=get;list;watch;create;update;deletecollection
 // +kubebuilder:rbac:groups=osrm.itayankri,resources=osrmclusters,verbs=get;list;watch;create;update;patch;delete
 // +kubebuilder:rbac:groups=osrm.itayankri,resources=osrmclusters/status,verbs=get;update;patch
 // +kubebuilder:rbac:groups=osrm.itayankri,resources=osrmclusters/finalizers,verbs=update
-// +kubebuilder:rbac:groups="",resources=persistentvolumeclaims,verbs=get;list;watch;create;update
+// +kubebuilder:rbac:groups="",resources=persistentvolumeclaims,verbs=get;list;watch;create;update;deletecollection
 // +kubebuilder:rbac:groups="rbac.authorization.k8s.io",resources=roles,verbs=get;list;watch;create;update
 // +kubebuilder:rbac:groups="rbac.authorization.k8s.io",resources=rolebindings,verbs=get;list;watch;create;update
 
