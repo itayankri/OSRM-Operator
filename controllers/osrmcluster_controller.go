@@ -456,7 +456,6 @@ func (r *OSRMClusterReconciler) garbageCollection(ctx context.Context, instance 
 			Raw:       &metav1.ListOptions{LabelSelector: labelSelector},
 		},
 	})
-
 	if err != nil {
 		return err
 	}
@@ -467,7 +466,6 @@ func (r *OSRMClusterReconciler) garbageCollection(ctx context.Context, instance 
 			Raw:       &metav1.ListOptions{LabelSelector: labelSelector},
 		},
 	})
-
 	if err != nil {
 		return err
 	}
@@ -478,7 +476,6 @@ func (r *OSRMClusterReconciler) garbageCollection(ctx context.Context, instance 
 			Raw:       &metav1.ListOptions{LabelSelector: labelSelector},
 		},
 	})
-
 	if err != nil {
 		return err
 	}
@@ -489,7 +486,6 @@ func (r *OSRMClusterReconciler) garbageCollection(ctx context.Context, instance 
 			Raw:       &metav1.ListOptions{LabelSelector: labelSelector},
 		},
 	})
-
 	if err != nil {
 		return err
 	}
@@ -500,7 +496,6 @@ func (r *OSRMClusterReconciler) garbageCollection(ctx context.Context, instance 
 			Raw:       &metav1.ListOptions{LabelSelector: labelSelector},
 		},
 	})
-
 	if err != nil {
 		return err
 	}
@@ -511,7 +506,6 @@ func (r *OSRMClusterReconciler) garbageCollection(ctx context.Context, instance 
 			Raw:       &metav1.ListOptions{LabelSelector: labelSelector},
 		},
 	})
-
 	if err != nil {
 		return err
 	}
