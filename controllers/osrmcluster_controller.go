@@ -448,7 +448,14 @@ func (r *OSRMClusterReconciler) getChildResources(ctx context.Context, instance 
 }
 
 func (r *OSRMClusterReconciler) garbageCollection(ctx context.Context, instance *osrmv1alpha1.OSRMCluster) error {
-	labelSelector := fmt.Sprintf("%s,%s notin (%d)", metadata.GenerationLabelKey, metadata.GenerationLabelKey, instance.ObjectMeta.Generation)
+	labelSelector := fmt.Sprintf(
+		"%s in (%s),%s,%s notin (%d)",
+		metadata.ComponentLabelKey,
+		metadata.ComponentLabelProfile,
+		metadata.GenerationLabelKey,
+		metadata.GenerationLabelKey,
+		instance.ObjectMeta.Generation,
+	)
 	propagationPolicy := metav1.DeletePropagationBackground
 
 	err := r.Client.DeleteAllOf(ctx, &batchv1.CronJob{}, &client.DeleteAllOfOptions{
