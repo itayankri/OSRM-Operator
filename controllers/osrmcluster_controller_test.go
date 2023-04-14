@@ -17,6 +17,7 @@ import (
 	batchv1 "k8s.io/api/batch/v1"
 	corev1 "k8s.io/api/core/v1"
 	policyv1 "k8s.io/api/policy/v1"
+	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
@@ -349,47 +350,53 @@ var _ = Describe("OSRMClusterController", func() {
 				}
 			})).To(Succeed())
 
-			Eventually(k8sClient.Get(ctx, types.NamespacedName{
-				Name:      firstGenerationService.Name,
-				Namespace: firstGenerationService.Namespace,
-			}, firstGenerationService), 20*time.Second).Should(HaveOccurred())
+			Eventually(func() bool {
+				err := k8sClient.Get(ctx, types.NamespacedName{
+					Name:      firstGenerationService.Name,
+					Namespace: firstGenerationService.Namespace,
+				}, &corev1.Service{})
+				return errors.IsNotFound(err)
+			}, 10*time.Second).Should(BeTrue())
 
-			Expect(1).To(Equal(true))
+			Eventually(func() bool {
+				err := k8sClient.Get(ctx, types.NamespacedName{
+					Name:      firstGenerationDeployment.Name,
+					Namespace: firstGenerationDeployment.Namespace,
+				}, &appsv1.Deployment{})
+				return errors.IsNotFound(err)
+			}, 10*time.Second).Should(BeTrue())
 
-			Eventually(k8sClient.Get(ctx, types.NamespacedName{
-				Name:      firstGenerationDeployment.Name,
-				Namespace: firstGenerationDeployment.Namespace,
-			}, firstGenerationDeployment), 20*time.Second).Should(HaveOccurred())
+			Eventually(func() bool {
+				err := k8sClient.Get(ctx, types.NamespacedName{
+					Name:      firstGenerationHPA.Name,
+					Namespace: firstGenerationHPA.Namespace,
+				}, &autoscalingv1.HorizontalPodAutoscaler{})
+				return errors.IsNotFound(err)
+			}, 10*time.Second).Should(BeTrue())
 
-			Expect(2).To(Equal(true))
+			Eventually(func() bool {
+				err := k8sClient.Get(ctx, types.NamespacedName{
+					Name:      firstGenerationPDB.Name,
+					Namespace: firstGenerationPDB.Namespace,
+				}, &policyv1.PodDisruptionBudget{})
+				return errors.IsNotFound(err)
+			}, 10*time.Second).Should(BeTrue())
 
-			Eventually(k8sClient.Get(ctx, types.NamespacedName{
-				Name:      firstGenerationHPA.Name,
-				Namespace: firstGenerationHPA.Namespace,
-			}, firstGenerationHPA), 20*time.Second).Should(HaveOccurred())
+			Eventually(func() bool {
+				err := k8sClient.Get(ctx, types.NamespacedName{
+					Name:      firstGenerationJob.Name,
+					Namespace: firstGenerationJob.Namespace,
+				}, &batchv1.Job{})
+				return errors.IsNotFound(err)
+			}, 10*time.Second).Should(BeTrue())
 
-			Expect(3).To(Equal(true))
-
-			Eventually(k8sClient.Get(ctx, types.NamespacedName{
-				Name:      firstGenerationPDB.Name,
-				Namespace: firstGenerationPDB.Namespace,
-			}, firstGenerationPDB), 20*time.Second).Should(HaveOccurred())
-
-			Expect(4).To(Equal(true))
-
-			Eventually(k8sClient.Get(ctx, types.NamespacedName{
-				Name:      firstGenerationPVC.Name,
-				Namespace: firstGenerationPVC.Namespace,
-			}, firstGenerationPVC), 20*time.Second).Should(HaveOccurred())
-
-			Expect(5).To(Equal(true))
-
-			Eventually(k8sClient.Get(ctx, types.NamespacedName{
-				Name:      firstGenerationJob.Name,
-				Namespace: firstGenerationJob.Namespace,
-			}, firstGenerationJob), 20*time.Second).Should(HaveOccurred())
-
-			Expect(6).To(Equal(true))
+			Eventually(func() bool {
+				err := k8sClient.Get(ctx, types.NamespacedName{
+					Name:      firstGenerationPVC.Name,
+					Namespace: firstGenerationPVC.Namespace,
+				}, &corev1.PersistentVolumeClaim{})
+				return errors.IsNotFound(err)
+			}, 180*time.Second).Should(BeTrue())
 		})
 	})
 })
