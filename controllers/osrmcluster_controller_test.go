@@ -308,7 +308,7 @@ var _ = Describe("OSRMClusterController", func() {
 
 			for _, resource := range resources {
 				By(fmt.Sprintf("checking label on %s after cluster creation", resource.GetName()), func() {
-					label, labelExists := resource.GetLabels()[metadata.GenerationLabel]
+					label, labelExists := resource.GetLabels()[metadata.GenerationLabelKey]
 					Expect(labelExists).To(BeTrue())
 					Expect(label).To(Equal("1"))
 				})
@@ -322,7 +322,7 @@ var _ = Describe("OSRMClusterController", func() {
 				resources = getGatewayResources(ctx, instance)
 				resources = append(resources, getProfileResources(ctx, instance.Spec.Profiles[0])...)
 				for _, resource := range resources {
-					label, labelExists := resource.GetLabels()[metadata.GenerationLabel]
+					label, labelExists := resource.GetLabels()[metadata.GenerationLabelKey]
 					if !labelExists || label != "2" {
 						return false
 					}
