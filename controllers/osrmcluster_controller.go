@@ -32,6 +32,7 @@ import (
 
 	"github.com/go-logr/logr"
 	osrmv1alpha1 "github.com/itayankri/OSRM-Operator/api/v1alpha1"
+	"github.com/itayankri/OSRM-Operator/internal/metadata"
 	"github.com/itayankri/OSRM-Operator/internal/resource"
 	"github.com/itayankri/OSRM-Operator/internal/status"
 	appsv1 "k8s.io/api/apps/v1"
@@ -89,19 +90,19 @@ func isPaused(object metav1.Object) bool {
 // the rbac rule requires an empty row at the end to render
 // +kubebuilder:rbac:groups="",resources=pods/exec,verbs=create
 // +kubebuilder:rbac:groups="",resources=pods,verbs=update;get;list;watch
-// +kubebuilder:rbac:groups="",resources=services,verbs=get;list;watch;create;update
+// +kubebuilder:rbac:groups="",resources=services,verbs=get;list;watch;create;update;deletecollection
 // +kubebuilder:rbac:groups="",resources=configmaps,verbs=get;list;watch;create;update
-// +kubebuilder:rbac:groups="batch",resources=jobs,verbs=get;list;watch;create;update
-// +kubebuilder:rbac:groups="batch",resources=cronjobs,verbs=get;list;watch;create;update
-// +kubebuilder:rbac:groups="apps",resources=deployments,verbs=get;list;watch;create;update
-// +kubebuilder:rbac:groups="autoscaling",resources=horizontalpodautoscalers,verbs=get;list;watch;create;update
+// +kubebuilder:rbac:groups="batch",resources=jobs,verbs=get;list;watch;create;update;deletecollection
+// +kubebuilder:rbac:groups="batch",resources=cronjobs,verbs=get;list;watch;create;update;deletecollection
+// +kubebuilder:rbac:groups="apps",resources=deployments,verbs=get;list;watch;create;update;deletecollection
+// +kubebuilder:rbac:groups="autoscaling",resources=horizontalpodautoscalers,verbs=get;list;watch;create;update;deletecollection
 // +kubebuilder:rbac:groups="networking.k8s.io",resources=ingresses,verbs=get;list;watch;create;update
 // +kubebuilder:rbac:groups="",resources=endpoints,verbs=get;watch;list
-// +kubebuilder:rbac:groups="policy",resources=poddisruptionbudgets,verbs=get;list;watch;create;update
+// +kubebuilder:rbac:groups="policy",resources=poddisruptionbudgets,verbs=get;list;watch;create;update;deletecollection
 // +kubebuilder:rbac:groups=osrm.itayankri,resources=osrmclusters,verbs=get;list;watch;create;update;patch;delete
 // +kubebuilder:rbac:groups=osrm.itayankri,resources=osrmclusters/status,verbs=get;update;patch
 // +kubebuilder:rbac:groups=osrm.itayankri,resources=osrmclusters/finalizers,verbs=update
-// +kubebuilder:rbac:groups="",resources=persistentvolumeclaims,verbs=get;list;watch;create;update
+// +kubebuilder:rbac:groups="",resources=persistentvolumeclaims,verbs=get;list;watch;create;update;deletecollection
 // +kubebuilder:rbac:groups="rbac.authorization.k8s.io",resources=roles,verbs=get;list;watch;create;update
 // +kubebuilder:rbac:groups="rbac.authorization.k8s.io",resources=rolebindings,verbs=get;list;watch;create;update
 
@@ -212,6 +213,12 @@ func (r *OSRMClusterReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 				return ctrl.Result{}, err
 			}
 		}
+	}
+
+	err = r.garbageCollection(ctx, instance)
+	if err != nil {
+		logger.Error(err, "Garbage collection failed for OSRMCluster %v/%v", instance.Namespace, instance.Name)
+		return ctrl.Result{RequeueAfter: time.Second * 10}, err
 	}
 
 	r.setReconciliationSuccess(ctx, instance, metav1.ConditionTrue, "Success", "Reconciliation completed")
@@ -438,6 +445,82 @@ func (r *OSRMClusterReconciler) getChildResources(ctx context.Context, instance 
 	}
 
 	return children, nil
+}
+
+func (r *OSRMClusterReconciler) garbageCollection(ctx context.Context, instance *osrmv1alpha1.OSRMCluster) error {
+	labelSelector := fmt.Sprintf("%s,%s notin (%d)", metadata.GenerationLabel, metadata.GenerationLabel, instance.ObjectMeta.Generation)
+	propagationPolicy := metav1.DeletePropagationBackground
+
+	err := r.Client.DeleteAllOf(ctx, &batchv1.CronJob{}, &client.DeleteAllOfOptions{
+		ListOptions: client.ListOptions{
+			Namespace: instance.Namespace,
+			Raw:       &metav1.ListOptions{LabelSelector: labelSelector},
+		},
+		DeleteOptions: client.DeleteOptions{PropagationPolicy: &propagationPolicy},
+	})
+	if err != nil {
+		return err
+	}
+
+	err = r.Client.DeleteAllOf(ctx, &batchv1.Job{}, &client.DeleteAllOfOptions{
+		ListOptions: client.ListOptions{
+			Namespace: instance.Namespace,
+			Raw:       &metav1.ListOptions{LabelSelector: labelSelector},
+		},
+		DeleteOptions: client.DeleteOptions{PropagationPolicy: &propagationPolicy},
+	})
+	if err != nil {
+		return err
+	}
+
+	err = r.Client.DeleteAllOf(ctx, &autoscalingv1.HorizontalPodAutoscaler{}, &client.DeleteAllOfOptions{
+		ListOptions: client.ListOptions{
+			Namespace: instance.Namespace,
+			Raw:       &metav1.ListOptions{LabelSelector: labelSelector},
+		},
+	})
+	if err != nil {
+		return err
+	}
+
+	err = r.Client.DeleteAllOf(ctx, &policyv1.PodDisruptionBudget{}, &client.DeleteAllOfOptions{
+		ListOptions: client.ListOptions{
+			Namespace: instance.Namespace,
+			Raw:       &metav1.ListOptions{LabelSelector: labelSelector},
+		},
+	})
+	if err != nil {
+		return err
+	}
+
+	err = r.Client.DeleteAllOf(ctx, &corev1.Service{}, &client.DeleteAllOfOptions{
+		ListOptions: client.ListOptions{
+			Namespace: instance.Namespace,
+			Raw:       &metav1.ListOptions{LabelSelector: labelSelector},
+		},
+	})
+	if err != nil {
+		return err
+	}
+
+	err = r.Client.DeleteAllOf(ctx, &appsv1.Deployment{}, &client.DeleteAllOfOptions{
+		ListOptions: client.ListOptions{
+			Namespace: instance.Namespace,
+			Raw:       &metav1.ListOptions{LabelSelector: labelSelector},
+		},
+	})
+	if err != nil {
+		return err
+	}
+
+	err = r.Client.DeleteAllOf(ctx, &corev1.PersistentVolumeClaim{}, &client.DeleteAllOfOptions{
+		ListOptions: client.ListOptions{
+			Namespace: instance.Namespace,
+			Raw:       &metav1.ListOptions{LabelSelector: labelSelector},
+		},
+	})
+
+	return err
 }
 
 func (r *OSRMClusterReconciler) cleanup(ctx context.Context, instance *osrmv1alpha1.OSRMCluster) error {

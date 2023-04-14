@@ -33,13 +33,14 @@ func (builder *ConfigMapBuilder) Build() (client.Object, error) {
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      builder.Instance.ChildResourceName(GatewaySuffix, ConfigMapSuffix),
 			Namespace: builder.Instance.Namespace,
+			Labels:    metadata.GetLabels(builder.Instance, builder.Instance.Labels),
 		},
 	}, nil
 }
 
 func (builder *ConfigMapBuilder) Update(object client.Object, siblings []runtime.Object) error {
 	configMap := object.(*corev1.ConfigMap)
-	configMap.Labels = metadata.GetLabels(builder.Instance.Name, builder.Instance.Labels)
+	configMap.ObjectMeta.Labels = metadata.GetLabels(builder.Instance, builder.Instance.Labels)
 
 	if configMap.Data == nil {
 		configMap.Data = make(map[string]string)

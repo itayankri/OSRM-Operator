@@ -31,6 +31,7 @@ func (builder *ServiceBuilder) Build() (client.Object, error) {
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      builder.Instance.ChildResourceName(builder.profile.Name, ServiceSuffix),
 			Namespace: builder.Instance.Namespace,
+			Labels:    metadata.GetLabels(builder.Instance, builder.Instance.Labels),
 		},
 	}, nil
 }
@@ -40,7 +41,7 @@ func (builder *ServiceBuilder) Update(object client.Object, siblings []runtime.O
 
 	service := object.(*corev1.Service)
 
-	service.Labels = metadata.GetLabels(builder.Instance.Name, builder.Instance.Labels)
+	service.ObjectMeta.Labels = metadata.GetLabels(builder.Instance, builder.Instance.Labels)
 
 	service.Spec.Type = corev1.ServiceTypeClusterIP
 	service.Spec.Ports = []corev1.ServicePort{

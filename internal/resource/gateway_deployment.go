@@ -35,13 +35,14 @@ func (builder *GatewayDeploymentBuilder) Build() (client.Object, error) {
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      builder.Instance.Name,
 			Namespace: builder.Instance.Namespace,
+			Labels:    metadata.GetLabels(builder.Instance, builder.Instance.Labels),
 		},
 	}, nil
 }
 
 func (builder *GatewayDeploymentBuilder) Update(object client.Object, siblings []runtime.Object) error {
 	deployment := object.(*appsv1.Deployment)
-	deployment.Labels = metadata.GetLabels(builder.Instance.Name, builder.Instance.Labels)
+	deployment.ObjectMeta.Labels = metadata.GetLabels(builder.Instance, builder.Instance.Labels)
 	deployment.Spec = appsv1.DeploymentSpec{
 		Replicas: &gatewayDefaultReplicas,
 		Selector: &metav1.LabelSelector{

@@ -31,6 +31,7 @@ func (builder *GatewayServiceBuilder) Build() (client.Object, error) {
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      builder.Instance.Name,
 			Namespace: builder.Instance.Namespace,
+			Labels:    metadata.GetLabels(builder.Instance, builder.Instance.Labels),
 		},
 	}, nil
 }
@@ -38,7 +39,7 @@ func (builder *GatewayServiceBuilder) Build() (client.Object, error) {
 func (builder *GatewayServiceBuilder) Update(object client.Object, siblings []runtime.Object) error {
 	service := object.(*corev1.Service)
 
-	service.Labels = metadata.GetLabels(builder.Instance.Name, builder.Instance.Labels)
+	service.ObjectMeta.Labels = metadata.GetLabels(builder.Instance, builder.Instance.Labels)
 
 	service.Spec.Ports = []corev1.ServicePort{
 		{
