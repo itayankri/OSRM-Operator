@@ -449,12 +449,14 @@ func (r *OSRMClusterReconciler) getChildResources(ctx context.Context, instance 
 
 func (r *OSRMClusterReconciler) garbageCollection(ctx context.Context, instance *osrmv1alpha1.OSRMCluster) error {
 	labelSelector := fmt.Sprintf("%s,%s notin (%d)", metadata.GenerationLabel, metadata.GenerationLabel, instance.ObjectMeta.Generation)
+	propagationPolicy := metav1.DeletePropagationBackground
 
 	err := r.Client.DeleteAllOf(ctx, &batchv1.CronJob{}, &client.DeleteAllOfOptions{
 		ListOptions: client.ListOptions{
 			Namespace: instance.Namespace,
 			Raw:       &metav1.ListOptions{LabelSelector: labelSelector},
 		},
+		DeleteOptions: client.DeleteOptions{PropagationPolicy: &propagationPolicy},
 	})
 	if err != nil {
 		return err
@@ -465,6 +467,7 @@ func (r *OSRMClusterReconciler) garbageCollection(ctx context.Context, instance 
 			Namespace: instance.Namespace,
 			Raw:       &metav1.ListOptions{LabelSelector: labelSelector},
 		},
+		DeleteOptions: client.DeleteOptions{PropagationPolicy: &propagationPolicy},
 	})
 	if err != nil {
 		return err

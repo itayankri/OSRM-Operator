@@ -352,32 +352,44 @@ var _ = Describe("OSRMClusterController", func() {
 			Eventually(k8sClient.Get(ctx, types.NamespacedName{
 				Name:      firstGenerationService.Name,
 				Namespace: firstGenerationService.Namespace,
-			}, firstGenerationService), 180*time.Second).Should(HaveOccurred())
+			}, firstGenerationService), 20*time.Second).Should(HaveOccurred())
+
+			Expect(1).To(Equal(true))
 
 			Eventually(k8sClient.Get(ctx, types.NamespacedName{
 				Name:      firstGenerationDeployment.Name,
 				Namespace: firstGenerationDeployment.Namespace,
-			}, firstGenerationDeployment), 180*time.Second).Should(HaveOccurred())
+			}, firstGenerationDeployment), 20*time.Second).Should(HaveOccurred())
+
+			Expect(2).To(Equal(true))
 
 			Eventually(k8sClient.Get(ctx, types.NamespacedName{
 				Name:      firstGenerationHPA.Name,
 				Namespace: firstGenerationHPA.Namespace,
-			}, firstGenerationHPA), 180*time.Second).Should(HaveOccurred())
+			}, firstGenerationHPA), 20*time.Second).Should(HaveOccurred())
+
+			Expect(3).To(Equal(true))
 
 			Eventually(k8sClient.Get(ctx, types.NamespacedName{
 				Name:      firstGenerationPDB.Name,
 				Namespace: firstGenerationPDB.Namespace,
-			}, firstGenerationPDB), 180*time.Second).Should(HaveOccurred())
+			}, firstGenerationPDB), 20*time.Second).Should(HaveOccurred())
+
+			Expect(4).To(Equal(true))
 
 			Eventually(k8sClient.Get(ctx, types.NamespacedName{
 				Name:      firstGenerationPVC.Name,
 				Namespace: firstGenerationPVC.Namespace,
-			}, firstGenerationPVC), 180*time.Second).Should(HaveOccurred())
+			}, firstGenerationPVC), 20*time.Second).Should(HaveOccurred())
+
+			Expect(5).To(Equal(true))
 
 			Eventually(k8sClient.Get(ctx, types.NamespacedName{
 				Name:      firstGenerationJob.Name,
 				Namespace: firstGenerationJob.Namespace,
-			}, firstGenerationJob), 180*time.Second).Should(HaveOccurred())
+			}, firstGenerationJob), 20*time.Second).Should(HaveOccurred())
+
+			Expect(6).To(Equal(true))
 		})
 	})
 })
