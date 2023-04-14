@@ -30,7 +30,7 @@ func (builder *HorizontalPodAutoscalerBuilder) Build() (client.Object, error) {
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      builder.Instance.ChildResourceName(builder.profile.Name, HorizontalPodAutoscalerSuffix),
 			Namespace: builder.Instance.Namespace,
-			Labels:    metadata.GetLabels(builder.Instance, builder.profile.Name),
+			Labels:    metadata.GetLabels(builder.Instance, metadata.ComponentLabelProfile),
 		},
 	}, nil
 }
@@ -39,7 +39,7 @@ func (builder *HorizontalPodAutoscalerBuilder) Update(object client.Object, sibl
 	name := builder.Instance.ChildResourceName(builder.profile.Name, HorizontalPodAutoscalerSuffix)
 	hpa := object.(*autoscalingv1.HorizontalPodAutoscaler)
 
-	hpa.ObjectMeta.Labels = metadata.GetLabels(builder.Instance, builder.profile.Name)
+	hpa.ObjectMeta.Labels = metadata.GetLabels(builder.Instance, metadata.ComponentLabelProfile)
 
 	targetCPUUtilizationPercentage := int32(85)
 	profileSpec := getProfileSpec(builder.profile.Name, builder.Instance)

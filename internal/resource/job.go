@@ -30,7 +30,7 @@ func (builder *JobBuilder) Build() (client.Object, error) {
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      builder.Instance.ChildResourceName(builder.profile.Name, JobSuffix),
 			Namespace: builder.Instance.Namespace,
-			Labels:    metadata.GetLabels(builder.Instance, builder.profile.Name),
+			Labels:    metadata.GetLabels(builder.Instance, metadata.ComponentLabelProfile),
 		},
 	}, nil
 }
@@ -38,7 +38,7 @@ func (builder *JobBuilder) Build() (client.Object, error) {
 func (builder *JobBuilder) Update(object client.Object, siblings []runtime.Object) error {
 	job := object.(*batchv1.Job)
 
-	job.ObjectMeta.Labels = metadata.GetLabels(builder.Instance, builder.profile.Name)
+	job.ObjectMeta.Labels = metadata.GetLabels(builder.Instance, metadata.ComponentLabelProfile)
 
 	job.Spec = batchv1.JobSpec{
 		Selector: job.Spec.Selector,
