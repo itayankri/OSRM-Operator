@@ -31,7 +31,7 @@ func (builder *CronJobBuilder) Build() (client.Object, error) {
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      builder.Instance.ChildResourceName(builder.profile.Name, CronJobSuffix),
 			Namespace: builder.Instance.Namespace,
-			Labels:    metadata.GetLabels(builder.Instance, builder.Instance.Labels),
+			Labels:    metadata.GetLabels(builder.Instance, builder.profile.Name),
 		},
 	}, nil
 }
@@ -39,7 +39,7 @@ func (builder *CronJobBuilder) Build() (client.Object, error) {
 func (builder *CronJobBuilder) Update(object client.Object, siblings []runtime.Object) error {
 	cronJob := object.(*batchv1.CronJob)
 
-	cronJob.ObjectMeta.Labels = metadata.GetLabels(builder.Instance, builder.Instance.Labels)
+	cronJob.ObjectMeta.Labels = metadata.GetLabels(builder.Instance, builder.profile.Name)
 
 	cronJob.Spec = batchv1.CronJobSpec{
 		Suspend:  builder.profile.SpeedUpdates.Suspend,

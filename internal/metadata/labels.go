@@ -9,16 +9,18 @@ import (
 
 const NameLabel = "app.kubernetes.io/name"
 const PartOfLabel = "app.kubernetes.io/part-of"
+const ComponentLabel = "app.kubernetes.io/component"
 const GenerationLabel = "osrmcluster.itayankri/cluster-generation"
 
-func GetLabels(instance *osrmv1alpha1.OSRMCluster, instanceLabels map[string]string) map[string]string {
+func GetLabels(instance *osrmv1alpha1.OSRMCluster, componentName string) map[string]string {
 	labels := map[string]string{
 		NameLabel:       instance.Name,
 		PartOfLabel:     "osrmcluster",
+		ComponentLabel:  componentName,
 		GenerationLabel: strconv.FormatInt(instance.ObjectMeta.Generation, 10),
 	}
 
-	for label, value := range instanceLabels {
+	for label, value := range instance.Labels {
 		if !strings.HasPrefix(label, "app.kubernetes.io") {
 			labels[label] = value
 		}
