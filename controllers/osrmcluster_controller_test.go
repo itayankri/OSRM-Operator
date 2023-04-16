@@ -399,7 +399,7 @@ var _ = Describe("OSRMClusterController", func() {
 			}, 180*time.Second).Should(BeTrue())
 		})
 
-		FIt("Should delete only resources that belong to the current reconciled CR", func() {
+		It("Should delete only resources that belong to the current reconciled CR", func() {
 			secondInstance := generateOSRMCluster(fmt.Sprintf("garbage-collection-%d-b", testNumber))
 			Expect(k8sClient.Create(ctx, secondInstance)).To(Succeed())
 			waitForDeployment(ctx, secondInstance, k8sClient)
@@ -410,8 +410,6 @@ var _ = Describe("OSRMClusterController", func() {
 			secondInstancePDB := pdb(ctx, secondInstance.Name, secondInstance.Spec.Profiles[0].Name, osrmResource.PodDisruptionBudgetSuffix)
 			secondInstancePVC := pvc(ctx, secondInstance.Name, secondInstance.Spec.Profiles[0].Name, osrmResource.PersistentVolumeClaimSuffix)
 			secondInstanceJob := job(ctx, secondInstance.Name, secondInstance.Spec.Profiles[0].Name, osrmResource.JobSuffix)
-
-			time.Sleep(time.Minute * 10)
 
 			Expect(updateWithRetry(instance, func(v *osrmv1alpha1.OSRMCluster) {
 				v.Spec.Profiles[0].Name = "foot"
