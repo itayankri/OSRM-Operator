@@ -398,6 +398,79 @@ var _ = Describe("OSRMClusterController", func() {
 				return errors.IsNotFound(err)
 			}, 180*time.Second).Should(BeTrue())
 		})
+
+		FIt("Should delete only resources that belong to the current reconciled CR", func() {
+			secondInstance := generateOSRMCluster(fmt.Sprintf("garbage-collection-%d-b", testNumber))
+			Expect(k8sClient.Create(ctx, secondInstance)).To(Succeed())
+			waitForDeployment(ctx, secondInstance, k8sClient)
+
+			secondInstanceService := service(ctx, secondInstance.Name, secondInstance.Spec.Profiles[0].Name, osrmResource.ServiceSuffix)
+			secondInstanceDeployment := deployment(ctx, secondInstance.Name, secondInstance.Spec.Profiles[0].Name, osrmResource.DeploymentSuffix)
+			secondInstanceHPA := hpa(ctx, secondInstance.Name, secondInstance.Spec.Profiles[0].Name, osrmResource.HorizontalPodAutoscalerSuffix)
+			secondInstancePDB := pdb(ctx, secondInstance.Name, secondInstance.Spec.Profiles[0].Name, osrmResource.PodDisruptionBudgetSuffix)
+			secondInstancePVC := pvc(ctx, secondInstance.Name, secondInstance.Spec.Profiles[0].Name, osrmResource.PersistentVolumeClaimSuffix)
+			secondInstanceJob := job(ctx, secondInstance.Name, secondInstance.Spec.Profiles[0].Name, osrmResource.JobSuffix)
+
+			time.Sleep(time.Minute * 10)
+
+			Expect(updateWithRetry(instance, func(v *osrmv1alpha1.OSRMCluster) {
+				v.Spec.Profiles[0].Name = "foot"
+			})).To(Succeed())
+
+			Consistently(func() string {
+				err := k8sClient.Get(ctx, types.NamespacedName{
+					Name:      secondInstanceService.Name,
+					Namespace: secondInstanceService.Namespace,
+				}, &corev1.Service{})
+				if errors.IsNotFound(err) {
+					return fmt.Sprintf("service %s deleted", secondInstanceService.Name)
+				}
+
+				err = k8sClient.Get(ctx, types.NamespacedName{
+					Name:      secondInstanceDeployment.Name,
+					Namespace: secondInstanceDeployment.Namespace,
+				}, &appsv1.Deployment{})
+				if errors.IsNotFound(err) {
+					return fmt.Sprintf("deployment %s deleted", secondInstanceDeployment.Name)
+				}
+
+				err = k8sClient.Get(ctx, types.NamespacedName{
+					Name:      secondInstanceHPA.Name,
+					Namespace: secondInstanceHPA.Namespace,
+				}, &autoscalingv1.HorizontalPodAutoscaler{})
+				if errors.IsNotFound(err) {
+					return fmt.Sprintf("hpa %s deleted", secondInstanceHPA.Name)
+				}
+
+				err = k8sClient.Get(ctx, types.NamespacedName{
+					Name:      secondInstancePDB.Name,
+					Namespace: secondInstancePDB.Namespace,
+				}, &policyv1.PodDisruptionBudget{})
+				if errors.IsNotFound(err) {
+					return fmt.Sprintf("pdb %s deleted", secondInstancePDB.Name)
+				}
+
+				err = k8sClient.Get(ctx, types.NamespacedName{
+					Name:      secondInstanceJob.Name,
+					Namespace: secondInstanceJob.Namespace,
+				}, &batchv1.Job{})
+				if errors.IsNotFound(err) {
+					return fmt.Sprintf("job %s deleted", secondInstanceJob.Name)
+				}
+
+				err = k8sClient.Get(ctx, types.NamespacedName{
+					Name:      secondInstancePVC.Name,
+					Namespace: secondInstancePVC.Namespace,
+				}, &corev1.PersistentVolumeClaim{})
+				if errors.IsNotFound(err) {
+					return fmt.Sprintf("pvc %s deleted", secondInstancePVC.Name)
+				}
+
+				return "nothing deleted"
+			}, 15*time.Second).Should(Equal("nothing deleted"))
+
+			Expect(k8sClient.Delete(ctx, secondInstance)).To(Succeed())
+		})
 	})
 })
 
