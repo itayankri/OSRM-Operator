@@ -449,7 +449,7 @@ func (r *OSRMClusterReconciler) getChildResources(ctx context.Context, instance 
 
 func (r *OSRMClusterReconciler) garbageCollection(ctx context.Context, instance *osrmv1alpha1.OSRMCluster) error {
 	labelSelector := fmt.Sprintf(
-		"%s=%s,%s=%s=,%s,%s notin (%d)",
+		"%s=%s,%s=%s,%s,%s notin (%d)",
 		metadata.NameLabelKey,
 		instance.Name,
 		metadata.ComponentLabelKey,
