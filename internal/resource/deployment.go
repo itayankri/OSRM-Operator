@@ -49,7 +49,7 @@ func (builder *DeploymentBuilder) Update(object client.Object, siblings []runtim
 	deployment.ObjectMeta.Labels = metadata.GetLabels(builder.Instance, metadata.ComponentLabelProfile)
 
 	deployment.Spec = appsv1.DeploymentSpec{
-		Replicas: profileSpec.MinReplicas,
+		Replicas: profileSpec.Replicas,
 		Selector: &metav1.LabelSelector{
 			MatchLabels: map[string]string{
 				"app": name,
