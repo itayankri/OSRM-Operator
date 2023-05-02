@@ -44,12 +44,11 @@ func (builder *DeploymentBuilder) Update(object client.Object, siblings []runtim
 	deployment := object.(*appsv1.Deployment)
 	pbfFileName := builder.Instance.Spec.GetPbfFileName()
 	osrmFileName := strings.ReplaceAll(pbfFileName, "osm.pbf", "osrm")
-	profileSpec := getProfileSpec(builder.profile.Name, builder.Instance)
 
 	deployment.ObjectMeta.Labels = metadata.GetLabels(builder.Instance, metadata.ComponentLabelProfile)
 
 	deployment.Spec = appsv1.DeploymentSpec{
-		Replicas: profileSpec.Replicas,
+		Replicas: deployment.Spec.Replicas,
 		Selector: &metav1.LabelSelector{
 			MatchLabels: map[string]string{
 				"app": name,
