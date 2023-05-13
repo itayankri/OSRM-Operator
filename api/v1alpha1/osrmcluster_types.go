@@ -95,6 +95,7 @@ type ProfilesSpec []*ProfileSpec
 type ProfileSpec struct {
 	Name             string                       `json:"name,omitempty"`
 	EndpointName     string                       `json:"endpointName,omitempty"`
+	Replicas         *int32                       `json:"replicas,omitempty"`
 	InternalEndpoint *string                      `json:"internalEndpoint,omitempty"`
 	OSRMProfile      *string                      `json:"osrmProfile,omitempty"`
 	MinReplicas      *int32                       `json:"minReplicas,omitempty"`

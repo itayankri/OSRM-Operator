@@ -44,64 +44,59 @@ func (builder *DeploymentBuilder) Update(object client.Object, siblings []runtim
 	deployment := object.(*appsv1.Deployment)
 	pbfFileName := builder.Instance.Spec.GetPbfFileName()
 	osrmFileName := strings.ReplaceAll(pbfFileName, "osm.pbf", "osrm")
-	profileSpec := getProfileSpec(builder.profile.Name, builder.Instance)
+	labelSelector := map[string]string{
+		"app": name,
+	}
 
 	deployment.ObjectMeta.Labels = metadata.GetLabels(builder.Instance, metadata.ComponentLabelProfile)
+	deployment.Spec.Selector = &metav1.LabelSelector{
+		MatchLabels: labelSelector,
+	}
 
-	deployment.Spec = appsv1.DeploymentSpec{
-		Replicas: profileSpec.MinReplicas,
-		Selector: &metav1.LabelSelector{
-			MatchLabels: map[string]string{
-				"app": name,
-			},
+	deployment.Spec.Template = corev1.PodTemplateSpec{
+		ObjectMeta: metav1.ObjectMeta{
+			Labels: labelSelector,
 		},
-		Template: corev1.PodTemplateSpec{
-			ObjectMeta: metav1.ObjectMeta{
-				Labels: map[string]string{
-					"app": name,
-				},
-			},
-			Spec: corev1.PodSpec{
-				Containers: []corev1.Container{
-					{
-						Name:  osrmContainerName,
-						Image: builder.Instance.Spec.GetImage(),
-						Ports: []corev1.ContainerPort{
-							{
-								ContainerPort: 5000,
-							},
+		Spec: corev1.PodSpec{
+			Containers: []corev1.Container{
+				{
+					Name:  osrmContainerName,
+					Image: builder.Instance.Spec.GetImage(),
+					Ports: []corev1.ContainerPort{
+						{
+							ContainerPort: 5000,
 						},
-						Resources: *builder.profile.GetResources(),
-						Command: []string{
-							"/bin/sh",
-							"-c",
-						},
-						Args: []string{
-							fmt.Sprintf(`
-								cd %s/%s && \
-								osrm-routed %s --algorithm mld --max-matching-size 21474836
-							`,
-								osrmDataPath,
-								osrmCustomizedData,
-								osrmFileName,
-							),
-						},
-						VolumeMounts: []corev1.VolumeMount{
-							{
-								Name:      osrmDataVolumeName,
-								MountPath: osrmDataPath,
-							},
+					},
+					Resources: *builder.profile.GetResources(),
+					Command: []string{
+						"/bin/sh",
+						"-c",
+					},
+					Args: []string{
+						fmt.Sprintf(`
+							cd %s/%s && \
+							osrm-routed %s --algorithm mld --max-matching-size 21474836
+						`,
+							osrmDataPath,
+							osrmCustomizedData,
+							osrmFileName,
+						),
+					},
+					VolumeMounts: []corev1.VolumeMount{
+						{
+							Name:      osrmDataVolumeName,
+							MountPath: osrmDataPath,
 						},
 					},
 				},
-				Volumes: []corev1.Volume{
-					{
-						Name: osrmDataVolumeName,
-						VolumeSource: corev1.VolumeSource{
-							PersistentVolumeClaim: &corev1.PersistentVolumeClaimVolumeSource{
-								ClaimName: builder.Instance.ChildResourceName(builder.profile.Name, PersistentVolumeClaimSuffix),
-								ReadOnly:  true,
-							},
+			},
+			Volumes: []corev1.Volume{
+				{
+					Name: osrmDataVolumeName,
+					VolumeSource: corev1.VolumeSource{
+						PersistentVolumeClaim: &corev1.PersistentVolumeClaimVolumeSource{
+							ClaimName: builder.Instance.ChildResourceName(builder.profile.Name, PersistentVolumeClaimSuffix),
+							ReadOnly:  true,
 						},
 					},
 				},
