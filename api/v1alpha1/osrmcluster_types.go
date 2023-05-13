@@ -27,7 +27,7 @@ import (
 	"k8s.io/apimachinery/pkg/util/intstr"
 )
 
-const defaultImage = "osrm/osrm-backend"
+const defaultImage = "osrm/osrm-backend:v5.25.0"
 const defaultSpeedUpdatesFetcherImage = "itayankri/osrm-speed-updates"
 const defaultBuilderImage = "itayankri/osrm-builder"
 
