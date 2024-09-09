@@ -37,7 +37,7 @@ func (builder *PersistentVolumeClaimBuilder) Build() (client.Object, error) {
 			AccessModes: []corev1.PersistentVolumeAccessMode{
 				builder.Instance.Spec.Persistence.GetAccessMode(),
 			},
-			Resources: corev1.ResourceRequirements{
+			Resources: corev1.VolumeResourceRequirements{
 				Requests: map[corev1.ResourceName]resource.Quantity{
 					corev1.ResourceStorage: *builder.Instance.Spec.Persistence.Storage,
 				},
