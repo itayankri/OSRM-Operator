@@ -1,4 +1,4 @@
-FROM osrm/osrm-backend:latest
+FROM itayankri/osrm-builder:osrm-v5.27.1
 
 RUN apt update
 RUN apt --assume-yes install curl
