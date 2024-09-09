@@ -86,7 +86,7 @@ var _ = BeforeSuite(func() {
 
 	ctx = context.Background()
 
-}, 60)
+})
 
 var _ = AfterSuite(func() {
 	By("tearing down the test environment")
