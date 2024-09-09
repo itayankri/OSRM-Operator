@@ -2,7 +2,7 @@ package metadata_test
 
 import (
 	"github.com/itayankri/OSRM-Operator/internal/metadata"
-	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 )
 

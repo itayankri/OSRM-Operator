@@ -10,7 +10,7 @@ import (
 	"github.com/itayankri/OSRM-Operator/internal/metadata"
 	osrmResource "github.com/itayankri/OSRM-Operator/internal/resource"
 	"github.com/itayankri/OSRM-Operator/internal/status"
-	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	appsv1 "k8s.io/api/apps/v1"
 	autoscalingv1 "k8s.io/api/autoscaling/v1"
