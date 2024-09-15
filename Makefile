@@ -105,7 +105,7 @@ unit-test: manifests generate fmt vet envtest ## Run tests.
 
 .PHONY: integration-test
 integration-test: manifests generate fmt vet envtest ## Run tests.
-	KUBEBUILDER_ASSETS="$(shell $(ENVTEST) use $(ENVTEST_K8S_VERSION) -p path)" USE_EXISTING_CLUSTER=true go test -timeout 900s ./controllers/...
+	KUBEBUILDER_ASSETS="$(shell $(ENVTEST) use $(ENVTEST_K8S_VERSION) -p path)" USE_EXISTING_CLUSTER=true go test -v -timeout 900s ./controllers/... -args -ginkgo.v
 
 ##@ Build
 

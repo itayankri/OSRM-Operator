@@ -21,7 +21,6 @@ import (
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
-	"k8s.io/utils/pointer"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -211,8 +210,11 @@ var _ = Describe("OSRMClusterController", func() {
 
 		It("Should keep ReconcileSuccess condition updated", func() {
 			By("setting to False when spec is not valid", func() {
+				ptr := new(int32)
+				*ptr = -1
+
 				// It is impossible to create a deployment with -1 replicas. Thus we expect reconcilication to fail.
-				instance.Spec.Profiles[0].MinReplicas = pointer.Int32Ptr(-1)
+				instance.Spec.Profiles[0].MinReplicas = ptr
 				Expect(k8sClient.Create(ctx, instance)).To(Succeed())
 				waitForOSRMClusterCreation(ctx, instance, k8sClient)
 
@@ -235,7 +237,9 @@ var _ = Describe("OSRMClusterController", func() {
 			By("setting to True when spec is valid", func() {
 				// It is impossible to create a deployment with -1 replicas. Thus we expect reconcilication to fail.
 				Expect(updateWithRetry(instance, func(v *osrmv1alpha1.OSRMCluster) {
-					v.Spec.Profiles[0].MinReplicas = pointer.Int32Ptr(2)
+					ptr := new(int32)
+					*ptr = 2
+					v.Spec.Profiles[0].MinReplicas = ptr
 				})).To(Succeed())
 
 				Eventually(func() metav1.ConditionStatus {
