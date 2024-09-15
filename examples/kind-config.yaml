@@ -6,6 +6,7 @@ apiVersion: kind.x-k8s.io/v1alpha4
 nodes:
 # the control plane node config
 - role: control-plane
+  image: kindest/node:v1.30.3
   kubeadmConfigPatches:
   - |
     kind: InitConfiguration
@@ -21,4 +22,6 @@ nodes:
     protocol: TCP
 # the two workers
 - role: worker
+  image: kindest/node:v1.30.3
 - role: worker
+  image: kindest/node:v1.30.3

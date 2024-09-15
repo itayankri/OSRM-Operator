@@ -27,9 +27,9 @@ import (
 	"k8s.io/apimachinery/pkg/util/intstr"
 )
 
-const defaultImage = "osrm/osrm-backend:v5.25.0"
-const defaultSpeedUpdatesFetcherImage = "itayankri/osrm-speed-updates"
-const defaultBuilderImage = "itayankri/osrm-builder"
+const defaultImage = "ghcr.io/project-osrm/osrm-backend:v5.27.1"
+const defaultSpeedUpdatesFetcherImage = "itayankri/osrm-speed-updates:osrm-v5.27.1"
+const defaultBuilderImage = "itayankri/osrm-builder:osrm-v5.27.1"
 
 const OperatorPausedAnnotation = "osrm.itayankri/operator.paused"
 
