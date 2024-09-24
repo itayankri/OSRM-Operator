@@ -48,4 +48,4 @@ cp * ../$CUSTOMIZED_DATA_DIR
 cd ../$CUSTOMIZED_DATA_DIR
 
 echo "Customizing map data"
-osrm-customize $OSRM_FILE_NAME $CUSTOMIZE_OPTIONS
+osrm-customize $OSRM_FILE_NAME $CUSTOMIZE_OPTIONS --time-zone-file ./timezone-file.json

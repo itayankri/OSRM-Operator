@@ -3,6 +3,10 @@ kind: OSRMCluster
 metadata:
   name: single-profile-example
 spec:
+  mapBuilder:
+    image: itayankri/osrm-builder:test-timezone-file-2
+    extractOptions: "--parse-conditional-restrictions"
+    customizeOptions: "--parse-conditionals-from-now $(date +%s)"
   pbfUrl: https://download.geofabrik.de/australia-oceania/marshall-islands-latest.osm.pbf
   profiles:
   - name: foot
