@@ -80,7 +80,7 @@ func (builder *JobBuilder) Update(object client.Object, siblings []runtime.Objec
 	if builder.Instance.Spec.MapBuilder.CustomizeOptions != nil {
 		env = append(env, corev1.EnvVar{
 			Name:  "CUSTOMIZE_OPTIONS",
-			Value: *builder.Instance.Spec.MapBuilder.ExtractOptions,
+			Value: *builder.Instance.Spec.MapBuilder.CustomizeOptions,
 		})
 	}
 
