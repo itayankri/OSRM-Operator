@@ -140,9 +140,15 @@ func (spec *ProfileSpec) GetInternalEndpoint() string {
 	return *spec.InternalEndpoint
 }
 
+type MapBuildingOptions struct {
+	TimezoneFileURL    *string `json:"timezoneFileURL,omitempty"`
+	MapBuildingUTCTime *string `json:"mapBuildingUTCTime,omitempty"`
+}
+
 type MapBuilderSpec struct {
 	Image     *string                      `json:"image,omitempty"`
 	Resources *corev1.ResourceRequirements `json:"resources,omitempty"`
+	Options   *MapBuildingOptions
 }
 
 func (spec *MapBuilderSpec) GetImage() string {
