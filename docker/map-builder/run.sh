@@ -39,13 +39,13 @@ echo "Downloading PBF file from $PBF_URL"
 curl -O $PBF_URL
 
 echo "Extracting PBF"
-osrm-extract -p /opt/$PROFILE.lua $PBF_FILE_NAME && \
+osrm-extract -p /opt/$PROFILE.lua $PBF_FILE_NAME $EXTRACT_OPTIONS && \
 
 echo "Partitioning map data"
-osrm-partition $OSRM_FILE_NAME
+osrm-partition $OSRM_FILE_NAME $PARTITION_OPTIONS
 
 cp * ../$CUSTOMIZED_DATA_DIR
 cd ../$CUSTOMIZED_DATA_DIR
 
 echo "Customizing map data"
-osrm-customize $OSRM_FILE_NAME
+osrm-customize $OSRM_FILE_NAME $CUSTOMIZE_OPTIONS --time-zone-file /opt/timezone-file.json

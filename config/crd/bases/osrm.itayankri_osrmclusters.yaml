@@ -43,7 +43,13 @@ spec:
                 type: string
               mapBuilder:
                 properties:
+                  customizeOptions:
+                    type: string
+                  extractOptions:
+                    type: string
                   image:
+                    type: string
+                  partitionOptions:
                     type: string
                   resources:
                     description: ResourceRequirements describes the compute resource
