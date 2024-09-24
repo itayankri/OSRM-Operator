@@ -40,6 +40,50 @@ func (builder *JobBuilder) Update(object client.Object, siblings []runtime.Objec
 
 	job.ObjectMeta.Labels = metadata.GetLabels(builder.Instance, metadata.ComponentLabelProfile)
 
+	env := []corev1.EnvVar{
+		{
+			Name:  "ROOT_DIR",
+			Value: osrmDataPath,
+		},
+		{
+			Name:  "PARTITIONED_DATA_DIR",
+			Value: osrmPartitionedData,
+		},
+		{
+			Name:  "CUSTOMIZED_DATA_DIR",
+			Value: osrmCustomizedData,
+		},
+		{
+			Name:  "PBF_URL",
+			Value: builder.Instance.Spec.PBFURL,
+		},
+		{
+			Name:  "PROFILE",
+			Value: builder.profile.GetProfile(),
+		},
+	}
+
+	if builder.Instance.Spec.MapBuilder.ExtractOptions != nil {
+		env = append(env, corev1.EnvVar{
+			Name:  "EXTRACT_OPTIONS",
+			Value: *builder.Instance.Spec.MapBuilder.ExtractOptions,
+		})
+	}
+
+	if builder.Instance.Spec.MapBuilder.PartitionOptions != nil {
+		env = append(env, corev1.EnvVar{
+			Name:  "PARTITION_OPTIONS",
+			Value: *builder.Instance.Spec.MapBuilder.ExtractOptions,
+		})
+	}
+
+	if builder.Instance.Spec.MapBuilder.CustomizeOptions != nil {
+		env = append(env, corev1.EnvVar{
+			Name:  "CUSTOMIZE_OPTIONS",
+			Value: *builder.Instance.Spec.MapBuilder.ExtractOptions,
+		})
+	}
+
 	job.Spec = batchv1.JobSpec{
 		Selector: job.Spec.Selector,
 		Template: corev1.PodTemplateSpec{
@@ -53,28 +97,7 @@ func (builder *JobBuilder) Update(object client.Object, siblings []runtime.Objec
 						Name:      builder.Instance.ChildResourceName(builder.profile.Name, JobSuffix),
 						Image:     builder.Instance.Spec.MapBuilder.GetImage(),
 						Resources: *builder.Instance.Spec.MapBuilder.GetResources(),
-						Env: []corev1.EnvVar{
-							{
-								Name:  "ROOT_DIR",
-								Value: osrmDataPath,
-							},
-							{
-								Name:  "PARTITIONED_DATA_DIR",
-								Value: osrmPartitionedData,
-							},
-							{
-								Name:  "CUSTOMIZED_DATA_DIR",
-								Value: osrmCustomizedData,
-							},
-							{
-								Name:  "PBF_URL",
-								Value: builder.Instance.Spec.PBFURL,
-							},
-							{
-								Name:  "PROFILE",
-								Value: builder.profile.GetProfile(),
-							},
-						},
+						Env:       env,
 						VolumeMounts: []corev1.VolumeMount{
 							{
 								Name:      osrmDataVolumeName,
