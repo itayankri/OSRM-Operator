@@ -141,8 +141,11 @@ func (spec *ProfileSpec) GetInternalEndpoint() string {
 }
 
 type MapBuilderSpec struct {
-	Image     *string                      `json:"image,omitempty"`
-	Resources *corev1.ResourceRequirements `json:"resources,omitempty"`
+	Image            *string                      `json:"image,omitempty"`
+	ExtractOptions   *string                      `json:"extractOptions,omitempty"`
+	PartitionOptions *string                      `json:"partitionOptions,omitempty"`
+	CustomizeOptions *string                      `json:"customizeOptions,omitempty"`
+	Resources        *corev1.ResourceRequirements `json:"resources,omitempty"`
 }
 
 func (spec *MapBuilderSpec) GetImage() string {
