@@ -36,8 +36,13 @@ rm -rf *
 echo "Copying fresh partitioned map data"
 cp -r ../$PARTITIONED_DATA_DIR/* .
 
-ONE_HOUR_FROM_NOW=$(date -d "+1 hour")
-HOUR=$(date -d "$ONE_HOUR_FROM_NOW" +"%H")
+MINUTES=$(date +"%M")
+if [ "$MINUTES" -gt 55 ]; then
+    HOUR=$(date -d "+1 hour" +"%H")
+else
+    HOUR=$(date +"%H")
+fi
+
 
 if [ "$HOUR" == "00" ]; then
   HOUR="0"
