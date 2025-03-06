@@ -38,11 +38,12 @@ cp -r ../$PARTITIONED_DATA_DIR/* .
 
 MINUTES=$(date +"%M")
 if [ "$MINUTES" -gt 55 ]; then
-    HOUR=$(date -d "+1 hour" +"%H")
+  DATE_HOUR=$(date -d "+1 hour")
+  HOUR=$(date -d "$DATE_HOUR" +"%H")
 else
-    HOUR=$(date +"%H")
+  DATE_HOUR=$(date)
+  HOUR=$(date +"%H")
 fi
-
 
 if [ "$HOUR" == "00" ]; then
   HOUR="0"
@@ -50,7 +51,7 @@ else
   HOUR=$(echo $HOUR | sed 's/^0*//')
 fi
 
-DAY_OF_WEEK=$(expr $(date -d "$ONE_HOUR_FROM_NOW" +"%u") - 1)
+DAY_OF_WEEK=$(expr $(date -d "$DATE_HOUR" +"%u") - 1)
 FULL_URL="$URL/$DAY_OF_WEEK/$HOUR.csv"
 
 echo "Downloading speed updates CSV from $FULL_URL"
