@@ -89,7 +89,7 @@ func (builder *DeploymentBuilder) Update(object client.Object, siblings []runtim
 							MountPath: osrmDataPath,
 						},
 					},
-					LivenessProbe: &corev1.Probe{
+					ReadinessProbe: &corev1.Probe{
 						ProbeHandler: corev1.ProbeHandler{
 							HTTPGet: &corev1.HTTPGetAction{
 								Path:   fmt.Sprintf("/nearest/v1/%s/34.761122,32.051346", builder.profile.Name),
