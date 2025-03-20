@@ -58,7 +58,7 @@ func (builder *CronJobBuilder) Update(object client.Object, siblings []runtime.O
 								Name:      builder.Instance.ChildResourceName(builder.profile.Name, CronJobSuffix),
 								Image:     builder.profile.GetSpeedUpdatesImage(),
 								Resources: *builder.profile.SpeedUpdates.GetResources(),
-								Env: append(builder.profile.SpeedUpdates.Env, []corev1.EnvVar{
+								Env: []corev1.EnvVar{
 									{
 										Name:  "ROOT_DIR",
 										Value: osrmDataPath,
@@ -79,7 +79,7 @@ func (builder *CronJobBuilder) Update(object client.Object, siblings []runtime.O
 										Name:  "OSRM_FILE_NAME",
 										Value: builder.Instance.Spec.GetOsrmFileName(),
 									},
-								}...),
+								},
 								VolumeMounts: []corev1.VolumeMount{
 									{
 										Name:      osrmDataVolumeName,

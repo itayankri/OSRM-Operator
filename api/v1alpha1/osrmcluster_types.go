@@ -182,12 +182,12 @@ func (spec *ServiceSpec) GetType() corev1.ServiceType {
 }
 
 type SpeedUpdatesSpec struct {
-	Suspend   *bool                        `json:"suspend,omitempty"`
-	URL       string                       `json:"url,omitempty"`
-	Schedule  string                       `json:"schedule,omitempty"`
-	Image     *string                      `json:"image,omitempty"`
-	Resources *corev1.ResourceRequirements `json:"resources,omitempty"`
-	Env       []corev1.EnvVar              `json:"env,omitempty"`
+	Suspend             *bool                        `json:"suspend,omitempty"`
+	URL                 string                       `json:"url,omitempty"`
+	Schedule            string                       `json:"schedule,omitempty"`
+	Image               *string                      `json:"image,omitempty"`
+	Resources           *corev1.ResourceRequirements `json:"resources,omitempty"`
+	PodTemplateOverride *corev1.PodTemplateSpec      `json:"podTemplateOverride,omitempty"`
 }
 
 func (spec *SpeedUpdatesSpec) GetResources() *corev1.ResourceRequirements {
@@ -195,13 +195,6 @@ func (spec *SpeedUpdatesSpec) GetResources() *corev1.ResourceRequirements {
 		return &corev1.ResourceRequirements{}
 	}
 	return spec.Resources
-}
-
-func (spec *SpeedUpdatesSpec) GetEnv() []corev1.EnvVar {
-	if spec.Env == nil {
-		return []corev1.EnvVar{}
-	}
-	return spec.Env
 }
 
 type PersistenceSpec struct {
