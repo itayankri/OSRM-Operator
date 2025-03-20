@@ -13,6 +13,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/util/intstr"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 )
@@ -64,7 +65,7 @@ func (builder *DeploymentBuilder) Update(object client.Object, siblings []runtim
 					Image: builder.Instance.Spec.GetImage(),
 					Ports: []corev1.ContainerPort{
 						{
-							ContainerPort: 5000,
+							ContainerPort: containerPort,
 						},
 					},
 					Resources: *builder.profile.GetResources(),
@@ -86,6 +87,15 @@ func (builder *DeploymentBuilder) Update(object client.Object, siblings []runtim
 						{
 							Name:      osrmDataVolumeName,
 							MountPath: osrmDataPath,
+						},
+					},
+					ReadinessProbe: &corev1.Probe{
+						ProbeHandler: corev1.ProbeHandler{
+							HTTPGet: &corev1.HTTPGetAction{
+								Path:   fmt.Sprintf("/nearest/v1/%s/34.761122,32.051346", builder.profile.Name),
+								Port:   intstr.IntOrString{IntVal: containerPort},
+								Scheme: corev1.URISchemeHTTP,
+							},
 						},
 					},
 				},
