@@ -1,8 +1,5 @@
 #!/bin/bash
 
-echo "Environment:"
-printenv
-
 # Validate required environment variables
 REQUIRED_VARS=("ROOT_DIR" "PARTITIONED_DATA_DIR" "CUSTOMIZED_DATA_DIR" "URL" "OSRM_FILE_NAME")
 for var in "${REQUIRED_VARS[@]}"; do
