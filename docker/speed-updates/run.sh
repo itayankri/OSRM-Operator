@@ -47,11 +47,18 @@ if ! osrm-customize "$TEMP_DIR_PATH/$OSRM_FILE_NAME" --segment-speed-file "$TEMP
   exit 1
 fi
 
+sleep 2
+
 # Atomically replace the old directory
 # This minimizes the time the directory is unavailable
 echo "Swapping directories"
 mv "$CUSTOMIZED_DIR_PATH" "${CUSTOMIZED_DIR_PATH}_old"
+
+sleep 2
+
 mv "$TEMP_DIR_PATH" "$CUSTOMIZED_DIR_PATH"
+
+sleep 2
 
 # Clean up the old directory
 rm -rf "${CUSTOMIZED_DIR_PATH}_old"
