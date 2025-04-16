@@ -41,6 +41,62 @@ func (builder *CronJobBuilder) Update(object client.Object, siblings []runtime.O
 
 	cronJob.ObjectMeta.Labels = metadata.GetLabels(builder.Instance, metadata.ComponentLabelProfile)
 
+	podTemplate := corev1.PodTemplateSpec{
+		Spec: corev1.PodSpec{
+			RestartPolicy: corev1.RestartPolicyOnFailure,
+			Containers: []corev1.Container{
+				{
+					Name:      builder.Instance.ChildResourceName(builder.profile.Name, CronJobSuffix),
+					Image:     builder.profile.GetSpeedUpdatesImage(),
+					Resources: *builder.profile.SpeedUpdates.GetResources(),
+					Env: append(builder.profile.SpeedUpdates.Env, []corev1.EnvVar{
+						{
+							Name:  "ROOT_DIR",
+							Value: osrmDataPath,
+						},
+						{
+							Name:  "PARTITIONED_DATA_DIR",
+							Value: osrmPartitionedData,
+						},
+						{
+							Name:  "CUSTOMIZED_DATA_DIR",
+							Value: osrmCustomizedData,
+						},
+						{
+							Name:  "URL",
+							Value: builder.profile.SpeedUpdates.URL,
+						},
+						{
+							Name:  "OSRM_FILE_NAME",
+							Value: builder.Instance.Spec.GetOsrmFileName(),
+						},
+					}...),
+					VolumeMounts: []corev1.VolumeMount{
+						{
+							Name:      osrmDataVolumeName,
+							MountPath: osrmDataPath,
+						},
+					},
+				},
+			},
+			Volumes: []corev1.Volume{
+				{
+					Name: osrmDataVolumeName,
+					VolumeSource: corev1.VolumeSource{
+						PersistentVolumeClaim: &corev1.PersistentVolumeClaimVolumeSource{
+							ClaimName: builder.Instance.ChildResourceName(builder.profile.Name, PersistentVolumeClaimSuffix),
+							ReadOnly:  false,
+						},
+					},
+				},
+			},
+		},
+	}
+
+	if err := overridePodTemplateSpec(&podTemplate, builder.profile.PodTemplateOverride); err != nil {
+		return fmt.Errorf("failed to override pod template spec: %v", err)
+	}
+
 	cronJob.Spec = batchv1.CronJobSpec{
 		Suspend:  builder.profile.SpeedUpdates.Suspend,
 		Schedule: builder.profile.SpeedUpdates.Schedule,
@@ -50,57 +106,7 @@ func (builder *CronJobBuilder) Update(object client.Object, siblings []runtime.O
 				Namespace: builder.Instance.Namespace,
 			},
 			Spec: batchv1.JobSpec{
-				Template: corev1.PodTemplateSpec{
-					Spec: corev1.PodSpec{
-						RestartPolicy: corev1.RestartPolicyOnFailure,
-						Containers: []corev1.Container{
-							{
-								Name:      builder.Instance.ChildResourceName(builder.profile.Name, CronJobSuffix),
-								Image:     builder.profile.GetSpeedUpdatesImage(),
-								Resources: *builder.profile.SpeedUpdates.GetResources(),
-								Env: append(builder.profile.SpeedUpdates.Env, []corev1.EnvVar{
-									{
-										Name:  "ROOT_DIR",
-										Value: osrmDataPath,
-									},
-									{
-										Name:  "PARTITIONED_DATA_DIR",
-										Value: osrmPartitionedData,
-									},
-									{
-										Name:  "CUSTOMIZED_DATA_DIR",
-										Value: osrmCustomizedData,
-									},
-									{
-										Name:  "URL",
-										Value: builder.profile.SpeedUpdates.URL,
-									},
-									{
-										Name:  "OSRM_FILE_NAME",
-										Value: builder.Instance.Spec.GetOsrmFileName(),
-									},
-								}...),
-								VolumeMounts: []corev1.VolumeMount{
-									{
-										Name:      osrmDataVolumeName,
-										MountPath: osrmDataPath,
-									},
-								},
-							},
-						},
-						Volumes: []corev1.Volume{
-							{
-								Name: osrmDataVolumeName,
-								VolumeSource: corev1.VolumeSource{
-									PersistentVolumeClaim: &corev1.PersistentVolumeClaimVolumeSource{
-										ClaimName: builder.Instance.ChildResourceName(builder.profile.Name, PersistentVolumeClaimSuffix),
-										ReadOnly:  false,
-									},
-								},
-							},
-						},
-					},
-				},
+				Template: podTemplate,
 			},
 		},
 	}

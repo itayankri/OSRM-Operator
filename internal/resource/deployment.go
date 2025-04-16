@@ -54,7 +54,7 @@ func (builder *DeploymentBuilder) Update(object client.Object, siblings []runtim
 		MatchLabels: labelSelector,
 	}
 
-	deployment.Spec.Template = corev1.PodTemplateSpec{
+	podTemplate := corev1.PodTemplateSpec{
 		ObjectMeta: metav1.ObjectMeta{
 			Labels: labelSelector,
 		},
@@ -113,6 +113,12 @@ func (builder *DeploymentBuilder) Update(object client.Object, siblings []runtim
 			},
 		},
 	}
+
+	if err := overridePodTemplateSpec(&podTemplate, builder.profile.PodTemplateOverride); err != nil {
+		return fmt.Errorf("failed to override pod template spec: %v", err)
+	}
+
+	deployment.Spec.Template = podTemplate
 
 	builder.setAnnotations(deployment, siblings)
 

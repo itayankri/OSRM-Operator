@@ -84,41 +84,47 @@ func (builder *JobBuilder) Update(object client.Object, siblings []runtime.Objec
 		})
 	}
 
-	job.Spec = batchv1.JobSpec{
-		Selector: job.Spec.Selector,
-		Template: corev1.PodTemplateSpec{
-			ObjectMeta: metav1.ObjectMeta{
-				Labels: job.Spec.Template.ObjectMeta.Labels,
-			},
-			Spec: corev1.PodSpec{
-				RestartPolicy: corev1.RestartPolicyOnFailure,
-				Containers: []corev1.Container{
-					{
-						Name:      builder.Instance.ChildResourceName(builder.profile.Name, JobSuffix),
-						Image:     builder.Instance.Spec.MapBuilder.GetImage(),
-						Resources: *builder.Instance.Spec.MapBuilder.GetResources(),
-						Env:       env,
-						VolumeMounts: []corev1.VolumeMount{
-							{
-								Name:      osrmDataVolumeName,
-								MountPath: osrmDataPath,
-							},
+	podTemplate := corev1.PodTemplateSpec{
+		ObjectMeta: metav1.ObjectMeta{
+			Labels: job.Spec.Template.ObjectMeta.Labels,
+		},
+		Spec: corev1.PodSpec{
+			RestartPolicy: corev1.RestartPolicyOnFailure,
+			Containers: []corev1.Container{
+				{
+					Name:      builder.Instance.ChildResourceName(builder.profile.Name, JobSuffix),
+					Image:     builder.Instance.Spec.MapBuilder.GetImage(),
+					Resources: *builder.Instance.Spec.MapBuilder.GetResources(),
+					Env:       env,
+					VolumeMounts: []corev1.VolumeMount{
+						{
+							Name:      osrmDataVolumeName,
+							MountPath: osrmDataPath,
 						},
 					},
 				},
-				Volumes: []corev1.Volume{
-					{
-						Name: osrmDataVolumeName,
-						VolumeSource: corev1.VolumeSource{
-							PersistentVolumeClaim: &corev1.PersistentVolumeClaimVolumeSource{
-								ClaimName: builder.Instance.ChildResourceName(builder.profile.Name, PersistentVolumeClaimSuffix),
-								ReadOnly:  false,
-							},
+			},
+			Volumes: []corev1.Volume{
+				{
+					Name: osrmDataVolumeName,
+					VolumeSource: corev1.VolumeSource{
+						PersistentVolumeClaim: &corev1.PersistentVolumeClaimVolumeSource{
+							ClaimName: builder.Instance.ChildResourceName(builder.profile.Name, PersistentVolumeClaimSuffix),
+							ReadOnly:  false,
 						},
 					},
 				},
 			},
 		},
+	}
+
+	if err := overridePodTemplateSpec(&podTemplate, builder.profile.PodTemplateOverride); err != nil {
+		return fmt.Errorf("failed to override pod template spec: %v", err)
+	}
+
+	job.Spec = batchv1.JobSpec{
+		Selector: job.Spec.Selector,
+		Template: podTemplate,
 	}
 
 	if err := controllerutil.SetControllerReference(builder.Instance, job, builder.Scheme); err != nil {

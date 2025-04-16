@@ -93,15 +93,16 @@ func (spec *OSRMClusterSpec) GetOsrmFileName() string {
 type ProfilesSpec []*ProfileSpec
 
 type ProfileSpec struct {
-	Name             string                       `json:"name,omitempty"`
-	EndpointName     string                       `json:"endpointName,omitempty"`
-	Replicas         *int32                       `json:"replicas,omitempty"`
-	InternalEndpoint *string                      `json:"internalEndpoint,omitempty"`
-	OSRMProfile      *string                      `json:"osrmProfile,omitempty"`
-	MinReplicas      *int32                       `json:"minReplicas,omitempty"`
-	MaxReplicas      *int32                       `json:"maxReplicas,omitempty"`
-	Resources        *corev1.ResourceRequirements `json:"resources,omitempty"`
-	SpeedUpdates     *SpeedUpdatesSpec            `json:"speedUpdates,omitempty"`
+	Name                string                       `json:"name,omitempty"`
+	EndpointName        string                       `json:"endpointName,omitempty"`
+	Replicas            *int32                       `json:"replicas,omitempty"`
+	InternalEndpoint    *string                      `json:"internalEndpoint,omitempty"`
+	OSRMProfile         *string                      `json:"osrmProfile,omitempty"`
+	MinReplicas         *int32                       `json:"minReplicas,omitempty"`
+	MaxReplicas         *int32                       `json:"maxReplicas,omitempty"`
+	Resources           *corev1.ResourceRequirements `json:"resources,omitempty"`
+	SpeedUpdates        *SpeedUpdatesSpec            `json:"speedUpdates,omitempty"`
+	PodTemplateOverride *runtime.RawExtension        `json:"podTemplateOverride,omitempty"`
 }
 
 func (spec *ProfileSpec) GetMinAvailable() *intstr.IntOrString {
@@ -141,11 +142,12 @@ func (spec *ProfileSpec) GetInternalEndpoint() string {
 }
 
 type MapBuilderSpec struct {
-	Image            *string                      `json:"image,omitempty"`
-	ExtractOptions   *string                      `json:"extractOptions,omitempty"`
-	PartitionOptions *string                      `json:"partitionOptions,omitempty"`
-	CustomizeOptions *string                      `json:"customizeOptions,omitempty"`
-	Resources        *corev1.ResourceRequirements `json:"resources,omitempty"`
+	Image               *string                      `json:"image,omitempty"`
+	ExtractOptions      *string                      `json:"extractOptions,omitempty"`
+	PartitionOptions    *string                      `json:"partitionOptions,omitempty"`
+	CustomizeOptions    *string                      `json:"customizeOptions,omitempty"`
+	Resources           *corev1.ResourceRequirements `json:"resources,omitempty"`
+	PodTemplateOverride *runtime.RawExtension        `json:"podTemplateOverride,omitempty"`
 }
 
 func (spec *MapBuilderSpec) GetImage() string {
@@ -182,12 +184,13 @@ func (spec *ServiceSpec) GetType() corev1.ServiceType {
 }
 
 type SpeedUpdatesSpec struct {
-	Suspend   *bool                        `json:"suspend,omitempty"`
-	URL       string                       `json:"url,omitempty"`
-	Schedule  string                       `json:"schedule,omitempty"`
-	Image     *string                      `json:"image,omitempty"`
-	Resources *corev1.ResourceRequirements `json:"resources,omitempty"`
-	Env       []corev1.EnvVar              `json:"env,omitempty"`
+	Suspend             *bool                        `json:"suspend,omitempty"`
+	URL                 string                       `json:"url,omitempty"`
+	Schedule            string                       `json:"schedule,omitempty"`
+	Image               *string                      `json:"image,omitempty"`
+	Resources           *corev1.ResourceRequirements `json:"resources,omitempty"`
+	Env                 []corev1.EnvVar              `json:"env,omitempty"`
+	PodTemplateOverride *runtime.RawExtension        `json:"podTemplateOverride,omitempty"`
 }
 
 func (spec *SpeedUpdatesSpec) GetResources() *corev1.ResourceRequirements {
