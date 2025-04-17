@@ -51,6 +51,9 @@ spec:
                     type: string
                   partitionOptions:
                     type: string
+                  podTemplateOverride:
+                    type: object
+                    x-kubernetes-preserve-unknown-fields: true
                   resources:
                     description: ResourceRequirements describes the compute resource
                       requirements.
@@ -147,6 +150,9 @@ spec:
                       type: string
                     osrmProfile:
                       type: string
+                    podTemplateOverride:
+                      type: object
+                      x-kubernetes-preserve-unknown-fields: true
                     replicas:
                       format: int32
                       type: integer
@@ -333,6 +339,9 @@ spec:
                           type: array
                         image:
                           type: string
+                        podTemplateOverride:
+                          type: object
+                          x-kubernetes-preserve-unknown-fields: true
                         resources:
                           description: ResourceRequirements describes the compute
                             resource requirements.

@@ -9,8 +9,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/util/strategicpatch"
-	"k8s.io/apimachinery/pkg/util/validation/field"
-	"k8s.io/kubernetes/pkg/apis/core/validation"
+	"k8s.io/client-go/kubernetes/scheme"
 )
 
 func getProfileSpec(profileName string, instance *osrmv1alpha1.OSRMCluster) *osrmv1alpha1.ProfileSpec {
@@ -26,23 +25,43 @@ func serviceToEnvVariable(serviceName string) string {
 	return fmt.Sprintf("%s_SERVICE_HOST", strings.ReplaceAll(strings.ToUpper(serviceName), "-", "_"))
 }
 
+func ValidatePodTemplateSpec(jsonData []byte) (*corev1.PodTemplateSpec, error) {
+	// Create a new PodTemplateSpec
+	podTemplateSpec := &corev1.PodTemplateSpec{}
+
+	// First try simple JSON unmarshaling to catch basic JSON syntax errors
+	if err := json.Unmarshal(jsonData, podTemplateSpec); err != nil {
+		return nil, fmt.Errorf("invalid JSON format: %w", err)
+	}
+
+	// For more thorough validation, use the Kubernetes decoder
+	decoder := scheme.Codecs.UniversalDeserializer()
+	obj, _, err := decoder.Decode(jsonData, nil, nil)
+	if err != nil {
+		return nil, fmt.Errorf("invalid PodTemplateSpec: %w", err)
+	}
+
+	// Try to convert to PodTemplateSpec
+	podTemplateSpec, ok := obj.(*corev1.PodTemplateSpec)
+	if !ok {
+		return nil, fmt.Errorf("JSON does not represent a valid PodTemplateSpec")
+	}
+
+	return podTemplateSpec, nil
+}
+
 func overridePodTemplateSpec(defaultPodTemplate *corev1.PodTemplateSpec, podTemplateOverride *runtime.RawExtension) error {
 	defaultJSON, err := json.Marshal(defaultPodTemplate)
 	if err != nil {
 		return fmt.Errorf("failed to marshal default PodTemplateSpec: %v", err)
 	}
 
-	var overridePodTemplate corev1.PodTemplateSpec
-
-	if err := json.Unmarshal(podTemplateOverride.Raw, &overridePodTemplate); err != nil {
-		return fmt.Errorf("failed to decode podTemplateOverride: %v", err)
+	validatedPodTemplateSpecOverride, err := ValidatePodTemplateSpec(podTemplateOverride.Raw)
+	if err != nil {
+		return fmt.Errorf("invalid podTemplateOverride: %v", err)
 	}
 
-	if errs := validation.ValidatePodTemplateSpec(&overridePodTemplate, field.NewPath("spec.podTemplateOverride")); len(errs) > 0 {
-		return fmt.Errorf("invalid podTemplateOverride: %v", errs.ToAggregate())
-	}
-
-	overrideJSON, err := json.Marshal(overridePodTemplate)
+	overrideJSON, err := json.Marshal(validatedPodTemplateSpecOverride)
 	if err != nil {
 		return fmt.Errorf("failed to marshal override PodTemplateSpec: %v", err)
 	}
@@ -52,7 +71,6 @@ func overridePodTemplateSpec(defaultPodTemplate *corev1.PodTemplateSpec, podTemp
 		return fmt.Errorf("failed to merge PodTemplateSpec: %v", err)
 	}
 
-	// Unmarshal back to PodTemplateSpec
 	if err := json.Unmarshal(mergedJSON, &defaultPodTemplate); err != nil {
 		return fmt.Errorf("failed to unmarshal merged PodTemplateSpec: %v", err)
 	}
