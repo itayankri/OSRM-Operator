@@ -54,6 +54,8 @@ func (builder *GatewayDeploymentBuilder) Update(object client.Object, siblings [
 			ObjectMeta: metav1.ObjectMeta{
 				Labels: map[string]string{
 					"app": builder.Instance.ChildResourceName(GatewaySuffix, DeploymentSuffix),
+					"osrm-cluster": true,
+
 				},
 			},
 			Spec: corev1.PodSpec{

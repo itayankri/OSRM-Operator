@@ -53,6 +53,14 @@ func (builder *CronJobBuilder) Update(object client.Object, siblings []runtime.O
 				Template: corev1.PodTemplateSpec{
 					Spec: corev1.PodSpec{
 						RestartPolicy: corev1.RestartPolicyOnFailure,
+						Tolerations: []corev1.Toleration{
+							{
+								Key:      "map-builder",
+								Operator: corev1.TolerationOpEqual,
+								Value:    "true",
+								Effect:   corev1.TaintEffectNoSchedule,
+							},
+						},
 						Containers: []corev1.Container{
 							{
 								Name:      builder.Instance.ChildResourceName(builder.profile.Name, CronJobSuffix),
