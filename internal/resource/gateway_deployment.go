@@ -54,6 +54,10 @@ func (builder *GatewayDeploymentBuilder) Update(object client.Object, siblings [
 			ObjectMeta: metav1.ObjectMeta{
 				Labels: map[string]string{
 					"app": builder.Instance.ChildResourceName(GatewaySuffix, DeploymentSuffix),
+					"app.kubernetes.io/instance": builder.Instance.Name,
+					"app.kubernetes.io/component": "gateway",
+					"app.kubernetes.io/part-of":   "OSRMCluster",
+
 				},
 			},
 			Spec: corev1.PodSpec{
