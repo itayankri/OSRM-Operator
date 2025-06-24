@@ -62,7 +62,7 @@ func (builder *ConfigMapBuilder) Update(object client.Object, siblings []runtime
 func generateNginxConf(instance *osrmv1alpha1.OSRMCluster, profiles []*osrmv1alpha1.ProfileSpec, osrmServices []string) string {
 	config := `
 	events {
-	
+		worker_connections 2048;
 	}
 	http {
 		large_client_header_buffers 4 128k;
