@@ -17,6 +17,8 @@ limitations under the License.
 package v1alpha1
 
 import (
+	"crypto/sha256"
+	"fmt"
 	"strings"
 
 	"github.com/itayankri/OSRM-Operator/internal/status"
@@ -88,6 +90,14 @@ func (spec *OSRMClusterSpec) GetPbfFileName() string {
 
 func (spec *OSRMClusterSpec) GetOsrmFileName() string {
 	return strings.ReplaceAll(spec.GetPbfFileName(), "osm.pbf", "osrm")
+}
+
+func (spec *OSRMClusterSpec) GetPbfUrlHash() string {
+	if spec.PBFURL == "" {
+		return ""
+	}
+	h := sha256.Sum256([]byte(spec.PBFURL))
+	return fmt.Sprintf("%x", h)[:16]
 }
 
 type ProfilesSpec []*ProfileSpec
@@ -228,6 +238,41 @@ type OSRMClusterStatus struct {
 	Phase Phase `json:"phase,omitempty"`
 
 	Conditions []metav1.Condition `json:"conditions,omitempty"`
+
+	// CurrentPbfUrlHash is the hash of the currently active pbfUrl
+	CurrentPbfUrlHash string `json:"currentPbfUrlHash,omitempty"`
+
+	// ActiveEnvironment indicates which environment (blue/green) is currently serving traffic
+	ActiveEnvironment string `json:"activeEnvironment,omitempty"`
+
+	// UpdatingEnvironment indicates which environment is being updated with new pbfUrl
+	UpdatingEnvironment string `json:"updatingEnvironment,omitempty"`
+}
+
+func (status *OSRMClusterStatus) NeedsPbfUrlUpdate(spec *OSRMClusterSpec) bool {
+	currentHash := spec.GetPbfUrlHash()
+	return currentHash != "" && status.CurrentPbfUrlHash != currentHash
+}
+
+func (status *OSRMClusterStatus) GetNextEnvironment() string {
+	if status.ActiveEnvironment == "blue" {
+		return "green"
+	}
+	return "blue"
+}
+
+func (status *OSRMClusterStatus) IsEnvironmentSwitching() bool {
+	return status.UpdatingEnvironment != ""
+}
+
+func (status *OSRMClusterStatus) StartEnvironmentUpdate(spec *OSRMClusterSpec) {
+	status.UpdatingEnvironment = status.GetNextEnvironment()
+	status.CurrentPbfUrlHash = spec.GetPbfUrlHash()
+}
+
+func (status *OSRMClusterStatus) CompleteEnvironmentUpdate() {
+	status.ActiveEnvironment = status.UpdatingEnvironment
+	status.UpdatingEnvironment = ""
 }
 
 func (osrmClusterStatus *OSRMClusterStatus) SetConditions(resources []runtime.Object) {
@@ -291,6 +336,14 @@ type OSRMCluster struct {
 func (cluster *OSRMCluster) ChildResourceName(service string, suffix string) string {
 	nameWithService := strings.TrimSuffix(strings.Join([]string{cluster.ObjectMeta.Name, service}, "-"), "-")
 	return strings.TrimSuffix(strings.Join([]string{nameWithService, suffix}, "-"), "-")
+}
+
+func (cluster *OSRMCluster) ChildResourceNameWithEnvironment(service string, suffix string, environment string) string {
+	baseName := cluster.ChildResourceName(service, suffix)
+	if environment != "" {
+		return fmt.Sprintf("%s-%s", baseName, environment)
+	}
+	return baseName
 }
 
 //+kubebuilder:object:root=true

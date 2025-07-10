@@ -42,6 +42,7 @@ import (
 	networkingv1 "k8s.io/api/networking/v1"
 	policyv1 "k8s.io/api/policy/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/labels"
 	clientretry "k8s.io/client-go/util/retry"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 )
@@ -186,6 +187,13 @@ func (r *OSRMClusterReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 	resourceBuilder := resource.OSRMResourceBuilder{
 		Instance: instance,
 		Scheme:   r.Scheme,
+	}
+
+	// Handle blue-green deployment for pbfUrl changes
+	if err := r.handleBlueGreenDeployment(ctx, instance, childResources, &resourceBuilder); err != nil {
+		logger.Error(err, "Failed to handle blue-green deployment")
+		r.setReconciliationSuccess(ctx, instance, metav1.ConditionFalse, "FailedBlueGreenDeployment", err.Error())
+		return ctrl.Result{}, err
 	}
 
 	builders := resourceBuilder.ResourceBuilders()
@@ -563,6 +571,208 @@ func (r *OSRMClusterReconciler) cleanup(ctx context.Context, instance *osrmv1alp
 		return nil
 	}
 	return err
+}
+
+func (r *OSRMClusterReconciler) handleBlueGreenDeployment(
+	ctx context.Context,
+	instance *osrmv1alpha1.OSRMCluster,
+	childResources []runtime.Object,
+	resourceBuilder *resource.OSRMResourceBuilder,
+) error {
+	logger := ctrl.LoggerFrom(ctx)
+
+	// Initialize environment if not set
+	if instance.Status.ActiveEnvironment == "" {
+		instance.Status.ActiveEnvironment = "blue"
+		instance.Status.CurrentPbfUrlHash = instance.Spec.GetPbfUrlHash()
+		if err := r.updateOSRMClusterResource(ctx, instance); err != nil {
+			return fmt.Errorf("failed to initialize environment: %v", err)
+		}
+		logger.Info("Initialized blue-green environment", "activeEnvironment", "blue")
+		return nil
+	}
+
+	// Check if pbfUrl has changed
+	if !instance.Status.NeedsPbfUrlUpdate(&instance.Spec) {
+		return nil
+	}
+
+	// If already switching environments, check if it's complete
+	if instance.Status.IsEnvironmentSwitching() {
+		return r.checkAndCompleteEnvironmentSwitch(ctx, instance, childResources)
+	}
+
+	// Start new environment deployment
+	logger.Info("Starting blue-green deployment for pbfUrl change", 
+		"currentEnvironment", instance.Status.ActiveEnvironment,
+		"newPbfUrl", instance.Spec.PBFURL)
+
+	instance.Status.StartEnvironmentUpdate(&instance.Spec)
+	if err := r.updateOSRMClusterResource(ctx, instance); err != nil {
+		return fmt.Errorf("failed to start environment update: %v", err)
+	}
+
+	// Deploy new environment resources
+	return r.deployNewEnvironment(ctx, instance, resourceBuilder)
+}
+
+func (r *OSRMClusterReconciler) checkAndCompleteEnvironmentSwitch(
+	ctx context.Context,
+	instance *osrmv1alpha1.OSRMCluster,
+	childResources []runtime.Object,
+) error {
+	logger := ctrl.LoggerFrom(ctx)
+
+	// Check if new environment deployments are ready
+	allReady := true
+	for _, profile := range instance.Spec.Profiles {
+		deploymentName := instance.ChildResourceNameWithEnvironment(profile.Name, resource.DeploymentSuffix, instance.Status.UpdatingEnvironment)
+		if !status.IsDeploymentReady(deploymentName, childResources) {
+			allReady = false
+			break
+		}
+	}
+
+	if !allReady {
+		logger.Info("New environment not ready yet", "updatingEnvironment", instance.Status.UpdatingEnvironment)
+		return nil
+	}
+
+	// Switch traffic to new environment and cleanup old environment
+	logger.Info("Completing environment switch", 
+		"from", instance.Status.ActiveEnvironment,
+		"to", instance.Status.UpdatingEnvironment)
+
+	oldEnvironment := instance.Status.ActiveEnvironment
+	instance.Status.CompleteEnvironmentUpdate()
+
+	if err := r.updateOSRMClusterResource(ctx, instance); err != nil {
+		return fmt.Errorf("failed to complete environment update: %v", err)
+	}
+
+	// Update services to point to new environment
+	if err := r.updateServicesForEnvironment(ctx, instance); err != nil {
+		return fmt.Errorf("failed to update services: %v", err)
+	}
+
+	// Cleanup old environment resources
+	return r.cleanupOldEnvironment(ctx, instance, oldEnvironment)
+}
+
+func (r *OSRMClusterReconciler) deployNewEnvironment(
+	ctx context.Context,
+	instance *osrmv1alpha1.OSRMCluster,
+	resourceBuilder *resource.OSRMResourceBuilder,
+) error {
+	logger := ctrl.LoggerFrom(ctx)
+
+	// Set environment in resource builder
+	resourceBuilder.Environment = instance.Status.UpdatingEnvironment
+
+	// Create environment-specific resources
+	builders := resourceBuilder.EnvironmentResourceBuilders()
+
+	for _, builder := range builders {
+		resource, err := builder.Build()
+		if err != nil {
+			return fmt.Errorf("failed to build environment resource: %v", err)
+		}
+
+		var operationResult controllerutil.OperationResult
+		err = clientretry.RetryOnConflict(clientretry.DefaultRetry, func() error {
+			var apiError error
+			operationResult, apiError = controllerutil.CreateOrUpdate(ctx, r.Client, resource, func() error {
+				return builder.Update(resource, []runtime.Object{})
+			})
+			return apiError
+		})
+
+		if err != nil {
+			return fmt.Errorf("failed to create/update environment resource: %v", err)
+		}
+
+		r.logOperationResult(logger, instance, resource, operationResult, err)
+	}
+
+	logger.Info("Deployed new environment resources", "environment", instance.Status.UpdatingEnvironment)
+	return nil
+}
+
+func (r *OSRMClusterReconciler) cleanupOldEnvironment(
+	ctx context.Context,
+	instance *osrmv1alpha1.OSRMCluster,
+	oldEnvironment string,
+) error {
+	logger := ctrl.LoggerFrom(ctx)
+
+	// Delete old environment resources
+	resourceTypes := []client.Object{
+		&appsv1.Deployment{},
+		&batchv1.Job{},
+		&corev1.PersistentVolumeClaim{},
+	}
+
+	for _, resourceType := range resourceTypes {
+		if err := r.Client.DeleteAllOf(ctx, resourceType,
+			client.InNamespace(instance.Namespace),
+			client.MatchingLabelsSelector{
+				Selector: labels.SelectorFromSet(labels.Set(map[string]string{
+					metadata.NameLabelKey:        instance.Name,
+					metadata.ComponentLabelKey:   string(metadata.ComponentLabelProfile),
+					metadata.EnvironmentLabelKey: oldEnvironment,
+				})),
+			},
+		); err != nil {
+			logger.Error(err, "Failed to cleanup old environment resources", 
+				"resourceType", fmt.Sprintf("%T", resourceType),
+				"environment", oldEnvironment)
+		}
+	}
+
+	logger.Info("Cleaned up old environment", "environment", oldEnvironment)
+	return nil
+}
+
+func (r *OSRMClusterReconciler) updateServicesForEnvironment(
+	ctx context.Context,
+	instance *osrmv1alpha1.OSRMCluster,
+) error {
+	logger := ctrl.LoggerFrom(ctx)
+
+	for _, profile := range instance.Spec.Profiles {
+		serviceName := instance.ChildResourceName(profile.Name, resource.ServiceSuffix)
+		
+		// Get the service
+		service := &corev1.Service{}
+		if err := r.Client.Get(ctx, types.NamespacedName{
+			Name:      serviceName,
+			Namespace: instance.Namespace,
+		}, service); err != nil {
+			if errors.IsNotFound(err) {
+				continue // Service will be created by regular reconciliation
+			}
+			return fmt.Errorf("failed to get service %s: %v", serviceName, err)
+		}
+
+		// Update service selector to point to active environment
+		if service.Spec.Selector == nil {
+			service.Spec.Selector = make(map[string]string)
+		}
+		
+		activeDeploymentName := instance.ChildResourceNameWithEnvironment(profile.Name, resource.DeploymentSuffix, instance.Status.ActiveEnvironment)
+		service.Spec.Selector["app"] = activeDeploymentName
+		
+		if err := r.Client.Update(ctx, service); err != nil {
+			return fmt.Errorf("failed to update service %s: %v", serviceName, err)
+		}
+		
+		logger.Info("Updated service selector", 
+			"service", serviceName,
+			"environment", instance.Status.ActiveEnvironment,
+			"deployment", activeDeploymentName)
+	}
+
+	return nil
 }
 
 // SetupWithManager sets up the controller with the Manager.

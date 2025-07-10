@@ -15,8 +15,9 @@ type ResourceBuilder interface {
 }
 
 type OSRMResourceBuilder struct {
-	Instance *osrmv1alpha1.OSRMCluster
-	Scheme   *runtime.Scheme
+	Instance    *osrmv1alpha1.OSRMCluster
+	Scheme      *runtime.Scheme
+	Environment string
 }
 
 type ProfileScopedBuilder struct {
@@ -49,5 +50,17 @@ func (builder *OSRMResourceBuilder) ResourceBuilders() []ResourceBuilder {
 		}...)
 	}
 
+	return builders
+}
+
+func (builder *OSRMResourceBuilder) EnvironmentResourceBuilders() []ResourceBuilder {
+	builders := []ResourceBuilder{}
+	for _, profile := range builder.Instance.Spec.Profiles {
+		builders = append(builders, []ResourceBuilder{
+			builder.PersistentVolumeClaimWithEnvironment(profile),
+			builder.JobWithEnvironment(profile),
+			builder.DeploymentWithEnvironment(profile),
+		}...)
+	}
 	return builders
 }

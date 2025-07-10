@@ -26,11 +26,22 @@ func (builder *OSRMResourceBuilder) Job(profile *osrmv1alpha1.ProfileSpec) *JobB
 }
 
 func (builder *JobBuilder) Build() (client.Object, error) {
+	var name string
+	var labels map[string]string
+	
+	if builder.Environment != "" {
+		name = builder.Instance.ChildResourceNameWithEnvironment(builder.profile.Name, JobSuffix, builder.Environment)
+		labels = metadata.GetLabelsWithEnvironment(builder.Instance, metadata.ComponentLabelProfile, builder.Environment)
+	} else {
+		name = builder.Instance.ChildResourceName(builder.profile.Name, JobSuffix)
+		labels = metadata.GetLabels(builder.Instance, metadata.ComponentLabelProfile)
+	}
+	
 	return &batchv1.Job{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      builder.Instance.ChildResourceName(builder.profile.Name, JobSuffix),
+			Name:      name,
 			Namespace: builder.Instance.Namespace,
-			Labels:    metadata.GetLabels(builder.Instance, metadata.ComponentLabelProfile),
+			Labels:    labels,
 		},
 	}, nil
 }
@@ -38,7 +49,11 @@ func (builder *JobBuilder) Build() (client.Object, error) {
 func (builder *JobBuilder) Update(object client.Object, siblings []runtime.Object) error {
 	job := object.(*batchv1.Job)
 
-	job.ObjectMeta.Labels = metadata.GetLabels(builder.Instance, metadata.ComponentLabelProfile)
+	if builder.Environment != "" {
+		job.ObjectMeta.Labels = metadata.GetLabelsWithEnvironment(builder.Instance, metadata.ComponentLabelProfile, builder.Environment)
+	} else {
+		job.ObjectMeta.Labels = metadata.GetLabels(builder.Instance, metadata.ComponentLabelProfile)
+	}
 
 	env := []corev1.EnvVar{
 		{
@@ -94,7 +109,7 @@ func (builder *JobBuilder) Update(object client.Object, siblings []runtime.Objec
 				RestartPolicy: corev1.RestartPolicyOnFailure,
 				Containers: []corev1.Container{
 					{
-						Name:      builder.Instance.ChildResourceName(builder.profile.Name, JobSuffix),
+						Name:      builder.getJobContainerName(),
 						Image:     builder.Instance.Spec.MapBuilder.GetImage(),
 						Resources: *builder.Instance.Spec.MapBuilder.GetResources(),
 						Env:       env,
@@ -111,7 +126,7 @@ func (builder *JobBuilder) Update(object client.Object, siblings []runtime.Objec
 						Name: osrmDataVolumeName,
 						VolumeSource: corev1.VolumeSource{
 							PersistentVolumeClaim: &corev1.PersistentVolumeClaimVolumeSource{
-								ClaimName: builder.Instance.ChildResourceName(builder.profile.Name, PersistentVolumeClaimSuffix),
+								ClaimName: builder.getPvcName(),
 								ReadOnly:  false,
 							},
 						},
@@ -130,4 +145,25 @@ func (builder *JobBuilder) Update(object client.Object, siblings []runtime.Objec
 
 func (builder *JobBuilder) ShouldDeploy(resources []runtime.Object) bool {
 	return true
+}
+
+func (builder *JobBuilder) getJobContainerName() string {
+	if builder.Environment != "" {
+		return builder.Instance.ChildResourceNameWithEnvironment(builder.profile.Name, JobSuffix, builder.Environment)
+	}
+	return builder.Instance.ChildResourceName(builder.profile.Name, JobSuffix)
+}
+
+func (builder *JobBuilder) getPvcName() string {
+	if builder.Environment != "" {
+		return builder.Instance.ChildResourceNameWithEnvironment(builder.profile.Name, PersistentVolumeClaimSuffix, builder.Environment)
+	}
+	return builder.Instance.ChildResourceName(builder.profile.Name, PersistentVolumeClaimSuffix)
+}
+
+func (builder *OSRMResourceBuilder) JobWithEnvironment(profile *osrmv1alpha1.ProfileSpec) *JobBuilder {
+	return &JobBuilder{
+		ProfileScopedBuilder{profile},
+		builder,
+	}
 }

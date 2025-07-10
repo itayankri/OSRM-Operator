@@ -131,3 +131,17 @@ func DoAllReplicasReady(resources []runtime.Object) bool {
 	}
 	return allReplicasReady
 }
+
+func IsDeploymentReady(deploymentName string, resources []runtime.Object) bool {
+	for _, resource := range resources {
+		if deployment, ok := resource.(*appsv1.Deployment); ok {
+			if deployment != nil && deployment.ObjectMeta.Name == deploymentName {
+				if deployment.Spec.Replicas != nil && deployment.Status.ReadyReplicas >= *deployment.Spec.Replicas {
+					return true
+				}
+				return false
+			}
+		}
+	}
+	return false
+}

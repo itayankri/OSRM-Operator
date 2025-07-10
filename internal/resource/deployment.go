@@ -31,17 +31,38 @@ func (builder *OSRMResourceBuilder) Deployment(profile *osrmv1alpha1.ProfileSpec
 }
 
 func (builder *DeploymentBuilder) Build() (client.Object, error) {
+	var name string
+	var labels map[string]string
+	
+	if builder.Environment != "" {
+		name = builder.Instance.ChildResourceNameWithEnvironment(builder.profile.Name, DeploymentSuffix, builder.Environment)
+		labels = metadata.GetLabelsWithEnvironment(builder.Instance, metadata.ComponentLabelProfile, builder.Environment)
+	} else {
+		name = builder.Instance.ChildResourceName(builder.profile.Name, DeploymentSuffix)
+		labels = metadata.GetLabels(builder.Instance, metadata.ComponentLabelProfile)
+	}
+	
 	return &appsv1.Deployment{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      builder.Instance.ChildResourceName(builder.profile.Name, DeploymentSuffix),
+			Name:      name,
 			Namespace: builder.Instance.Namespace,
-			Labels:    metadata.GetLabels(builder.Instance, metadata.ComponentLabelProfile),
+			Labels:    labels,
 		},
 	}, nil
 }
 
 func (builder *DeploymentBuilder) Update(object client.Object, siblings []runtime.Object) error {
-	name := builder.Instance.ChildResourceName(builder.profile.Name, DeploymentSuffix)
+	var name string
+	var labels map[string]string
+	
+	if builder.Environment != "" {
+		name = builder.Instance.ChildResourceNameWithEnvironment(builder.profile.Name, DeploymentSuffix, builder.Environment)
+		labels = metadata.GetLabelsWithEnvironment(builder.Instance, metadata.ComponentLabelProfile, builder.Environment)
+	} else {
+		name = builder.Instance.ChildResourceName(builder.profile.Name, DeploymentSuffix)
+		labels = metadata.GetLabels(builder.Instance, metadata.ComponentLabelProfile)
+	}
+	
 	deployment := object.(*appsv1.Deployment)
 	pbfFileName := builder.Instance.Spec.GetPbfFileName()
 	osrmFileName := strings.ReplaceAll(pbfFileName, "osm.pbf", "osrm")
@@ -49,7 +70,7 @@ func (builder *DeploymentBuilder) Update(object client.Object, siblings []runtim
 		"app": name,
 	}
 
-	deployment.ObjectMeta.Labels = metadata.GetLabels(builder.Instance, metadata.ComponentLabelProfile)
+	deployment.ObjectMeta.Labels = labels
 	deployment.Spec.Selector = &metav1.LabelSelector{
 		MatchLabels: labelSelector,
 	}
@@ -105,7 +126,7 @@ func (builder *DeploymentBuilder) Update(object client.Object, siblings []runtim
 					Name: osrmDataVolumeName,
 					VolumeSource: corev1.VolumeSource{
 						PersistentVolumeClaim: &corev1.PersistentVolumeClaimVolumeSource{
-							ClaimName: builder.Instance.ChildResourceName(builder.profile.Name, PersistentVolumeClaimSuffix),
+							ClaimName: builder.getPvcName(),
 							ReadOnly:  true,
 						},
 					},
@@ -125,11 +146,11 @@ func (builder *DeploymentBuilder) Update(object client.Object, siblings []runtim
 
 func (builder *DeploymentBuilder) ShouldDeploy(resources []runtime.Object) bool {
 	return status.IsPersistentVolumeClaimBound(
-		builder.Instance.ChildResourceName(builder.profile.Name, PersistentVolumeClaimSuffix),
+		builder.getPvcName(),
 		resources,
 	) &&
 		status.IsJobCompleted(
-			builder.Instance.ChildResourceName(builder.profile.Name, JobSuffix),
+			builder.getJobName(),
 			resources,
 		)
 }
@@ -146,5 +167,26 @@ func (builder *DeploymentBuilder) setAnnotations(deployment *appsv1.Deployment, 
 				}
 			}
 		}
+	}
+}
+
+func (builder *DeploymentBuilder) getPvcName() string {
+	if builder.Environment != "" {
+		return builder.Instance.ChildResourceNameWithEnvironment(builder.profile.Name, PersistentVolumeClaimSuffix, builder.Environment)
+	}
+	return builder.Instance.ChildResourceName(builder.profile.Name, PersistentVolumeClaimSuffix)
+}
+
+func (builder *DeploymentBuilder) getJobName() string {
+	if builder.Environment != "" {
+		return builder.Instance.ChildResourceNameWithEnvironment(builder.profile.Name, JobSuffix, builder.Environment)
+	}
+	return builder.Instance.ChildResourceName(builder.profile.Name, JobSuffix)
+}
+
+func (builder *OSRMResourceBuilder) DeploymentWithEnvironment(profile *osrmv1alpha1.ProfileSpec) *DeploymentBuilder {
+	return &DeploymentBuilder{
+		ProfileScopedBuilder{profile},
+		builder,
 	}
 }

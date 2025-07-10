@@ -424,6 +424,10 @@ spec:
           status:
             description: OSRMClusterStatus defines the observed state of OSRMCluster
             properties:
+              activeEnvironment:
+                description: ActiveEnvironment indicates which environment (blue/green)
+                  is currently serving traffic
+                type: string
               conditions:
                 items:
                   description: Condition contains details for one aspect of the current
@@ -480,6 +484,10 @@ spec:
                   - type
                   type: object
                 type: array
+              currentPbfUrlHash:
+                description: CurrentPbfUrlHash is the hash of the currently active
+                  pbfUrl
+                type: string
               observedGeneration:
                 description: ObservedGeneration is the latest generation observed
                   by the operator.
@@ -490,6 +498,10 @@ spec:
                 type: boolean
               phase:
                 description: Phase is the current phase of the deployment
+                type: string
+              updatingEnvironment:
+                description: UpdatingEnvironment indicates which environment is being
+                  updated with new pbfUrl
                 type: string
             type: object
         type: object
