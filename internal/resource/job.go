@@ -18,7 +18,7 @@ type JobBuilder struct {
 	*OSRMResourceBuilder
 }
 
-func (builder *OSRMResourceBuilder) Job(profile *osrmv1alpha1.ProfileSpec) *JobBuilder {
+func (builder *OSRMResourceBuilder) Job(profile *osrmv1alpha1.ProfileSpec, mapGeneration string) *JobBuilder {
 	return &JobBuilder{
 		ProfileScopedBuilder{profile},
 		builder,

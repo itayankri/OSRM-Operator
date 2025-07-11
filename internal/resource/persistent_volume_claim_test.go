@@ -11,7 +11,7 @@ var _ = Describe("PersistentVolumeClaim builder", func() {
 	Context("ShouldDeploy", func() {
 		var builder resource.ResourceBuilder
 		BeforeEach(func() {
-			builder = osrmResourceBuilder.PersistentVolumeClaim(instance.Spec.Profiles[0])
+			builder = osrmResourceBuilder.PersistentVolumeClaim(instance.Spec.Profiles[0], "1")
 		})
 
 		It("Should always return 'true'", func() {

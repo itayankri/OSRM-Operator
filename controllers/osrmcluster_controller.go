@@ -47,6 +47,7 @@ import (
 )
 
 const finalizerName = "osrmcluster.itayankri/finalizer"
+const mapGenerationAnnotation = "osrmcluster.itayankri/map-generation"
 
 // OSRMClusterReconciler reconciles a OSRMCluster object
 type OSRMClusterReconciler struct {
@@ -76,14 +77,17 @@ func isPaused(object metav1.Object) bool {
 	if object.GetAnnotations() == nil {
 		return false
 	}
+
 	pausedStr, ok := object.GetAnnotations()[osrmv1alpha1.OperatorPausedAnnotation]
 	if !ok {
 		return false
 	}
+
 	paused, err := strconv.ParseBool(pausedStr)
 	if err != nil {
 		return false
 	}
+
 	return paused
 }
 
@@ -188,7 +192,9 @@ func (r *OSRMClusterReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 		Scheme:   r.Scheme,
 	}
 
-	builders := resourceBuilder.ResourceBuilders()
+	mapGeneration, _ := getAnnotationValue(instance.ObjectMeta, mapGenerationAnnotation)
+
+	builders := resourceBuilder.ResourceBuilders(mapGeneration)
 
 	for _, builder := range builders {
 		if builder.ShouldDeploy(childResources) {
@@ -289,6 +295,12 @@ func (r *OSRMClusterReconciler) setReconciliationSuccess(
 
 func (r *OSRMClusterReconciler) initialize(ctx context.Context, instance *osrmv1alpha1.OSRMCluster) error {
 	controllerutil.AddFinalizer(instance, finalizerName)
+	annotations := instance.GetAnnotations()
+	if annotations == nil {
+		annotations = make(map[string]string)
+	}
+	annotations[mapGenerationAnnotation] = "1"
+	instance.SetAnnotations(annotations)
 	return r.updateOSRMClusterResource(ctx, instance)
 }
 
@@ -563,6 +575,15 @@ func (r *OSRMClusterReconciler) cleanup(ctx context.Context, instance *osrmv1alp
 		return nil
 	}
 	return err
+}
+
+func getAnnotationValue(meta metav1.ObjectMeta, key string) (string, bool) {
+	annotations := meta.GetAnnotations()
+	if annotations == nil {
+		return "", false
+	}
+	value, ok := annotations[key]
+	return value, ok
 }
 
 // SetupWithManager sets up the controller with the Manager.

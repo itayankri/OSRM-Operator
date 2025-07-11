@@ -106,7 +106,7 @@ type ProfileSpec struct {
 
 func (spec *ProfileSpec) GetMinAvailable() *intstr.IntOrString {
 	if spec.MinReplicas != nil {
-		return &intstr.IntOrString{IntVal: *spec.MinReplicas}
+		return &intstr.IntOrString{IntVal: *spec.MinReplicas - 1}
 	}
 
 	return &intstr.IntOrString{IntVal: 1}

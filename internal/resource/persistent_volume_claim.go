@@ -18,7 +18,7 @@ type PersistentVolumeClaimBuilder struct {
 	*OSRMResourceBuilder
 }
 
-func (builder *OSRMResourceBuilder) PersistentVolumeClaim(profile *osrmv1alpha1.ProfileSpec) *PersistentVolumeClaimBuilder {
+func (builder *OSRMResourceBuilder) PersistentVolumeClaim(profile *osrmv1alpha1.ProfileSpec, mapGeneration string) *PersistentVolumeClaimBuilder {
 	return &PersistentVolumeClaimBuilder{
 		ProfileScopedBuilder{profile},
 		builder,

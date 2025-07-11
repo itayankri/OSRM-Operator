@@ -23,16 +23,20 @@ type ProfileScopedBuilder struct {
 	profile *osrmv1alpha1.ProfileSpec
 }
 
+type MapScopedBuilder struct {
+	generation int32
+}
+
 type ClusterScopedBuilder struct {
 	profiles []*osrmv1alpha1.ProfileSpec
 }
 
-func (builder *OSRMResourceBuilder) ResourceBuilders() []ResourceBuilder {
+func (builder *OSRMResourceBuilder) ResourceBuilders(mapGeneration string) []ResourceBuilder {
 	builders := []ResourceBuilder{}
 	for _, profile := range builder.Instance.Spec.Profiles {
 		builders = append(builders, []ResourceBuilder{
-			builder.PersistentVolumeClaim(profile),
-			builder.Job(profile),
+			builder.PersistentVolumeClaim(profile, mapGeneration),
+			builder.Job(profile, mapGeneration),
 			builder.Deployment(profile),
 			builder.Service(profile),
 			builder.CronJob(profile),
