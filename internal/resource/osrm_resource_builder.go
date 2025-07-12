@@ -15,8 +15,9 @@ type ResourceBuilder interface {
 }
 
 type OSRMResourceBuilder struct {
-	Instance *osrmv1alpha1.OSRMCluster
-	Scheme   *runtime.Scheme
+	Instance      *osrmv1alpha1.OSRMCluster
+	Scheme        *runtime.Scheme
+	MapGeneration string
 }
 
 type ProfileScopedBuilder struct {

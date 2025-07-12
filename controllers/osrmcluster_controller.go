@@ -47,6 +47,8 @@ import (
 )
 
 const finalizerName = "osrmcluster.itayankri/finalizer"
+const mapGenerationAnnotation = "osrmcluster.itayankri/map-generation"
+const lastAppliedSpecAnnotation = "osrmcluster.itayankri/last-applied-spec"
 
 // OSRMClusterReconciler reconciles a OSRMCluster object
 type OSRMClusterReconciler struct {
@@ -85,6 +87,18 @@ func isPaused(object metav1.Object) bool {
 		return false
 	}
 	return paused
+}
+
+func getMapGeneration(childResources []runtime.Object) (string, error) {
+	for _, resource := range childResources {
+		if pvc, ok := resource.(*corev1.PersistentVolumeClaim); ok {
+			if generation, ok := pvc.ObjectMeta.Annotations[mapGenerationAnnotation]; ok {
+				return generation, nil
+			}
+		}
+	}
+
+	return "", fmt.Errorf("no PersistentVolumeClaim with map generation found")
 }
 
 // the rbac rule requires an empty row at the end to render
@@ -145,12 +159,16 @@ func (r *OSRMClusterReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 		return ctrl.Result{RequeueAfter: requeueAfter}, err
 	}
 
+	var mapGeneration string
 	if !isInitialized(instance) {
+		mapGeneration = "1"
 		err := r.initialize(ctx, instance)
 		// No need to requeue here, because
 		// the update will trigger reconciliation again
 		logger.Info("OSRMCLuster initialized")
 		return ctrl.Result{}, err
+	} else {
+		mapGeneration, err = getMapGeneration(childResources)
 	}
 
 	if isBeingDeleted(instance) {
@@ -171,8 +189,6 @@ func (r *OSRMClusterReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 		logger.Info(fmt.Sprintf("Pausing OSRM operator on resource: %v/%v", instance.Namespace, instance.Name))
 		instance.Status.Paused = true
 		err := r.updateOSRMClusterResource(ctx, instance)
-		// instance.Status.ObservedGeneration = instance.Generation
-		// err := r.Client.Status().Update(ctx, instance)
 		return ctrl.Result{}, err
 	}
 
@@ -184,8 +200,9 @@ func (r *OSRMClusterReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 	logger.Info("Reconciling OSRMCluster", "spec", string(rawInstanceSpec))
 
 	resourceBuilder := resource.OSRMResourceBuilder{
-		Instance: instance,
-		Scheme:   r.Scheme,
+		Instance:      instance,
+		Scheme:        r.Scheme,
+		MapGeneration: mapGeneration,
 	}
 
 	builders := resourceBuilder.ResourceBuilders()
