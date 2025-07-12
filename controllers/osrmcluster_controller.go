@@ -232,6 +232,12 @@ func (r *OSRMClusterReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 		}
 	}
 
+	err = r.setLastAppliedSpecAnnotation(ctx, instance)
+	if err != nil {
+		logger.Error(err, "Garbage collection failed for OSRMCluster %v/%v", instance.Namespace, instance.Name)
+		return ctrl.Result{RequeueAfter: time.Second * 10}, err
+	}
+
 	err = r.garbageCollection(ctx, instance)
 	if err != nil {
 		logger.Error(err, "Garbage collection failed for OSRMCluster %v/%v", instance.Namespace, instance.Name)
@@ -280,6 +286,21 @@ func (r *OSRMClusterReconciler) logOperationResult(
 		msg := fmt.Sprintf("failed to %s resource %s of Type %T", operation, resource.(metav1.Object).GetName(), resource.(metav1.Object))
 		logger.Error(err, msg)
 	}
+}
+
+func (r *OSRMClusterReconciler) setLastAppliedSpecAnnotation(
+	ctx context.Context,
+	instance *osrmv1alpha1.OSRMCluster,
+) error {
+	newSpecjson, err := json.Marshal(instance.Spec)
+	if err != nil {
+		return fmt.Errorf("failed to marshal OSRMCluster spec: %w", err)
+	}
+	if instance.Annotations == nil {
+		instance.Annotations = make(map[string]string)
+	}
+	instance.Annotations[lastAppliedSpecAnnotation] = string(newSpecjson)
+	return r.Client.Update(ctx, instance)
 }
 
 func (r *OSRMClusterReconciler) setReconciliationSuccess(
