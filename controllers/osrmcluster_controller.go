@@ -47,7 +47,6 @@ import (
 )
 
 const finalizerName = "osrmcluster.itayankri/finalizer"
-const mapGenerationAnnotation = "osrmcluster.itayankri/map-generation"
 const lastAppliedSpecAnnotation = "osrmcluster.itayankri/last-applied-spec"
 
 // OSRMClusterReconciler reconciles a OSRMCluster object
@@ -92,7 +91,7 @@ func isPaused(object metav1.Object) bool {
 func getMapGeneration(childResources []runtime.Object) (string, error) {
 	for _, resource := range childResources {
 		if pvc, ok := resource.(*corev1.PersistentVolumeClaim); ok {
-			if generation, ok := pvc.ObjectMeta.Annotations[mapGenerationAnnotation]; ok {
+			if generation, ok := pvc.ObjectMeta.Annotations[metadata.MapGenerationAnnotation]; ok {
 				return generation, nil
 			}
 		}
@@ -192,12 +191,16 @@ func (r *OSRMClusterReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 		return ctrl.Result{}, err
 	}
 
-	rawInstanceSpec, err := json.Marshal(instance.Spec)
-	if err != nil {
-		logger.Error(err, "Failed to marshal OSRMCluster spec")
+	oldSpecJSON, annotationFound := instance.GetAnnotations()[lastAppliedSpecAnnotation]
+	oldSpec := &osrmv1alpha1.OSRMClusterSpec{}
+	if annotationFound {
+		if err := json.Unmarshal([]byte(oldSpecJSON), oldSpec); err != nil {
+			logger.Error(err, "Failed to marshal last applied spec of OSRMCluster %v/%v", instance.Namespace, instance.Name)
+			return ctrl.Result{}, err
+		}
 	}
 
-	logger.Info("Reconciling OSRMCluster", "spec", string(rawInstanceSpec))
+	logger.Info("Reconciling OSRMCluster %v/%v", instance.Namespace, instance.Name)
 
 	resourceBuilder := resource.OSRMResourceBuilder{
 		Instance:      instance,
@@ -206,6 +209,10 @@ func (r *OSRMClusterReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 	}
 
 	builders := resourceBuilder.ResourceBuilders()
+
+	if instance.Spec.PBFURL != oldSpec.PBFURL {
+		builders = append(builders, resourceBuilder.MapUpdateResourceBuilders()...)
+	}
 
 	for _, builder := range builders {
 		if builder.ShouldDeploy(childResources) {

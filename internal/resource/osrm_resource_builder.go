@@ -30,6 +30,7 @@ type ClusterScopedBuilder struct {
 
 func (builder *OSRMResourceBuilder) ResourceBuilders() []ResourceBuilder {
 	builders := []ResourceBuilder{}
+
 	for _, profile := range builder.Instance.Spec.Profiles {
 		builders = append(builders, []ResourceBuilder{
 			builder.PersistentVolumeClaim(profile),
@@ -47,6 +48,19 @@ func (builder *OSRMResourceBuilder) ResourceBuilders() []ResourceBuilder {
 			builder.ConfigMap(builder.Instance.Spec.Profiles),
 			builder.GatewayService(builder.Instance.Spec.Profiles),
 			builder.GatewayDeployment(builder.Instance.Spec.Profiles),
+		}...)
+	}
+
+	return builders
+}
+
+func (builder *OSRMResourceBuilder) MapUpdateResourceBuilders() []ResourceBuilder {
+	builders := []ResourceBuilder{}
+
+	for _, profile := range builder.Instance.Spec.Profiles {
+		builders = append(builders, []ResourceBuilder{
+			builder.PersistentVolumeClaim(profile),
+			builder.Job(profile),
 		}...)
 	}
 

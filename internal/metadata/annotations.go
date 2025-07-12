@@ -1,6 +1,6 @@
 package metadata
 
-import "strings"
+const MapGenerationAnnotation = "osrmcluster.itayankri/map-generation"
 
 func ReconcileAnnotations(existing map[string]string, defaults ...map[string]string) map[string]string {
 	return merge(existing, defaults...)
@@ -19,8 +19,4 @@ func merge(baseAnnotations map[string]string, maps ...map[string]string) map[str
 	}
 
 	return annotations
-}
-
-func isKubernetesAnnotation(k string) bool {
-	return strings.Contains(k, "kubernetes.io") || strings.Contains(k, "k8s.io")
 }

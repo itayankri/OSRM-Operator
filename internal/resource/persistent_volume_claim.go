@@ -26,7 +26,7 @@ func (builder *OSRMResourceBuilder) PersistentVolumeClaim(profile *osrmv1alpha1.
 }
 
 func (builder *PersistentVolumeClaimBuilder) Build() (client.Object, error) {
-	name := builder.Instance.ChildResourceName(builder.profile.Name, PersistentVolumeClaimSuffix)
+	name := builder.Instance.ChildResourceName(builder.profile.Name, builder.MapGeneration)
 	return &corev1.PersistentVolumeClaim{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      name,
@@ -53,6 +53,8 @@ func (builder *PersistentVolumeClaimBuilder) Update(object client.Object, siblin
 
 	pvc.ObjectMeta.Labels = metadata.GetLabels(builder.Instance, metadata.ComponentLabelProfile)
 
+	builder.setAnnotations(pvc)
+
 	if err := controllerutil.SetControllerReference(builder.Instance, pvc, builder.Scheme); err != nil {
 		return fmt.Errorf("failed setting controller reference: %v", err)
 	}
@@ -62,4 +64,10 @@ func (builder *PersistentVolumeClaimBuilder) Update(object client.Object, siblin
 
 func (*PersistentVolumeClaimBuilder) ShouldDeploy(resources []runtime.Object) bool {
 	return true
+}
+
+func (builder *PersistentVolumeClaimBuilder) setAnnotations(pvc *corev1.PersistentVolumeClaim) {
+	if builder.Instance.Spec.Service.Annotations != nil {
+		pvc.Annotations = metadata.ReconcileAnnotations(pvc.Annotations, map[string]string{metadata.MapGenerationAnnotation: builder.MapGeneration})
+	}
 }
