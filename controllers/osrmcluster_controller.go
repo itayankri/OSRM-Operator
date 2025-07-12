@@ -312,10 +312,6 @@ func (r *OSRMClusterReconciler) determinePhase(
 		return osrmv1alpha1.PhaseDeployingWorkers
 	}
 
-	if instance.Spec.PBFURL != oldSpec.PBFURL {
-		return osrmv1alpha1.PhaseBuildingNewMap
-	}
-
 	return osrmv1alpha1.PhaseWorkersDeployed
 }
 

@@ -134,6 +134,6 @@ func (builder *JobBuilder) Update(object client.Object, siblings []runtime.Objec
 
 func (builder *JobBuilder) setAnnotations(job *batchv1.Job) {
 	if builder.Instance.Spec.Service.Annotations != nil {
-		job.Annotations = metadata.ReconcileAnnotations(job.Annotations, map[string]string{metadata.MapGenerationAnnotation: builder.MapGeneration})
+		job.ObjectMeta.Annotations[metadata.MapGenerationAnnotation] = builder.MapGenerationScopedBuilder.generation
 	}
 }
