@@ -208,34 +208,46 @@ func (r *OSRMClusterReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 		MapGeneration: mapGeneration,
 	}
 
-	builders := resourceBuilder.ResourceBuilders()
+	// Determine current phase and update status
+	newPhase := r.determinePhase(instance, childResources)
+	if instance.Status.Phase != newPhase {
+		instance.Status.Phase = newPhase
+		if err := r.Client.Status().Update(ctx, instance); err != nil {
+			logger.Error(err, "Failed to update phase for OSRMCluster %v/%v", instance.Namespace, instance.Name)
+			return ctrl.Result{}, err
+		}
+	}
 
+	// Get builders for the current phase
+	var builders []resource.ResourceBuilder
 	if instance.Spec.PBFURL != oldSpec.PBFURL {
-		builders = append(builders, resourceBuilder.MapUpdateResourceBuilders()...)
+		// Handle map updates specially - always use map update builders
+		builders = resourceBuilder.MapUpdateResourceBuilders()
+	} else {
+		// Use phase-based builders
+		builders = resourceBuilder.ResourceBuildersForPhase(newPhase)
 	}
 
 	for _, builder := range builders {
-		if builder.ShouldDeploy(childResources) {
-			resource, err := builder.Build()
-			if err != nil {
-				logger.Error(err, "Failed to build resource %v for OSRMCluster %v/%v", builder, instance.Namespace, instance.Name)
-				r.setReconciliationSuccess(ctx, instance, metav1.ConditionFalse, "FailedToBuildChildResource", err.Error())
-				return ctrl.Result{}, err
-			}
+		resource, err := builder.Build()
+		if err != nil {
+			logger.Error(err, "Failed to build resource %v for OSRMCluster %v/%v", builder, instance.Namespace, instance.Name)
+			r.setReconciliationSuccess(ctx, instance, metav1.ConditionFalse, "FailedToBuildChildResource", err.Error())
+			return ctrl.Result{}, err
+		}
 
-			var operationResult controllerutil.OperationResult
-			err = clientretry.RetryOnConflict(clientretry.DefaultRetry, func() error {
-				var apiError error
-				operationResult, apiError = controllerutil.CreateOrUpdate(ctx, r.Client, resource, func() error {
-					return builder.Update(resource, childResources)
-				})
-				return apiError
+		var operationResult controllerutil.OperationResult
+		err = clientretry.RetryOnConflict(clientretry.DefaultRetry, func() error {
+			var apiError error
+			operationResult, apiError = controllerutil.CreateOrUpdate(ctx, r.Client, resource, func() error {
+				return builder.Update(resource, childResources)
 			})
-			r.logOperationResult(logger, instance, resource, operationResult, err)
-			if err != nil {
-				r.setReconciliationSuccess(ctx, instance, metav1.ConditionFalse, "Error", err.Error())
-				return ctrl.Result{}, err
-			}
+			return apiError
+		})
+		r.logOperationResult(logger, instance, resource, operationResult, err)
+		if err != nil {
+			r.setReconciliationSuccess(ctx, instance, metav1.ConditionFalse, "Error", err.Error())
+			return ctrl.Result{}, err
 		}
 	}
 
@@ -260,6 +272,57 @@ func (r *OSRMClusterReconciler) getOSRMCluster(ctx context.Context, namespacedNa
 	instance := &osrmv1alpha1.OSRMCluster{}
 	err := r.Client.Get(ctx, namespacedName, instance)
 	return instance, err
+}
+
+// determinePhase determines the current phase based on the state of child resources
+func (r *OSRMClusterReconciler) determinePhase(instance *osrmv1alpha1.OSRMCluster, childResources []runtime.Object) osrmv1alpha1.Phase {
+	if len(instance.Spec.Profiles) == 0 {
+		return osrmv1alpha1.PhaseEmpty
+	}
+
+	// Check if all maps are built
+	allMapsBuilt := true
+	for _, profile := range instance.Spec.Profiles {
+		jobName := instance.ChildResourceName(profile.Name, resource.JobSuffix)
+		pvcName := instance.ChildResourceName(profile.Name, resource.PersistentVolumeClaimSuffix)
+
+		if !status.IsJobCompleted(jobName, childResources) || !status.IsPersistentVolumeClaimBound(pvcName, childResources) {
+			allMapsBuilt = false
+			break
+		}
+	}
+
+	if !allMapsBuilt {
+		return osrmv1alpha1.PhaseBuildingMap
+	}
+
+	// Check if all workers are deployed and ready
+	allWorkersDeployed := true
+	for _, profile := range instance.Spec.Profiles {
+		deploymentName := instance.ChildResourceName(profile.Name, resource.DeploymentSuffix)
+
+		// Check if deployment exists and is ready
+		deploymentReady := false
+		for _, res := range childResources {
+			if deployment, ok := res.(*appsv1.Deployment); ok && deployment.Name == deploymentName {
+				if deployment.Status.ReadyReplicas > 0 && deployment.Status.ReadyReplicas == deployment.Status.Replicas {
+					deploymentReady = true
+					break
+				}
+			}
+		}
+
+		if !deploymentReady {
+			allWorkersDeployed = false
+			break
+		}
+	}
+
+	if !allWorkersDeployed {
+		return osrmv1alpha1.PhaseDeployingWorkers
+	}
+
+	return osrmv1alpha1.PhaseWorkersDeployed
 }
 
 // logAndRecordOperationResult - helper function to log and record events with message and error
