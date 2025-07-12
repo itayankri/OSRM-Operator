@@ -15,18 +15,20 @@ import (
 
 type PersistentVolumeClaimBuilder struct {
 	ProfileScopedBuilder
+	MapGenerationScopedBuilder
 	*OSRMResourceBuilder
 }
 
-func (builder *OSRMResourceBuilder) PersistentVolumeClaim(profile *osrmv1alpha1.ProfileSpec) *PersistentVolumeClaimBuilder {
+func (builder *OSRMResourceBuilder) PersistentVolumeClaim(profile *osrmv1alpha1.ProfileSpec, mapGeneration string) *PersistentVolumeClaimBuilder {
 	return &PersistentVolumeClaimBuilder{
 		ProfileScopedBuilder{profile},
+		MapGenerationScopedBuilder{generation: mapGeneration},
 		builder,
 	}
 }
 
 func (builder *PersistentVolumeClaimBuilder) Build() (client.Object, error) {
-	name := builder.Instance.ChildResourceName(builder.profile.Name, builder.MapGeneration)
+	name := builder.Instance.ChildResourceName(builder.profile.Name, builder.MapGenerationScopedBuilder.generation)
 	return &corev1.PersistentVolumeClaim{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      name,

@@ -1,6 +1,8 @@
 package resource
 
 import (
+	"strconv"
+
 	osrmv1alpha1 "github.com/itayankri/OSRM-Operator/api/v1alpha1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -23,11 +25,14 @@ type ProfileScopedBuilder struct {
 	profile *osrmv1alpha1.ProfileSpec
 }
 
+type MapGenerationScopedBuilder struct {
+	generation string
+}
+
 type ClusterScopedBuilder struct {
 	profiles []*osrmv1alpha1.ProfileSpec
 }
 
-// ResourceBuildersForPhase returns builders based on the current phase
 func (builder *OSRMResourceBuilder) ResourceBuildersForPhase(phase osrmv1alpha1.Phase) []ResourceBuilder {
 	switch phase {
 	case osrmv1alpha1.PhaseBuildingMap:
@@ -36,27 +41,41 @@ func (builder *OSRMResourceBuilder) ResourceBuildersForPhase(phase osrmv1alpha1.
 		return builder.DeployingWorkersPhaseBuilders()
 	case osrmv1alpha1.PhaseWorkersDeployed:
 		return builder.WorkersDeployedPhaseBuilders()
+	case osrmv1alpha1.PhaseBuildingNewMap:
+		return builder.MapUpdatingResourceBuilders()
 	default:
-		// For backwards compatibility during transition
-		return builder.ResourceBuilders()
+		return nil
 	}
 }
 
-// MapBuildingPhaseBuilders returns builders for the map building phase
 func (builder *OSRMResourceBuilder) MapBuildingPhaseBuilders() []ResourceBuilder {
 	builders := []ResourceBuilder{}
 
 	for _, profile := range builder.Instance.Spec.Profiles {
 		builders = append(builders, []ResourceBuilder{
-			builder.PersistentVolumeClaim(profile),
-			builder.Job(profile),
+			builder.PersistentVolumeClaim(profile, builder.MapGeneration),
+			builder.Job(profile, builder.MapGeneration),
 		}...)
 	}
 
 	return builders
 }
 
-// DeployingWorkersPhaseBuilders returns builders for the deploying workers phase
+func (builder *OSRMResourceBuilder) MapUpdatingResourceBuilders() []ResourceBuilder {
+	nextMapGeneration := builder.getNextMapGeneration()
+
+	builders := []ResourceBuilder{}
+
+	for _, profile := range builder.Instance.Spec.Profiles {
+		builders = append(builders, []ResourceBuilder{
+			builder.PersistentVolumeClaim(profile, nextMapGeneration),
+			builder.Job(profile, nextMapGeneration),
+		}...)
+	}
+
+	return builders
+}
+
 func (builder *OSRMResourceBuilder) DeployingWorkersPhaseBuilders() []ResourceBuilder {
 	builders := []ResourceBuilder{}
 
@@ -95,42 +114,11 @@ func (builder *OSRMResourceBuilder) WorkersDeployedPhaseBuilders() []ResourceBui
 	return builders
 }
 
-// ResourceBuilders returns all builders (for backwards compatibility)
-func (builder *OSRMResourceBuilder) ResourceBuilders() []ResourceBuilder {
-	builders := []ResourceBuilder{}
-
-	for _, profile := range builder.Instance.Spec.Profiles {
-		builders = append(builders, []ResourceBuilder{
-			builder.PersistentVolumeClaim(profile),
-			builder.Job(profile),
-			builder.Deployment(profile),
-			builder.Service(profile),
-			builder.CronJob(profile),
-			builder.PodDisruptionBudget(profile),
-			builder.HorizontalPodAutoscaler(profile),
-		}...)
+func (builder *OSRMResourceBuilder) getNextMapGeneration() string {
+	mapGenerationInteger, err := strconv.Atoi(builder.MapGeneration)
+	if err != nil {
+		return "0"
 	}
 
-	if len(builders) > 0 {
-		builders = append(builders, []ResourceBuilder{
-			builder.ConfigMap(builder.Instance.Spec.Profiles),
-			builder.GatewayService(builder.Instance.Spec.Profiles),
-			builder.GatewayDeployment(builder.Instance.Spec.Profiles),
-		}...)
-	}
-
-	return builders
-}
-
-func (builder *OSRMResourceBuilder) MapUpdateResourceBuilders() []ResourceBuilder {
-	builders := []ResourceBuilder{}
-
-	for _, profile := range builder.Instance.Spec.Profiles {
-		builders = append(builders, []ResourceBuilder{
-			builder.PersistentVolumeClaim(profile),
-			builder.Job(profile),
-		}...)
-	}
-
-	return builders
+	return strconv.Itoa(mapGenerationInteger + 1)
 }

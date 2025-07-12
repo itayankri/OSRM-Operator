@@ -15,12 +15,14 @@ import (
 
 type JobBuilder struct {
 	ProfileScopedBuilder
+	MapGenerationScopedBuilder
 	*OSRMResourceBuilder
 }
 
-func (builder *OSRMResourceBuilder) Job(profile *osrmv1alpha1.ProfileSpec) *JobBuilder {
+func (builder *OSRMResourceBuilder) Job(profile *osrmv1alpha1.ProfileSpec, mapGeneration string) *JobBuilder {
 	return &JobBuilder{
 		ProfileScopedBuilder{profile},
+		MapGenerationScopedBuilder{generation: mapGeneration},
 		builder,
 	}
 }
@@ -28,7 +30,7 @@ func (builder *OSRMResourceBuilder) Job(profile *osrmv1alpha1.ProfileSpec) *JobB
 func (builder *JobBuilder) Build() (client.Object, error) {
 	return &batchv1.Job{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      builder.Instance.ChildResourceName(builder.profile.Name, JobSuffix),
+			Name:      builder.Instance.ChildResourceName(builder.profile.Name, builder.MapGenerationScopedBuilder.generation),
 			Namespace: builder.Instance.Namespace,
 			Labels:    metadata.GetLabels(builder.Instance, metadata.ComponentLabelProfile),
 		},
@@ -96,7 +98,7 @@ func (builder *JobBuilder) Update(object client.Object, siblings []runtime.Objec
 				RestartPolicy: corev1.RestartPolicyOnFailure,
 				Containers: []corev1.Container{
 					{
-						Name:      builder.Instance.ChildResourceName(builder.profile.Name, JobSuffix),
+						Name:      builder.Instance.ChildResourceName(builder.profile.Name, builder.MapGenerationScopedBuilder.generation),
 						Image:     builder.Instance.Spec.MapBuilder.GetImage(),
 						Resources: *builder.Instance.Spec.MapBuilder.GetResources(),
 						Env:       env,
@@ -113,7 +115,7 @@ func (builder *JobBuilder) Update(object client.Object, siblings []runtime.Objec
 						Name: osrmDataVolumeName,
 						VolumeSource: corev1.VolumeSource{
 							PersistentVolumeClaim: &corev1.PersistentVolumeClaimVolumeSource{
-								ClaimName: builder.Instance.ChildResourceName(builder.profile.Name, PersistentVolumeClaimSuffix),
+								ClaimName: builder.Instance.ChildResourceName(builder.profile.Name, builder.MapGenerationScopedBuilder.generation),
 								ReadOnly:  false,
 							},
 						},

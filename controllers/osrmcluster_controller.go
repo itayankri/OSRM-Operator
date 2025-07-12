@@ -209,7 +209,7 @@ func (r *OSRMClusterReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 	}
 
 	// Determine current phase and update status
-	newPhase := r.determinePhase(instance, childResources)
+	newPhase := r.determinePhase(instance, oldSpec, childResources)
 	if instance.Status.Phase != newPhase {
 		instance.Status.Phase = newPhase
 		if err := r.Client.Status().Update(ctx, instance); err != nil {
@@ -218,15 +218,7 @@ func (r *OSRMClusterReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 		}
 	}
 
-	// Get builders for the current phase
-	var builders []resource.ResourceBuilder
-	if instance.Spec.PBFURL != oldSpec.PBFURL {
-		// Handle map updates specially - always use map update builders
-		builders = resourceBuilder.MapUpdateResourceBuilders()
-	} else {
-		// Use phase-based builders
-		builders = resourceBuilder.ResourceBuildersForPhase(newPhase)
-	}
+	builders := resourceBuilder.ResourceBuildersForPhase(newPhase)
 
 	for _, builder := range builders {
 		resource, err := builder.Build()
@@ -236,15 +228,13 @@ func (r *OSRMClusterReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 			return ctrl.Result{}, err
 		}
 
-		var operationResult controllerutil.OperationResult
 		err = clientretry.RetryOnConflict(clientretry.DefaultRetry, func() error {
 			var apiError error
-			operationResult, apiError = controllerutil.CreateOrUpdate(ctx, r.Client, resource, func() error {
+			_, apiError = controllerutil.CreateOrUpdate(ctx, r.Client, resource, func() error {
 				return builder.Update(resource, childResources)
 			})
 			return apiError
 		})
-		r.logOperationResult(logger, instance, resource, operationResult, err)
 		if err != nil {
 			r.setReconciliationSuccess(ctx, instance, metav1.ConditionFalse, "Error", err.Error())
 			return ctrl.Result{}, err
@@ -274,13 +264,15 @@ func (r *OSRMClusterReconciler) getOSRMCluster(ctx context.Context, namespacedNa
 	return instance, err
 }
 
-// determinePhase determines the current phase based on the state of child resources
-func (r *OSRMClusterReconciler) determinePhase(instance *osrmv1alpha1.OSRMCluster, childResources []runtime.Object) osrmv1alpha1.Phase {
+func (r *OSRMClusterReconciler) determinePhase(
+	instance *osrmv1alpha1.OSRMCluster,
+	oldSpec *osrmv1alpha1.OSRMClusterSpec,
+	childResources []runtime.Object,
+) osrmv1alpha1.Phase {
 	if len(instance.Spec.Profiles) == 0 {
 		return osrmv1alpha1.PhaseEmpty
 	}
 
-	// Check if all maps are built
 	allMapsBuilt := true
 	for _, profile := range instance.Spec.Profiles {
 		jobName := instance.ChildResourceName(profile.Name, resource.JobSuffix)
@@ -296,12 +288,10 @@ func (r *OSRMClusterReconciler) determinePhase(instance *osrmv1alpha1.OSRMCluste
 		return osrmv1alpha1.PhaseBuildingMap
 	}
 
-	// Check if all workers are deployed and ready
 	allWorkersDeployed := true
 	for _, profile := range instance.Spec.Profiles {
 		deploymentName := instance.ChildResourceName(profile.Name, resource.DeploymentSuffix)
 
-		// Check if deployment exists and is ready
 		deploymentReady := false
 		for _, res := range childResources {
 			if deployment, ok := res.(*appsv1.Deployment); ok && deployment.Name == deploymentName {
@@ -322,40 +312,11 @@ func (r *OSRMClusterReconciler) determinePhase(instance *osrmv1alpha1.OSRMCluste
 		return osrmv1alpha1.PhaseDeployingWorkers
 	}
 
+	if instance.Spec.PBFURL != oldSpec.PBFURL {
+		return osrmv1alpha1.PhaseBuildingNewMap
+	}
+
 	return osrmv1alpha1.PhaseWorkersDeployed
-}
-
-// logAndRecordOperationResult - helper function to log and record events with message and error
-// it logs and records 'updated' and 'created' OperationResult, and ignores OperationResult 'unchanged'
-func (r *OSRMClusterReconciler) logOperationResult(
-	logger logr.Logger,
-	ro runtime.Object,
-	resource runtime.Object,
-	operationResult controllerutil.OperationResult,
-	err error,
-) {
-	if operationResult == controllerutil.OperationResultNone && err == nil {
-		return
-	}
-
-	var operation string
-	if operationResult == controllerutil.OperationResultCreated {
-		operation = "create"
-	}
-
-	if operationResult == controllerutil.OperationResultUpdated {
-		operation = "update"
-	}
-
-	if err == nil {
-		msg := fmt.Sprintf("%sd resource %s of Type %T", operation, resource.(metav1.Object).GetName(), resource.(metav1.Object))
-		logger.Info(msg)
-	}
-
-	if err != nil {
-		msg := fmt.Sprintf("failed to %s resource %s of Type %T", operation, resource.(metav1.Object).GetName(), resource.(metav1.Object))
-		logger.Error(err, msg)
-	}
 }
 
 func (r *OSRMClusterReconciler) setLastAppliedSpecAnnotation(
