@@ -6,7 +6,6 @@ import (
 
 	osrmv1alpha1 "github.com/itayankri/OSRM-Operator/api/v1alpha1"
 	"github.com/itayankri/OSRM-Operator/internal/metadata"
-	"github.com/itayankri/OSRM-Operator/internal/status"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
@@ -53,11 +52,10 @@ func (builder *GatewayDeploymentBuilder) Update(object client.Object, siblings [
 		Template: corev1.PodTemplateSpec{
 			ObjectMeta: metav1.ObjectMeta{
 				Labels: map[string]string{
-					"app": builder.Instance.ChildResourceName(GatewaySuffix, DeploymentSuffix),
-					"app.kubernetes.io/instance": builder.Instance.Name,
+					"app":                         builder.Instance.ChildResourceName(GatewaySuffix, DeploymentSuffix),
+					"app.kubernetes.io/instance":  builder.Instance.Name,
 					"app.kubernetes.io/component": "gateway",
 					"app.kubernetes.io/part-of":   "OSRMCluster",
-
 				},
 			},
 			Spec: corev1.PodSpec{
@@ -124,16 +122,6 @@ func (builder *GatewayDeploymentBuilder) Update(object client.Object, siblings [
 	builder.setAnnotations(deployment, siblings)
 
 	return nil
-}
-
-func (builder *GatewayDeploymentBuilder) ShouldDeploy(resources []runtime.Object) bool {
-	for _, profile := range builder.Instance.Spec.Profiles {
-		if !status.IsJobCompleted(builder.Instance.ChildResourceName(profile.Name, JobSuffix), resources) ||
-			!status.IsPersistentVolumeClaimBound(builder.Instance.ChildResourceName(profile.Name, PersistentVolumeClaimSuffix), resources) {
-			return false
-		}
-	}
-	return true
 }
 
 func (builder *GatewayDeploymentBuilder) setAnnotations(deployment *appsv1.Deployment, siblings []runtime.Object) {

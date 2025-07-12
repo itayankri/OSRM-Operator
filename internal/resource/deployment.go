@@ -7,7 +7,6 @@ import (
 
 	osrmv1alpha1 "github.com/itayankri/OSRM-Operator/api/v1alpha1"
 	"github.com/itayankri/OSRM-Operator/internal/metadata"
-	"github.com/itayankri/OSRM-Operator/internal/status"
 	appsv1 "k8s.io/api/apps/v1"
 	batchv1 "k8s.io/api/batch/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -121,17 +120,6 @@ func (builder *DeploymentBuilder) Update(object client.Object, siblings []runtim
 	}
 
 	return nil
-}
-
-func (builder *DeploymentBuilder) ShouldDeploy(resources []runtime.Object) bool {
-	return status.IsPersistentVolumeClaimBound(
-		builder.Instance.ChildResourceName(builder.profile.Name, PersistentVolumeClaimSuffix),
-		resources,
-	) &&
-		status.IsJobCompleted(
-			builder.Instance.ChildResourceName(builder.profile.Name, JobSuffix),
-			resources,
-		)
 }
 
 func (builder *DeploymentBuilder) setAnnotations(deployment *appsv1.Deployment, siblings []runtime.Object) {

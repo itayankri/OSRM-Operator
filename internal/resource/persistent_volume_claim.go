@@ -62,10 +62,6 @@ func (builder *PersistentVolumeClaimBuilder) Update(object client.Object, siblin
 	return nil
 }
 
-func (*PersistentVolumeClaimBuilder) ShouldDeploy(resources []runtime.Object) bool {
-	return true
-}
-
 func (builder *PersistentVolumeClaimBuilder) setAnnotations(pvc *corev1.PersistentVolumeClaim) {
 	if builder.Instance.Spec.Service.Annotations != nil {
 		pvc.Annotations = metadata.ReconcileAnnotations(pvc.Annotations, map[string]string{metadata.MapGenerationAnnotation: builder.MapGeneration})

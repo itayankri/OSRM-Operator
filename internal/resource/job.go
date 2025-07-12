@@ -130,10 +130,6 @@ func (builder *JobBuilder) Update(object client.Object, siblings []runtime.Objec
 	return nil
 }
 
-func (builder *JobBuilder) ShouldDeploy(resources []runtime.Object) bool {
-	return true
-}
-
 func (builder *JobBuilder) setAnnotations(job *batchv1.Job) {
 	if builder.Instance.Spec.Service.Annotations != nil {
 		job.Annotations = metadata.ReconcileAnnotations(job.Annotations, map[string]string{metadata.MapGenerationAnnotation: builder.MapGeneration})

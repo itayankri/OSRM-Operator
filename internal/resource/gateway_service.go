@@ -5,7 +5,6 @@ import (
 
 	osrmv1alpha1 "github.com/itayankri/OSRM-Operator/api/v1alpha1"
 	"github.com/itayankri/OSRM-Operator/internal/metadata"
-	"github.com/itayankri/OSRM-Operator/internal/status"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -68,16 +67,6 @@ func (builder *GatewayServiceBuilder) Update(object client.Object, siblings []ru
 	}
 
 	return nil
-}
-
-func (builder *GatewayServiceBuilder) ShouldDeploy(resources []runtime.Object) bool {
-	for _, profile := range builder.Instance.Spec.Profiles {
-		if !status.IsJobCompleted(builder.Instance.ChildResourceName(profile.Name, JobSuffix), resources) ||
-			!status.IsPersistentVolumeClaimBound(builder.Instance.ChildResourceName(profile.Name, PersistentVolumeClaimSuffix), resources) {
-			return false
-		}
-	}
-	return true
 }
 
 func (builder *GatewayServiceBuilder) setAnnotations(service *corev1.Service) {
