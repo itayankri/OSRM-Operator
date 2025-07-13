@@ -29,7 +29,7 @@ func (builder *OSRMResourceBuilder) PersistentVolumeClaim(profile *osrmv1alpha1.
 
 func (builder *PersistentVolumeClaimBuilder) Build() (client.Object, error) {
 	name := builder.Instance.ChildResourceName(builder.profile.Name, builder.MapGenerationScopedBuilder.generation)
-	return &corev1.PersistentVolumeClaim{
+	pvc := &corev1.PersistentVolumeClaim{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      name,
 			Namespace: builder.Instance.Namespace,
@@ -47,7 +47,11 @@ func (builder *PersistentVolumeClaimBuilder) Build() (client.Object, error) {
 			VolumeName:       "",
 			StorageClassName: &builder.Instance.Spec.Persistence.StorageClassName,
 		},
-	}, nil
+	}
+
+	builder.setAnnotations(pvc)
+
+	return pvc, nil
 }
 
 func (builder *PersistentVolumeClaimBuilder) Update(object client.Object, siblings []runtime.Object) error {
@@ -65,7 +69,10 @@ func (builder *PersistentVolumeClaimBuilder) Update(object client.Object, siblin
 }
 
 func (builder *PersistentVolumeClaimBuilder) setAnnotations(pvc *corev1.PersistentVolumeClaim) {
-	if builder.Instance.Spec.Service.Annotations != nil {
-		pvc.ObjectMeta.Annotations[metadata.MapGenerationAnnotation] = builder.MapGenerationScopedBuilder.generation
+	annotations := pvc.GetAnnotations()
+	if annotations == nil {
+		annotations = make(map[string]string)
 	}
+	annotations[metadata.MapGenerationAnnotation] = builder.MapGenerationScopedBuilder.generation
+	pvc.SetAnnotations(annotations)
 }

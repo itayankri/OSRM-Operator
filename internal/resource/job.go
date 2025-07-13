@@ -133,7 +133,10 @@ func (builder *JobBuilder) Update(object client.Object, siblings []runtime.Objec
 }
 
 func (builder *JobBuilder) setAnnotations(job *batchv1.Job) {
-	if builder.Instance.Spec.Service.Annotations != nil {
-		job.ObjectMeta.Annotations[metadata.MapGenerationAnnotation] = builder.MapGenerationScopedBuilder.generation
+	annotations := job.GetAnnotations()
+	if annotations == nil {
+		annotations = make(map[string]string)
 	}
+	annotations[metadata.MapGenerationAnnotation] = builder.MapGenerationScopedBuilder.generation
+	job.SetAnnotations(annotations)
 }

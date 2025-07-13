@@ -1,6 +1,7 @@
 package status
 
 import (
+	"fmt"
 	"time"
 
 	appsv1 "k8s.io/api/apps/v1"
@@ -93,6 +94,7 @@ func IsPersistentVolumeClaimBound(pvcName string, resources []runtime.Object) bo
 	pvcBound := false
 	for _, resource := range resources {
 		if pvc, ok := resource.(*corev1.PersistentVolumeClaim); ok {
+			fmt.Println("IsJobCompleted", pvc.ObjectMeta.Name, pvcName)
 			if pvc != nil && pvc.ObjectMeta.Name == pvcName && pvc.Status.Phase == corev1.ClaimBound {
 				pvcBound = true
 				break
@@ -106,6 +108,7 @@ func IsJobCompleted(jobName string, resources []runtime.Object) bool {
 	jobCompleted := false
 	for _, resource := range resources {
 		if job, ok := resource.(*batchv1.Job); ok {
+			fmt.Println("IsJobCompleted", job.ObjectMeta.Name, jobName)
 			if job != nil && job.ObjectMeta.Name == jobName {
 				for _, condition := range job.Status.Conditions {
 					if condition.Type == batchv1.JobComplete && condition.Status == corev1.ConditionTrue {

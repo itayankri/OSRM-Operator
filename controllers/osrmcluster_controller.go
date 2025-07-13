@@ -88,16 +88,16 @@ func isPaused(object metav1.Object) bool {
 	return paused
 }
 
-func getMapGeneration(childResources []runtime.Object) (string, error) {
+func getMapGeneration(childResources []runtime.Object) string {
 	for _, resource := range childResources {
 		if pvc, ok := resource.(*corev1.PersistentVolumeClaim); ok {
 			if generation, ok := pvc.ObjectMeta.Annotations[metadata.MapGenerationAnnotation]; ok {
-				return generation, nil
+				return generation
 			}
 		}
 	}
 
-	return "", fmt.Errorf("no PersistentVolumeClaim with map generation found")
+	return "1"
 }
 
 // the rbac rule requires an empty row at the end to render
@@ -158,17 +158,16 @@ func (r *OSRMClusterReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 		return ctrl.Result{RequeueAfter: requeueAfter}, err
 	}
 
-	var mapGeneration string
 	if !isInitialized(instance) {
-		mapGeneration = "1"
 		err := r.initialize(ctx, instance)
 		// No need to requeue here, because
 		// the update will trigger reconciliation again
 		logger.Info("OSRMCLuster initialized")
 		return ctrl.Result{}, err
-	} else {
-		mapGeneration, err = getMapGeneration(childResources)
 	}
+
+	mapGeneration := getMapGeneration(childResources)
+	logger.Info("map generation else", "mapGeneration", mapGeneration)
 
 	if isBeingDeleted(instance) {
 		err := r.cleanup(ctx, instance)
@@ -209,7 +208,7 @@ func (r *OSRMClusterReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 	}
 
 	// Determine current phase and update status
-	newPhase := r.determinePhase(instance, oldSpec, childResources)
+	newPhase := r.determinePhase(instance, oldSpec, childResources, mapGeneration)
 	if instance.Status.Phase != newPhase {
 		instance.Status.Phase = newPhase
 		if err := r.Client.Status().Update(ctx, instance); err != nil {
@@ -217,6 +216,8 @@ func (r *OSRMClusterReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 			return ctrl.Result{}, err
 		}
 	}
+
+	logger.Info("OSRMCluster phase", "current", instance.Status.Phase, "new", newPhase)
 
 	builders := resourceBuilder.ResourceBuildersForPhase(newPhase)
 
@@ -268,17 +269,22 @@ func (r *OSRMClusterReconciler) determinePhase(
 	instance *osrmv1alpha1.OSRMCluster,
 	oldSpec *osrmv1alpha1.OSRMClusterSpec,
 	childResources []runtime.Object,
+	mapGeneration string,
 ) osrmv1alpha1.Phase {
+
 	if len(instance.Spec.Profiles) == 0 {
 		return osrmv1alpha1.PhaseEmpty
 	}
 
 	allMapsBuilt := true
 	for _, profile := range instance.Spec.Profiles {
-		jobName := instance.ChildResourceName(profile.Name, resource.JobSuffix)
-		pvcName := instance.ChildResourceName(profile.Name, resource.PersistentVolumeClaimSuffix)
+		jobName := instance.ChildResourceName(profile.Name, mapGeneration)
+		pvcName := instance.ChildResourceName(profile.Name, mapGeneration)
+
+		r.log.Info("allMapsBuilt loop", "jobName", jobName, "pvcName", pvcName)
 
 		if !status.IsJobCompleted(jobName, childResources) || !status.IsPersistentVolumeClaimBound(pvcName, childResources) {
+			r.log.Info("map not built", "jobName", jobName, "pvcName", pvcName, "IsJobCompleted", strconv.FormatBool(status.IsJobCompleted(jobName, childResources)), "IsPersistentVolumeClaimBound", strconv.FormatBool(status.IsPersistentVolumeClaimBound(pvcName, childResources)))
 			allMapsBuilt = false
 			break
 		}
@@ -302,7 +308,10 @@ func (r *OSRMClusterReconciler) determinePhase(
 			}
 		}
 
+		r.log.Info("allWorkersDeployed loop", "deploymentName", deploymentName)
+
 		if !deploymentReady {
+			r.log.Info("worker not deployed", "deploymentName", deploymentName)
 			allWorkersDeployed = false
 			break
 		}
@@ -354,6 +363,9 @@ func (r *OSRMClusterReconciler) setReconciliationSuccess(
 
 func (r *OSRMClusterReconciler) initialize(ctx context.Context, instance *osrmv1alpha1.OSRMCluster) error {
 	controllerutil.AddFinalizer(instance, finalizerName)
+	annotations := instance.GetAnnotations()
+	annotations[metadata.MapGenerationAnnotation] = "1"
+	instance.SetAnnotations(annotations)
 	return r.updateOSRMClusterResource(ctx, instance)
 }
 
@@ -384,7 +396,10 @@ func (r *OSRMClusterReconciler) updateStatusConditions(
 	return 0, nil
 }
 
-func (r *OSRMClusterReconciler) getChildResources(ctx context.Context, instance *osrmv1alpha1.OSRMCluster) ([]runtime.Object, error) {
+func (r *OSRMClusterReconciler) getChildResources(
+	ctx context.Context,
+	instance *osrmv1alpha1.OSRMCluster,
+) ([]runtime.Object, error) {
 	children := []runtime.Object{}
 
 	gatewayDeployment := &appsv1.Deployment{}
@@ -424,28 +439,38 @@ func (r *OSRMClusterReconciler) getChildResources(ctx context.Context, instance 
 	}
 
 	for _, profileSpec := range instance.Spec.Profiles {
-		pvc := &corev1.PersistentVolumeClaim{}
-		if err := r.Client.Get(ctx, types.NamespacedName{
-			Name:      instance.ChildResourceName(profileSpec.Name, resource.PersistentVolumeClaimSuffix),
+		labelSelector := fmt.Sprintf(
+			"%s=%s,%s=%s,%s,%s notin (%d)",
+			metadata.NameLabelKey,
+			instance.Name,
+			metadata.ComponentLabelKey,
+			metadata.ComponentLabelProfile,
+			metadata.GenerationLabelKey,
+			metadata.GenerationLabelKey,
+			instance.ObjectMeta.Generation,
+		)
+
+		listOptions := &client.ListOptions{
 			Namespace: instance.Namespace,
-		}, pvc); err != nil {
-			if !errors.IsNotFound(err) {
-				return nil, err
-			}
-		} else {
-			children = append(children, pvc)
+			Raw:       &metav1.ListOptions{LabelSelector: labelSelector},
 		}
 
-		job := &batchv1.Job{}
-		if err := r.Client.Get(ctx, types.NamespacedName{
-			Name:      instance.ChildResourceName(profileSpec.Name, resource.JobSuffix),
-			Namespace: instance.Namespace,
-		}, job); err != nil {
+		pvcs := &corev1.PersistentVolumeClaimList{}
+		if err := r.Client.List(ctx, pvcs, listOptions); err != nil {
 			if !errors.IsNotFound(err) {
 				return nil, err
 			}
 		} else {
-			children = append(children, job)
+			children = append(children, pvcs)
+		}
+
+		jobs := &batchv1.JobList{}
+		if err := r.Client.List(ctx, jobs, listOptions); err != nil {
+			if !errors.IsNotFound(err) {
+				return nil, err
+			}
+		} else {
+			children = append(children, jobs)
 		}
 
 		cronJob := &batchv1.CronJob{}
