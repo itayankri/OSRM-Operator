@@ -89,7 +89,7 @@ func isPaused(object metav1.Object) bool {
 	return paused
 }
 
-func getResourceNameVersion(name string) string {
+func getResourceNameSuffix(name string) string {
 	tokens := strings.Split(name, "-")
 	return tokens[len(tokens)-1]
 }
@@ -169,7 +169,7 @@ func (r *OSRMClusterReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 		err := r.initialize(ctx, instance)
 		// No need to requeue here, because
 		// the update will trigger reconciliation again
-		logger.Info("OSRMCLuster initialized")
+		logger.Info("OSRMCluster initialized")
 		return ctrl.Result{}, err
 	}
 
@@ -203,13 +203,16 @@ func (r *OSRMClusterReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 		}
 	}
 
-	newPhase := r.determinePhase(ctx, instance, oldSpec, childResources)
+	profilesDeployments, _ := r.getProfilesDeployments(ctx, instance)
+	activeMapGeneration := r.getActiveMapGeneration(profilesDeployments)
+	newPhase := r.determinePhase(ctx, instance, oldSpec, profilesDeployments, childResources)
 
-	logger.Info("Reconciling OSRMCluster %v/%v, phase: %v", instance.Namespace, instance.Name, newPhase)
+	logger.Info("Reconciling OSRMCluster %v/%v", instance.Namespace, instance.Name)
 
 	resourceBuilder := resource.OSRMResourceBuilder{
-		Instance: instance,
-		Scheme:   r.Scheme,
+		Instance:      instance,
+		Scheme:        r.Scheme,
+		MapGeneration: activeMapGeneration,
 	}
 
 	if instance.Status.Phase != newPhase {
@@ -272,55 +275,61 @@ func (r *OSRMClusterReconciler) determinePhase(
 	ctx context.Context,
 	instance *osrmv1alpha1.OSRMCluster,
 	oldSpec *osrmv1alpha1.OSRMClusterSpec,
+	profilesDeployments []*appsv1.Deployment,
 	childResources []runtime.Object,
 ) osrmv1alpha1.Phase {
 	if len(instance.Spec.Profiles) == 0 {
 		return osrmv1alpha1.PhaseEmpty
 	}
 
-	profilesDeployments, _ := r.getProfilesDeployments(ctx, instance)
-	activeMapGeneration := getResourceNameVersion(profilesDeployments[0].Spec.Template.Spec.Volumes[0].VolumeSource.PersistentVolumeClaim.ClaimName)
-	r.log.Info("Active Map Generation", "activeMapGeneration", activeMapGeneration)
+	activeMapGeneration := r.getActiveMapGeneration(profilesDeployments)
 
 	pvcs, _ := r.getPersistentVolumeClaims(ctx, instance)
 	mapGenrations := make([]string, 0)
 	for _, pvc := range pvcs {
-		mapGenrations = append(mapGenrations, getResourceNameVersion(pvc.Name))
+		mapGenrations = append(mapGenrations, getResourceNameSuffix(pvc.Name))
 	}
 
 	allVolumesBound := true
 	for _, profile := range instance.Spec.Profiles {
-		pvcName := instance.ChildResourceName(profile.Name, activeMapGeneration)
+		pvcFound := false
 		for _, pvc := range pvcs {
-			if pvc.Name == pvcName {
+			if pvc.Name == instance.ChildResourceName(profile.Name, activeMapGeneration) {
+				pvcFound = true
 				if !status.IsPersistentVolumeClaimBound(pvc) {
 					allVolumesBound = false
-					r.log.Info("PersistentVolumeClaim not bound", "pvcName", pvc.Name)
 					break
 				}
 			}
 		}
-	}
 
-	if !allVolumesBound {
-		return osrmv1alpha1.PhaseWaitingForVolumes
+		if !pvcFound {
+			allVolumesBound = false
+			break
+		}
 	}
 
 	jobs, _ := r.getJobs(ctx, instance)
 	allMapsBuilt := true
 	for _, profile := range instance.Spec.Profiles {
+		jobFound := false
 		for _, job := range jobs {
 			if job.Name == instance.ChildResourceName(profile.Name, activeMapGeneration) {
+				jobFound = true
 				if !status.IsJobCompleted(job) {
 					allMapsBuilt = false
-					r.log.Info("Map build job not completed", "jobName", job.Name)
 					break
 				}
 			}
 		}
+
+		if !jobFound {
+			allMapsBuilt = false
+			break
+		}
 	}
 
-	if !allMapsBuilt {
+	if !allVolumesBound || !allMapsBuilt {
 		return osrmv1alpha1.PhaseBuildingMap
 	}
 
@@ -338,10 +347,7 @@ func (r *OSRMClusterReconciler) determinePhase(
 			}
 		}
 
-		r.log.Info("allWorkersDeployed loop", "deploymentName", deploymentName)
-
 		if !deploymentReady {
-			r.log.Info("worker not deployed", "deploymentName", deploymentName)
 			allWorkersDeployed = false
 			break
 		}
@@ -424,6 +430,18 @@ func (r *OSRMClusterReconciler) updateStatusConditions(
 		return 0, err
 	}
 	return 0, nil
+}
+
+func (r *OSRMClusterReconciler) getActiveMapGeneration(profilesDeployments []*appsv1.Deployment) string {
+	activeMapGeneration := "1"
+	if len(profilesDeployments) > 0 {
+		suffix := getResourceNameSuffix(profilesDeployments[0].Spec.Template.Spec.Volumes[0].VolumeSource.PersistentVolumeClaim.ClaimName)
+		if _, err := strconv.Atoi(suffix); err != nil {
+			activeMapGeneration = suffix
+		}
+	}
+
+	return activeMapGeneration
 }
 
 func (r *OSRMClusterReconciler) getProfilesDeployments(
