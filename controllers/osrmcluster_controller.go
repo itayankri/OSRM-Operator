@@ -203,11 +203,13 @@ func (r *OSRMClusterReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 		}
 	}
 
+	pvcs, _ := r.getPersistentVolumeClaims(ctx, instance)
+	jobs, _ := r.getJobs(ctx, instance)
 	profilesDeployments, _ := r.getProfilesDeployments(ctx, instance)
 	activeMapGeneration := r.getActiveMapGeneration(profilesDeployments)
-	newPhase := r.determinePhase(ctx, instance, oldSpec, profilesDeployments, childResources)
+	phase := r.determinePhase(ctx, instance, activeMapGeneration, pvcs, jobs, profilesDeployments)
 
-	logger.Info("Reconciling OSRMCluster %v/%v", instance.Namespace, instance.Name)
+	logger.Info("Reconciling OSRMCluster", "namespace", instance.Namespace, "instance", instance.Name)
 
 	resourceBuilder := resource.OSRMResourceBuilder{
 		Instance:      instance,
@@ -215,17 +217,16 @@ func (r *OSRMClusterReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 		MapGeneration: activeMapGeneration,
 	}
 
-	if instance.Status.Phase != newPhase {
-		instance.Status.Phase = newPhase
+	if instance.Status.Phase != phase {
+		logger.Info("OSRMCluster phase changed", "current", instance.Status.Phase, "new", phase)
+		instance.Status.Phase = phase
 		if err := r.Client.Status().Update(ctx, instance); err != nil {
 			logger.Error(err, "Failed to update phase for OSRMCluster %v/%v", instance.Namespace, instance.Name)
 			return ctrl.Result{}, err
 		}
 	}
 
-	logger.Info("OSRMCluster phase", "current", instance.Status.Phase, "new", newPhase)
-
-	builders := resourceBuilder.ResourceBuildersForPhase(newPhase)
+	builders := resourceBuilder.ResourceBuildersForPhase(phase)
 
 	for _, builder := range builders {
 		resource, err := builder.Build()
@@ -274,17 +275,14 @@ func (r *OSRMClusterReconciler) getOSRMCluster(ctx context.Context, namespacedNa
 func (r *OSRMClusterReconciler) determinePhase(
 	ctx context.Context,
 	instance *osrmv1alpha1.OSRMCluster,
-	oldSpec *osrmv1alpha1.OSRMClusterSpec,
+	activeMapGeneration string,
+	pvcs []*corev1.PersistentVolumeClaim,
+	jobs []*batchv1.Job,
 	profilesDeployments []*appsv1.Deployment,
-	childResources []runtime.Object,
 ) osrmv1alpha1.Phase {
 	if len(instance.Spec.Profiles) == 0 {
 		return osrmv1alpha1.PhaseEmpty
 	}
-
-	activeMapGeneration := r.getActiveMapGeneration(profilesDeployments)
-
-	pvcs, _ := r.getPersistentVolumeClaims(ctx, instance)
 	mapGenrations := make([]string, 0)
 	for _, pvc := range pvcs {
 		mapGenrations = append(mapGenrations, getResourceNameSuffix(pvc.Name))
@@ -309,7 +307,6 @@ func (r *OSRMClusterReconciler) determinePhase(
 		}
 	}
 
-	jobs, _ := r.getJobs(ctx, instance)
 	allMapsBuilt := true
 	for _, profile := range instance.Spec.Profiles {
 		jobFound := false
@@ -338,8 +335,8 @@ func (r *OSRMClusterReconciler) determinePhase(
 		deploymentName := instance.ChildResourceName(profile.Name, resource.DeploymentSuffix)
 
 		deploymentReady := false
-		for _, res := range childResources {
-			if deployment, ok := res.(*appsv1.Deployment); ok && deployment.Name == deploymentName {
+		for _, deployment := range profilesDeployments {
+			if deployment.Name == deploymentName {
 				if deployment.Status.ReadyReplicas > 0 && deployment.Status.ReadyReplicas == deployment.Status.Replicas {
 					deploymentReady = true
 					break

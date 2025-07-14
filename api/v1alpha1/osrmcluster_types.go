@@ -44,7 +44,7 @@ const (
 	PhaseWaitingForVolumes Phase = "WaitingForVolumes"
 
 	// PhaseBuildingNewMap signals that a new map is being built
-	PhaseBuildingNewMap Phase = "BuildingNewMap"
+	PhaseUpdatingMap Phase = "UpdatingMap"
 
 	// PhaseDeployingWorkersOnNewMap signals that the workers are being deployed on a new map
 	PhaseDeployingWorkersOnNewMap = "DeployingWorkersOnNewMap"

@@ -41,7 +41,7 @@ func (builder *OSRMResourceBuilder) ResourceBuildersForPhase(phase osrmv1alpha1.
 		return builder.DeployingWorkersPhaseBuilders()
 	case osrmv1alpha1.PhaseWorkersDeployed:
 		return builder.WorkersDeployedPhaseBuilders()
-	case osrmv1alpha1.PhaseBuildingNewMap:
+	case osrmv1alpha1.PhaseUpdatingMap:
 		return builder.MapUpdatingResourceBuilders()
 	default:
 		return nil
