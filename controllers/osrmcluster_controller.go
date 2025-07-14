@@ -207,7 +207,16 @@ func (r *OSRMClusterReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 	jobs, _ := r.getJobs(ctx, instance)
 	profilesDeployments, _ := r.getProfilesDeployments(ctx, instance)
 	activeMapGeneration := r.getActiveMapGeneration(profilesDeployments)
-	phase := r.determinePhase(instance, oldSpec, activeMapGeneration, pvcs, jobs, profilesDeployments)
+	futureMapGeneration := r.getfutureMapGeneration(pvcs)
+	phase := r.determinePhase(
+		instance,
+		oldSpec,
+		activeMapGeneration,
+		futureMapGeneration,
+		pvcs,
+		jobs,
+		profilesDeployments,
+	)
 
 	logger.Info("Reconciling OSRMCluster", "namespace", instance.Namespace, "instance", instance.Name)
 
@@ -272,27 +281,17 @@ func (r *OSRMClusterReconciler) getOSRMCluster(ctx context.Context, namespacedNa
 	return instance, err
 }
 
-func (r *OSRMClusterReconciler) determinePhase(
+func IsMapBuildingInProgress(
 	instance *osrmv1alpha1.OSRMCluster,
-	oldSpec *osrmv1alpha1.OSRMClusterSpec,
-	activeMapGeneration string,
 	pvcs []*corev1.PersistentVolumeClaim,
 	jobs []*batchv1.Job,
-	profilesDeployments []*appsv1.Deployment,
-) osrmv1alpha1.Phase {
-	if len(instance.Spec.Profiles) == 0 {
-		return osrmv1alpha1.PhaseEmpty
-	}
-	mapGenrations := make([]string, 0)
-	for _, pvc := range pvcs {
-		mapGenrations = append(mapGenrations, getResourceNameSuffix(pvc.Name))
-	}
-
+	mapGeneration string,
+) bool {
 	allVolumesBound := true
 	for _, profile := range instance.Spec.Profiles {
 		pvcFound := false
 		for _, pvc := range pvcs {
-			if pvc.Name == instance.ChildResourceName(profile.Name, activeMapGeneration) {
+			if pvc.Name == instance.ChildResourceName(profile.Name, mapGeneration) {
 				pvcFound = true
 				if !status.IsPersistentVolumeClaimBound(pvc) {
 					allVolumesBound = false
@@ -311,7 +310,7 @@ func (r *OSRMClusterReconciler) determinePhase(
 	for _, profile := range instance.Spec.Profiles {
 		jobFound := false
 		for _, job := range jobs {
-			if job.Name == instance.ChildResourceName(profile.Name, activeMapGeneration) {
+			if job.Name == instance.ChildResourceName(profile.Name, mapGeneration) {
 				jobFound = true
 				if !status.IsJobCompleted(job) {
 					allMapsBuilt = false
@@ -326,7 +325,23 @@ func (r *OSRMClusterReconciler) determinePhase(
 		}
 	}
 
-	if !allVolumesBound || !allMapsBuilt {
+	return !allVolumesBound || !allMapsBuilt
+}
+
+func (r *OSRMClusterReconciler) determinePhase(
+	instance *osrmv1alpha1.OSRMCluster,
+	oldSpec *osrmv1alpha1.OSRMClusterSpec,
+	activeMapGeneration string,
+	futureMapGeneration string,
+	pvcs []*corev1.PersistentVolumeClaim,
+	jobs []*batchv1.Job,
+	profilesDeployments []*appsv1.Deployment,
+) osrmv1alpha1.Phase {
+	if len(instance.Spec.Profiles) == 0 {
+		return osrmv1alpha1.PhaseEmpty
+	}
+
+	if IsMapBuildingInProgress(instance, pvcs, jobs, activeMapGeneration) {
 		return osrmv1alpha1.PhaseBuildingMap
 	}
 
@@ -354,8 +369,12 @@ func (r *OSRMClusterReconciler) determinePhase(
 		return osrmv1alpha1.PhaseDeployingWorkers
 	}
 
-	if instance.Spec.PBFURL != oldSpec.PBFURL {
+	if instance.Spec.PBFURL != oldSpec.PBFURL || IsMapBuildingInProgress(instance, pvcs, jobs, futureMapGeneration) {
 		return osrmv1alpha1.PhaseUpdatingMap
+	}
+
+	if activeMapGeneration != futureMapGeneration {
+		return osrmv1alpha1.PhaseRedepoloyingWorkers
 	}
 
 	return osrmv1alpha1.PhaseWorkersDeployed
@@ -443,6 +462,17 @@ func (r *OSRMClusterReconciler) getActiveMapGeneration(profilesDeployments []*ap
 	}
 
 	return activeMapGeneration
+}
+
+func (r *OSRMClusterReconciler) getfutureMapGeneration(pvcs []*corev1.PersistentVolumeClaim) string {
+	higestMapGeneration := "1"
+	for _, pvc := range pvcs {
+		mapGeneration := getResourceNameSuffix(pvc.Name)
+		if mapGeneration > higestMapGeneration {
+			higestMapGeneration = mapGeneration
+		}
+	}
+	return higestMapGeneration
 }
 
 func (r *OSRMClusterReconciler) getProfilesDeployments(
@@ -617,16 +647,7 @@ func (r *OSRMClusterReconciler) getChildResources(
 }
 
 func (r *OSRMClusterReconciler) garbageCollection(ctx context.Context, instance *osrmv1alpha1.OSRMCluster) error {
-	labelSelector := fmt.Sprintf(
-		"%s=%s,%s=%s,%s,%s notin (%d)",
-		metadata.NameLabelKey,
-		instance.Name,
-		metadata.ComponentLabelKey,
-		metadata.ComponentLabelProfile,
-		metadata.GenerationLabelKey,
-		metadata.GenerationLabelKey,
-		instance.ObjectMeta.Generation,
-	)
+	labelSelector := getLabelSelector(instance)
 	propagationPolicy := metav1.DeletePropagationBackground
 
 	err := r.Client.DeleteAllOf(ctx, &batchv1.CronJob{}, &client.DeleteAllOfOptions{

@@ -19,12 +19,14 @@ import (
 
 type DeploymentBuilder struct {
 	ProfileScopedBuilder
+	MapGenerationScopedBuilder
 	*OSRMResourceBuilder
 }
 
-func (builder *OSRMResourceBuilder) Deployment(profile *osrmv1alpha1.ProfileSpec) *DeploymentBuilder {
+func (builder *OSRMResourceBuilder) Deployment(profile *osrmv1alpha1.ProfileSpec, mapGeneration string) *DeploymentBuilder {
 	return &DeploymentBuilder{
 		ProfileScopedBuilder{profile},
+		MapGenerationScopedBuilder{generation: mapGeneration},
 		builder,
 	}
 }
@@ -104,7 +106,7 @@ func (builder *DeploymentBuilder) Update(object client.Object, siblings []runtim
 					Name: osrmDataVolumeName,
 					VolumeSource: corev1.VolumeSource{
 						PersistentVolumeClaim: &corev1.PersistentVolumeClaimVolumeSource{
-							ClaimName: builder.Instance.ChildResourceName(builder.profile.Name, builder.MapGeneration),
+							ClaimName: builder.Instance.ChildResourceName(builder.profile.Name, builder.MapGenerationScopedBuilder.generation),
 							ReadOnly:  true,
 						},
 					},

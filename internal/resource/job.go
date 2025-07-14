@@ -28,19 +28,13 @@ func (builder *OSRMResourceBuilder) Job(profile *osrmv1alpha1.ProfileSpec, mapGe
 }
 
 func (builder *JobBuilder) Build() (client.Object, error) {
-	return &batchv1.Job{
+	job := &batchv1.Job{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      builder.Instance.ChildResourceName(builder.profile.Name, builder.MapGenerationScopedBuilder.generation),
 			Namespace: builder.Instance.Namespace,
 			Labels:    metadata.GetLabels(builder.Instance, metadata.ComponentLabelProfile),
 		},
-	}, nil
-}
-
-func (builder *JobBuilder) Update(object client.Object, siblings []runtime.Object) error {
-	job := object.(*batchv1.Job)
-
-	job.ObjectMeta.Labels = metadata.GetLabels(builder.Instance, metadata.ComponentLabelProfile)
+	}
 
 	builder.setAnnotations(job)
 
@@ -124,6 +118,16 @@ func (builder *JobBuilder) Update(object client.Object, siblings []runtime.Objec
 			},
 		},
 	}
+
+	return job, nil
+}
+
+func (builder *JobBuilder) Update(object client.Object, siblings []runtime.Object) error {
+	job := object.(*batchv1.Job)
+
+	job.ObjectMeta.Labels = metadata.GetLabels(builder.Instance, metadata.ComponentLabelProfile)
+
+	builder.setAnnotations(job)
 
 	if err := controllerutil.SetControllerReference(builder.Instance, job, builder.Scheme); err != nil {
 		return fmt.Errorf("failed setting controller reference: %v", err)

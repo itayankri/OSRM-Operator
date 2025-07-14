@@ -16,9 +16,10 @@ type ResourceBuilder interface {
 }
 
 type OSRMResourceBuilder struct {
-	Instance      *osrmv1alpha1.OSRMCluster
-	Scheme        *runtime.Scheme
-	MapGeneration string
+	Instance            *osrmv1alpha1.OSRMCluster
+	Scheme              *runtime.Scheme
+	MapGeneration       string
+	FutureMapGeneration string
 }
 
 type ProfileScopedBuilder struct {
@@ -81,6 +82,12 @@ func (builder *OSRMResourceBuilder) MapUpdatingResourceBuilders() []ResourceBuil
 func (builder *OSRMResourceBuilder) RedeployingWorkersPhaseBuilders() []ResourceBuilder {
 	builders := []ResourceBuilder{}
 
+	for _, profile := range builder.Instance.Spec.Profiles {
+		builders = append(builders, []ResourceBuilder{
+			builder.Deployment(profile, builder.FutureMapGeneration),
+		}...)
+	}
+
 	return builders
 }
 
@@ -89,7 +96,7 @@ func (builder *OSRMResourceBuilder) DeployingWorkersPhaseBuilders() []ResourceBu
 
 	for _, profile := range builder.Instance.Spec.Profiles {
 		builders = append(builders, []ResourceBuilder{
-			builder.Deployment(profile),
+			builder.Deployment(profile, builder.MapGeneration),
 			builder.Service(profile),
 			builder.PodDisruptionBudget(profile),
 			builder.HorizontalPodAutoscaler(profile),
@@ -125,7 +132,7 @@ func (builder *OSRMResourceBuilder) WorkersDeployedPhaseBuilders() []ResourceBui
 func getNextMapGeneration(mapGeneration string) string {
 	mapGenerationInteger, err := strconv.Atoi(mapGeneration)
 	if err != nil {
-		return "0"
+		return "1"
 	}
 
 	return strconv.Itoa(mapGenerationInteger + 1)

@@ -7,7 +7,8 @@ spec:
     image: itayankri/osrm-builder:osrm-v5.27.1
     extractOptions: "--parse-conditional-restrictions"
     customizeOptions: "--parse-conditionals-from-now 1727194872"
-  pbfUrl: https://download.geofabrik.de/australia-oceania/marshall-islands-latest.osm.pbf
+  # pbfUrl: https://download.geofabrik.de/australia-oceania/marshall-islands-latest.osm.pbf
+  pbfUrl: https://download.geofabrik.de/australia-oceania/marshall-islands-250713.osm.pbf
   profiles:
   - name: foot
     endpointName: foot
