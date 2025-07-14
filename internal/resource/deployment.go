@@ -104,7 +104,7 @@ func (builder *DeploymentBuilder) Update(object client.Object, siblings []runtim
 					Name: osrmDataVolumeName,
 					VolumeSource: corev1.VolumeSource{
 						PersistentVolumeClaim: &corev1.PersistentVolumeClaimVolumeSource{
-							ClaimName: builder.Instance.ChildResourceName(builder.profile.Name, PersistentVolumeClaimSuffix),
+							ClaimName: builder.Instance.ChildResourceName(builder.profile.Name, builder.MapGeneration),
 							ReadOnly:  true,
 						},
 					},

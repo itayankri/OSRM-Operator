@@ -21,6 +21,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"strconv"
+	"strings"
 	"time"
 
 	"k8s.io/apimachinery/pkg/api/errors"
@@ -88,16 +89,22 @@ func isPaused(object metav1.Object) bool {
 	return paused
 }
 
-func getMapGeneration(childResources []runtime.Object) string {
-	for _, resource := range childResources {
-		if pvc, ok := resource.(*corev1.PersistentVolumeClaim); ok {
-			if generation, ok := pvc.ObjectMeta.Annotations[metadata.MapGenerationAnnotation]; ok {
-				return generation
-			}
-		}
-	}
+func getResourceNameVersion(name string) string {
+	tokens := strings.Split(name, "-")
+	return tokens[len(tokens)-1]
+}
 
-	return "1"
+func getLabelSelector(instance *osrmv1alpha1.OSRMCluster) string {
+	return fmt.Sprintf(
+		"%s=%s,%s=%s,%s,%s notin (%d)",
+		metadata.NameLabelKey,
+		instance.Name,
+		metadata.ComponentLabelKey,
+		metadata.ComponentLabelProfile,
+		metadata.GenerationLabelKey,
+		metadata.GenerationLabelKey,
+		instance.ObjectMeta.Generation,
+	)
 }
 
 // the rbac rule requires an empty row at the end to render
@@ -166,9 +173,6 @@ func (r *OSRMClusterReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 		return ctrl.Result{}, err
 	}
 
-	mapGeneration := getMapGeneration(childResources)
-	logger.Info("map generation else", "mapGeneration", mapGeneration)
-
 	if isBeingDeleted(instance) {
 		err := r.cleanup(ctx, instance)
 		if err != nil {
@@ -199,16 +203,15 @@ func (r *OSRMClusterReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 		}
 	}
 
-	logger.Info("Reconciling OSRMCluster %v/%v", instance.Namespace, instance.Name)
+	newPhase := r.determinePhase(ctx, instance, oldSpec, childResources)
+
+	logger.Info("Reconciling OSRMCluster %v/%v, phase: %v", instance.Namespace, instance.Name, newPhase)
 
 	resourceBuilder := resource.OSRMResourceBuilder{
-		Instance:      instance,
-		Scheme:        r.Scheme,
-		MapGeneration: mapGeneration,
+		Instance: instance,
+		Scheme:   r.Scheme,
 	}
 
-	// Determine current phase and update status
-	newPhase := r.determinePhase(instance, oldSpec, childResources, mapGeneration)
 	if instance.Status.Phase != newPhase {
 		instance.Status.Phase = newPhase
 		if err := r.Client.Status().Update(ctx, instance); err != nil {
@@ -266,27 +269,54 @@ func (r *OSRMClusterReconciler) getOSRMCluster(ctx context.Context, namespacedNa
 }
 
 func (r *OSRMClusterReconciler) determinePhase(
+	ctx context.Context,
 	instance *osrmv1alpha1.OSRMCluster,
 	oldSpec *osrmv1alpha1.OSRMClusterSpec,
 	childResources []runtime.Object,
-	mapGeneration string,
 ) osrmv1alpha1.Phase {
-
 	if len(instance.Spec.Profiles) == 0 {
 		return osrmv1alpha1.PhaseEmpty
 	}
 
+	profilesDeployments, _ := r.getProfilesDeployments(ctx, instance)
+	activeMapGeneration := getResourceNameVersion(profilesDeployments[0].Spec.Template.Spec.Volumes[0].VolumeSource.PersistentVolumeClaim.ClaimName)
+	r.log.Info("Active Map Generation", "activeMapGeneration", activeMapGeneration)
+
+	pvcs, _ := r.getPersistentVolumeClaims(ctx, instance)
+	mapGenrations := make([]string, 0)
+	for _, pvc := range pvcs {
+		mapGenrations = append(mapGenrations, getResourceNameVersion(pvc.Name))
+	}
+
+	allVolumesBound := true
+	for _, profile := range instance.Spec.Profiles {
+		pvcName := instance.ChildResourceName(profile.Name, activeMapGeneration)
+		for _, pvc := range pvcs {
+			if pvc.Name == pvcName {
+				if !status.IsPersistentVolumeClaimBound(pvc) {
+					allVolumesBound = false
+					r.log.Info("PersistentVolumeClaim not bound", "pvcName", pvc.Name)
+					break
+				}
+			}
+		}
+	}
+
+	if !allVolumesBound {
+		return osrmv1alpha1.PhaseWaitingForVolumes
+	}
+
+	jobs, _ := r.getJobs(ctx, instance)
 	allMapsBuilt := true
 	for _, profile := range instance.Spec.Profiles {
-		jobName := instance.ChildResourceName(profile.Name, mapGeneration)
-		pvcName := instance.ChildResourceName(profile.Name, mapGeneration)
-
-		r.log.Info("allMapsBuilt loop", "jobName", jobName, "pvcName", pvcName)
-
-		if !status.IsJobCompleted(jobName, childResources) || !status.IsPersistentVolumeClaimBound(pvcName, childResources) {
-			r.log.Info("map not built", "jobName", jobName, "pvcName", pvcName, "IsJobCompleted", strconv.FormatBool(status.IsJobCompleted(jobName, childResources)), "IsPersistentVolumeClaimBound", strconv.FormatBool(status.IsPersistentVolumeClaimBound(pvcName, childResources)))
-			allMapsBuilt = false
-			break
+		for _, job := range jobs {
+			if job.Name == instance.ChildResourceName(profile.Name, activeMapGeneration) {
+				if !status.IsJobCompleted(job) {
+					allMapsBuilt = false
+					r.log.Info("Map build job not completed", "jobName", job.Name)
+					break
+				}
+			}
 		}
 	}
 
@@ -396,6 +426,70 @@ func (r *OSRMClusterReconciler) updateStatusConditions(
 	return 0, nil
 }
 
+func (r *OSRMClusterReconciler) getProfilesDeployments(
+	ctx context.Context,
+	instance *osrmv1alpha1.OSRMCluster,
+) ([]*appsv1.Deployment, error) {
+	deployments := make([]*appsv1.Deployment, 0)
+	for _, profileSpec := range instance.Spec.Profiles {
+		deployment := &appsv1.Deployment{}
+		if err := r.Client.Get(ctx, types.NamespacedName{
+			Name:      instance.ChildResourceName(profileSpec.Name, resource.DeploymentSuffix),
+			Namespace: instance.Namespace,
+		}, deployment); err != nil {
+			if !errors.IsNotFound(err) {
+				return nil, err
+			}
+		} else {
+			deployments = append(deployments, deployment)
+		}
+	}
+	return deployments, nil
+}
+
+func (r *OSRMClusterReconciler) getPersistentVolumeClaims(
+	ctx context.Context,
+	instance *osrmv1alpha1.OSRMCluster,
+) ([]*corev1.PersistentVolumeClaim, error) {
+	labelSelector := getLabelSelector(instance)
+	listOptions := &client.ListOptions{
+		Namespace: instance.Namespace,
+		Raw:       &metav1.ListOptions{LabelSelector: labelSelector},
+	}
+
+	pvcList := &corev1.PersistentVolumeClaimList{}
+	if err := r.Client.List(ctx, pvcList, listOptions); err != nil {
+		return nil, fmt.Errorf("failed to list PVCs: %w", err)
+	}
+
+	pvcs := make([]*corev1.PersistentVolumeClaim, 0)
+	for _, pvc := range pvcList.Items {
+		pvcs = append(pvcs, &pvc)
+	}
+	return pvcs, nil
+}
+
+func (r *OSRMClusterReconciler) getJobs(ctx context.Context,
+	instance *osrmv1alpha1.OSRMCluster,
+) ([]*batchv1.Job, error) {
+	labelSelector := getLabelSelector(instance)
+	listOptions := &client.ListOptions{
+		Namespace: instance.Namespace,
+		Raw:       &metav1.ListOptions{LabelSelector: labelSelector},
+	}
+
+	jobList := &batchv1.JobList{}
+	if err := r.Client.List(ctx, jobList, listOptions); err != nil {
+		return nil, fmt.Errorf("failed to list PVCs: %w", err)
+	}
+
+	jobs := make([]*batchv1.Job, 0)
+	for _, job := range jobList.Items {
+		jobs = append(jobs, &job)
+	}
+	return jobs, nil
+}
+
 func (r *OSRMClusterReconciler) getChildResources(
 	ctx context.Context,
 	instance *osrmv1alpha1.OSRMCluster,
@@ -439,40 +533,6 @@ func (r *OSRMClusterReconciler) getChildResources(
 	}
 
 	for _, profileSpec := range instance.Spec.Profiles {
-		labelSelector := fmt.Sprintf(
-			"%s=%s,%s=%s,%s,%s notin (%d)",
-			metadata.NameLabelKey,
-			instance.Name,
-			metadata.ComponentLabelKey,
-			metadata.ComponentLabelProfile,
-			metadata.GenerationLabelKey,
-			metadata.GenerationLabelKey,
-			instance.ObjectMeta.Generation,
-		)
-
-		listOptions := &client.ListOptions{
-			Namespace: instance.Namespace,
-			Raw:       &metav1.ListOptions{LabelSelector: labelSelector},
-		}
-
-		pvcs := &corev1.PersistentVolumeClaimList{}
-		if err := r.Client.List(ctx, pvcs, listOptions); err != nil {
-			if !errors.IsNotFound(err) {
-				return nil, err
-			}
-		} else {
-			children = append(children, pvcs)
-		}
-
-		jobs := &batchv1.JobList{}
-		if err := r.Client.List(ctx, jobs, listOptions); err != nil {
-			if !errors.IsNotFound(err) {
-				return nil, err
-			}
-		} else {
-			children = append(children, jobs)
-		}
-
 		cronJob := &batchv1.CronJob{}
 		if err := r.Client.Get(ctx, types.NamespacedName{
 			Name:      instance.ChildResourceName(profileSpec.Name, resource.CronJobSuffix),

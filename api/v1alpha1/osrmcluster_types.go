@@ -40,6 +40,9 @@ const (
 	// PhaseBuildingMap signals that the map building phase is in progress
 	PhaseBuildingMap Phase = "BuildingMap"
 
+	// PhaseWaitingForVolumes signals that the deployment is waiting for volumes to be ready
+	PhaseWaitingForVolumes Phase = "WaitingForVolumes"
+
 	// PhaseBuildingNewMap signals that a new map is being built
 	PhaseBuildingNewMap Phase = "BuildingNewMap"
 
