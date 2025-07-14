@@ -207,7 +207,7 @@ func (r *OSRMClusterReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 	jobs, _ := r.getJobs(ctx, instance)
 	profilesDeployments, _ := r.getProfilesDeployments(ctx, instance)
 	activeMapGeneration := r.getActiveMapGeneration(profilesDeployments)
-	phase := r.determinePhase(ctx, instance, activeMapGeneration, pvcs, jobs, profilesDeployments)
+	phase := r.determinePhase(instance, oldSpec, activeMapGeneration, pvcs, jobs, profilesDeployments)
 
 	logger.Info("Reconciling OSRMCluster", "namespace", instance.Namespace, "instance", instance.Name)
 
@@ -273,8 +273,8 @@ func (r *OSRMClusterReconciler) getOSRMCluster(ctx context.Context, namespacedNa
 }
 
 func (r *OSRMClusterReconciler) determinePhase(
-	ctx context.Context,
 	instance *osrmv1alpha1.OSRMCluster,
+	oldSpec *osrmv1alpha1.OSRMClusterSpec,
 	activeMapGeneration string,
 	pvcs []*corev1.PersistentVolumeClaim,
 	jobs []*batchv1.Job,
@@ -352,6 +352,10 @@ func (r *OSRMClusterReconciler) determinePhase(
 
 	if !allWorkersDeployed {
 		return osrmv1alpha1.PhaseDeployingWorkers
+	}
+
+	if instance.Spec.PBFURL != oldSpec.PBFURL {
+		return osrmv1alpha1.PhaseUpdatingMap
 	}
 
 	return osrmv1alpha1.PhaseWorkersDeployed

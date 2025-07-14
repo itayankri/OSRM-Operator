@@ -46,8 +46,8 @@ const (
 	// PhaseBuildingNewMap signals that a new map is being built
 	PhaseUpdatingMap Phase = "UpdatingMap"
 
-	// PhaseDeployingWorkersOnNewMap signals that the workers are being deployed on a new map
-	PhaseDeployingWorkersOnNewMap = "DeployingWorkersOnNewMap"
+	// PhaseWaitingForMap signals that the deployment is waiting for the map to be ready
+	PhaseRedepoloyingWorkers Phase = "RedeployingWorkers"
 
 	// PhaseDeployingWorkers signals that the workers are being deployed
 	PhaseDeployingWorkers Phase = "DeployingWorkers"

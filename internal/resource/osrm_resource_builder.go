@@ -43,6 +43,8 @@ func (builder *OSRMResourceBuilder) ResourceBuildersForPhase(phase osrmv1alpha1.
 		return builder.WorkersDeployedPhaseBuilders()
 	case osrmv1alpha1.PhaseUpdatingMap:
 		return builder.MapUpdatingResourceBuilders()
+	case osrmv1alpha1.PhaseRedepoloyingWorkers:
+		return builder.RedeployingWorkersPhaseBuilders()
 	default:
 		return nil
 	}
@@ -62,7 +64,7 @@ func (builder *OSRMResourceBuilder) MapBuildingPhaseBuilders() []ResourceBuilder
 }
 
 func (builder *OSRMResourceBuilder) MapUpdatingResourceBuilders() []ResourceBuilder {
-	nextMapGeneration := builder.getNextMapGeneration()
+	nextMapGeneration := getNextMapGeneration(builder.MapGeneration)
 
 	builders := []ResourceBuilder{}
 
@@ -72,6 +74,12 @@ func (builder *OSRMResourceBuilder) MapUpdatingResourceBuilders() []ResourceBuil
 			builder.Job(profile, nextMapGeneration),
 		}...)
 	}
+
+	return builders
+}
+
+func (builder *OSRMResourceBuilder) RedeployingWorkersPhaseBuilders() []ResourceBuilder {
+	builders := []ResourceBuilder{}
 
 	return builders
 }
@@ -114,8 +122,8 @@ func (builder *OSRMResourceBuilder) WorkersDeployedPhaseBuilders() []ResourceBui
 	return builders
 }
 
-func (builder *OSRMResourceBuilder) getNextMapGeneration() string {
-	mapGenerationInteger, err := strconv.Atoi(builder.MapGeneration)
+func getNextMapGeneration(mapGeneration string) string {
+	mapGenerationInteger, err := strconv.Atoi(mapGeneration)
 	if err != nil {
 		return "0"
 	}
