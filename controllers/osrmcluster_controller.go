@@ -112,8 +112,8 @@ func getLabelSelector(instance *osrmv1alpha1.OSRMCluster) string {
 // +kubebuilder:rbac:groups="",resources=pods,verbs=update;get;list;watch
 // +kubebuilder:rbac:groups="",resources=services,verbs=get;list;watch;create;update;deletecollection
 // +kubebuilder:rbac:groups="",resources=configmaps,verbs=get;list;watch;create;update
-// +kubebuilder:rbac:groups="batch",resources=jobs,verbs=get;list;watch;create;update;deletecollection
-// +kubebuilder:rbac:groups="batch",resources=cronjobs,verbs=get;list;watch;create;update;deletecollection
+// +kubebuilder:rbac:groups="batch",resources=jobs,verbs=get;list;watch;create;update;delete;deletecollection
+// +kubebuilder:rbac:groups="batch",resources=cronjobs,verbs=get;list;watch;create;update;delete;deletecollection
 // +kubebuilder:rbac:groups="apps",resources=deployments,verbs=get;list;watch;create;update;deletecollection
 // +kubebuilder:rbac:groups="autoscaling",resources=horizontalpodautoscalers,verbs=get;list;watch;create;update;deletecollection
 // +kubebuilder:rbac:groups="networking.k8s.io",resources=ingresses,verbs=get;list;watch;create;update
@@ -265,6 +265,16 @@ func (r *OSRMClusterReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 		})
 		if err != nil {
 			r.setReconciliationSuccess(ctx, instance, metav1.ConditionFalse, "Error", err.Error())
+			return ctrl.Result{}, err
+		}
+	}
+
+	if phase == osrmv1alpha1.PhaseWorkersRedeployed {
+		logger.Info("Cleaning up previous map generation resources for OSRMCluster", "namespace", instance.Namespace, "instance", instance.Name)
+		err = r.cleanPreviousMapGenerationResources(ctx, instance, activeMapGeneration)
+		if err != nil {
+			logger.Error(err, "Failed to clean previous map generation resources for OSRMCluster %v/%v", instance.Namespace, instance.Name)
+			r.setReconciliationSuccess(ctx, instance, metav1.ConditionFalse, "FailedToCleanPreviousMapGenerationResources", err.Error())
 			return ctrl.Result{}, err
 		}
 	}
@@ -684,6 +694,49 @@ func (r *OSRMClusterReconciler) getChildResources(
 	return children, nil
 }
 
+func (r *OSRMClusterReconciler) cleanPreviousMapGenerationResources(
+	ctx context.Context,
+	instance *osrmv1alpha1.OSRMCluster,
+	currentMapGeneration string,
+) error {
+	currentMapGenerationInteger, err := strconv.Atoi(currentMapGeneration)
+	if err != nil {
+		return fmt.Errorf("invalid map generation: %w", err)
+	}
+
+	previousMapGeneration := strconv.Itoa(currentMapGenerationInteger - 1)
+	objectsToDelete := make([]client.Object, 0)
+	for _, profile := range instance.Spec.Profiles {
+		name := instance.ChildResourceName(profile.Name, previousMapGeneration)
+		objectsToDelete = append(objectsToDelete, []client.Object{
+			&batchv1.Job{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      name,
+					Namespace: instance.Namespace,
+				},
+			},
+			&corev1.PersistentVolumeClaim{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      name,
+					Namespace: instance.Namespace,
+				},
+			},
+		}...)
+	}
+
+	propagationPolicy := metav1.DeletePropagationBackground
+	for _, object := range objectsToDelete {
+		r.log.Info("Deleting previous map generation resource", "name", object.GetName())
+		err := r.Client.Delete(ctx, object, &client.DeleteOptions{PropagationPolicy: &propagationPolicy})
+		if err != nil {
+			r.log.Error(err, "Failed to delete previous map generation resource", "name", object.GetName())
+			return err
+		}
+	}
+
+	return nil
+}
+
 func (r *OSRMClusterReconciler) garbageCollection(ctx context.Context, instance *osrmv1alpha1.OSRMCluster) error {
 	labelSelector := getLabelSelector(instance)
 	propagationPolicy := metav1.DeletePropagationBackground
@@ -752,14 +805,12 @@ func (r *OSRMClusterReconciler) garbageCollection(ctx context.Context, instance 
 		return err
 	}
 
-	/*
-		err = r.Client.DeleteAllOf(ctx, &corev1.PersistentVolumeClaim{}, &client.DeleteAllOfOptions{
-			ListOptions: client.ListOptions{
-				Namespace: instance.Namespace,
-				Raw:       &metav1.ListOptions{LabelSelector: labelSelector},
-			},
-		})
-	*/
+	err = r.Client.DeleteAllOf(ctx, &corev1.PersistentVolumeClaim{}, &client.DeleteAllOfOptions{
+		ListOptions: client.ListOptions{
+			Namespace: instance.Namespace,
+			Raw:       &metav1.ListOptions{LabelSelector: labelSelector},
+		},
+	})
 
 	return err
 }
