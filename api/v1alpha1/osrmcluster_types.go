@@ -40,9 +40,6 @@ const (
 	// PhaseBuildingMap signals that the map building phase is in progress
 	PhaseBuildingMap Phase = "BuildingMap"
 
-	// PhaseWaitingForVolumes signals that the deployment is waiting for volumes to be ready
-	PhaseWaitingForVolumes Phase = "WaitingForVolumes"
-
 	// PhaseBuildingNewMap signals that a new map is being built
 	PhaseUpdatingMap Phase = "UpdatingMap"
 
@@ -57,15 +54,6 @@ const (
 
 	// PhaseWorkersRedeployed signals that the workers are being redeployed
 	PhaseWorkersRedeployed Phase = "WorkersRedeployed"
-
-	// PhaseDeleting signals that the resources are being removed
-	PhaseDeleting Phase = "Deleting"
-
-	// PhaseDeleted signals that the resources are deleted
-	PhaseDeleted Phase = "Deleted"
-
-	// PhaseError signals that the deployment is in an error state
-	PhaseError Phase = "Error"
 
 	// PhaseEmpty is an uninitialized phase
 	PhaseEmpty Phase = ""
