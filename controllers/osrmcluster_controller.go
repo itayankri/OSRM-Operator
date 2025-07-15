@@ -207,7 +207,7 @@ func (r *OSRMClusterReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 	jobs, _ := r.getJobs(ctx, instance)
 	profilesDeployments, _ := r.getProfilesDeployments(ctx, instance)
 	activeMapGeneration := r.getActiveMapGeneration(profilesDeployments)
-	futureMapGeneration := r.getfutureMapGeneration(pvcs)
+	futureMapGeneration := r.getFutureMapGeneration(pvcs)
 	phase := r.determinePhase(
 		instance,
 		oldSpec,
@@ -221,9 +221,10 @@ func (r *OSRMClusterReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 	logger.Info("Reconciling OSRMCluster", "namespace", instance.Namespace, "instance", instance.Name)
 
 	resourceBuilder := resource.OSRMResourceBuilder{
-		Instance:      instance,
-		Scheme:        r.Scheme,
-		MapGeneration: activeMapGeneration,
+		Instance:            instance,
+		Scheme:              r.Scheme,
+		MapGeneration:       activeMapGeneration,
+		FutureMapGeneration: futureMapGeneration,
 	}
 
 	if instance.Status.Phase != phase {
@@ -338,11 +339,23 @@ func (r *OSRMClusterReconciler) determinePhase(
 	profilesDeployments []*appsv1.Deployment,
 ) osrmv1alpha1.Phase {
 	if len(instance.Spec.Profiles) == 0 {
+		r.log.Info("PhaseEmpty")
 		return osrmv1alpha1.PhaseEmpty
 	}
 
 	if IsMapBuildingInProgress(instance, pvcs, jobs, activeMapGeneration) {
+		r.log.Info("PhaseBuildingMap", "activeMapGenration", activeMapGeneration)
 		return osrmv1alpha1.PhaseBuildingMap
+	}
+
+	if instance.Spec.PBFURL != oldSpec.PBFURL || IsMapBuildingInProgress(instance, pvcs, jobs, futureMapGeneration) {
+		r.log.Info("PhaseUpdatingMap", "pbfChanged", instance.Spec.PBFURL != oldSpec.PBFURL, "IsMapBuildingInProgress", IsMapBuildingInProgress(instance, pvcs, jobs, futureMapGeneration))
+		return osrmv1alpha1.PhaseUpdatingMap
+	}
+
+	if activeMapGeneration != futureMapGeneration {
+		r.log.Info("PhaseRedepoloyingWorkers", "activeMapGeneration", activeMapGeneration, "futureMapGeneration", futureMapGeneration)
+		return osrmv1alpha1.PhaseRedepoloyingWorkers
 	}
 
 	allWorkersDeployed := true
@@ -366,17 +379,11 @@ func (r *OSRMClusterReconciler) determinePhase(
 	}
 
 	if !allWorkersDeployed {
+		r.log.Info("PhaseDeployingWorkers")
 		return osrmv1alpha1.PhaseDeployingWorkers
 	}
 
-	if instance.Spec.PBFURL != oldSpec.PBFURL || IsMapBuildingInProgress(instance, pvcs, jobs, futureMapGeneration) {
-		return osrmv1alpha1.PhaseUpdatingMap
-	}
-
-	if activeMapGeneration != futureMapGeneration {
-		return osrmv1alpha1.PhaseRedepoloyingWorkers
-	}
-
+	r.log.Info("PhaseWorkersDeployed")
 	return osrmv1alpha1.PhaseWorkersDeployed
 }
 
@@ -464,15 +471,20 @@ func (r *OSRMClusterReconciler) getActiveMapGeneration(profilesDeployments []*ap
 	return activeMapGeneration
 }
 
-func (r *OSRMClusterReconciler) getfutureMapGeneration(pvcs []*corev1.PersistentVolumeClaim) string {
-	higestMapGeneration := "1"
+func (r *OSRMClusterReconciler) getFutureMapGeneration(pvcs []*corev1.PersistentVolumeClaim) string {
+	higestMapGeneration := 1
 	for _, pvc := range pvcs {
 		mapGeneration := getResourceNameSuffix(pvc.Name)
-		if mapGeneration > higestMapGeneration {
-			higestMapGeneration = mapGeneration
+		mapGenerationInteger, err := strconv.Atoi(mapGeneration)
+		if err != nil {
+			break
+		}
+
+		if mapGenerationInteger > higestMapGeneration {
+			higestMapGeneration = mapGenerationInteger
 		}
 	}
-	return higestMapGeneration
+	return strconv.Itoa(higestMapGeneration)
 }
 
 func (r *OSRMClusterReconciler) getProfilesDeployments(
@@ -661,16 +673,18 @@ func (r *OSRMClusterReconciler) garbageCollection(ctx context.Context, instance 
 		return err
 	}
 
-	err = r.Client.DeleteAllOf(ctx, &batchv1.Job{}, &client.DeleteAllOfOptions{
-		ListOptions: client.ListOptions{
-			Namespace: instance.Namespace,
-			Raw:       &metav1.ListOptions{LabelSelector: labelSelector},
-		},
-		DeleteOptions: client.DeleteOptions{PropagationPolicy: &propagationPolicy},
-	})
-	if err != nil {
-		return err
-	}
+	/*
+		err = r.Client.DeleteAllOf(ctx, &batchv1.Job{}, &client.DeleteAllOfOptions{
+			ListOptions: client.ListOptions{
+				Namespace: instance.Namespace,
+				Raw:       &metav1.ListOptions{LabelSelector: labelSelector},
+			},
+			DeleteOptions: client.DeleteOptions{PropagationPolicy: &propagationPolicy},
+		})
+		if err != nil {
+			return err
+		}
+	*/
 
 	err = r.Client.DeleteAllOf(ctx, &autoscalingv1.HorizontalPodAutoscaler{}, &client.DeleteAllOfOptions{
 		ListOptions: client.ListOptions{
