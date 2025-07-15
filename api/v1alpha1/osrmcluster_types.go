@@ -55,6 +55,9 @@ const (
 	// PhaseWorkersDeployed signals that the resources are successfully deployed
 	PhaseWorkersDeployed Phase = "WorkersDeployed"
 
+	// PhaseWorkersRedeployed signals that the workers are being redeployed
+	PhaseWorkersRedeployed Phase = "WorkersRedeployed"
+
 	// PhaseDeleting signals that the resources are being removed
 	PhaseDeleting Phase = "Deleting"
 

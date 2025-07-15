@@ -206,8 +206,18 @@ func (r *OSRMClusterReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 	pvcs, _ := r.getPersistentVolumeClaims(ctx, instance)
 	jobs, _ := r.getJobs(ctx, instance)
 	profilesDeployments, _ := r.getProfilesDeployments(ctx, instance)
-	activeMapGeneration := r.getActiveMapGeneration(profilesDeployments)
-	futureMapGeneration := r.getFutureMapGeneration(pvcs)
+	activeMapGeneration, err := r.getActiveMapGeneration(profilesDeployments)
+	if err != nil {
+		logger.Error(err, "Failed to get active map generation for OSRMCluster", "namespace", instance.Namespace, "instance", instance.Name)
+		return ctrl.Result{}, err
+	}
+
+	futureMapGeneration, err := r.getFutureMapGeneration(pvcs)
+	if err != nil {
+		logger.Error(err, "Failed to get future map generation for OSRMCluster", "namespace", instance.Namespace, "instance", instance.Name)
+		return ctrl.Result{}, err
+	}
+
 	phase := r.determinePhase(
 		instance,
 		oldSpec,
@@ -220,12 +230,12 @@ func (r *OSRMClusterReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 
 	logger.Info("Reconciling OSRMCluster", "namespace", instance.Namespace, "instance", instance.Name)
 
-	resourceBuilder := resource.OSRMResourceBuilder{
-		Instance:            instance,
-		Scheme:              r.Scheme,
-		MapGeneration:       activeMapGeneration,
-		FutureMapGeneration: futureMapGeneration,
-	}
+	resourceBuilder := resource.NewOSRMResourceBuilder(
+		instance,
+		r.Scheme,
+		activeMapGeneration,
+		futureMapGeneration,
+	)
 
 	if instance.Status.Phase != phase {
 		logger.Info("OSRMCluster phase changed", "current", instance.Status.Phase, "new", phase)
@@ -378,12 +388,24 @@ func (r *OSRMClusterReconciler) determinePhase(
 		}
 	}
 
+	activeMapGenerationInteger, _ := strconv.Atoi(activeMapGeneration)
+
 	if !allWorkersDeployed {
-		r.log.Info("PhaseDeployingWorkers")
+		if activeMapGenerationInteger > 1 {
+			r.log.Info("PhaseRedepoloyingWorkers", "activeMapGeneration", activeMapGeneration, "futureMapGeneration", futureMapGeneration)
+			return osrmv1alpha1.PhaseRedepoloyingWorkers
+		}
+
+		r.log.Info("PhaseDeployingWorkers", "activeMapGeneration", activeMapGeneration, "futureMapGeneration", futureMapGeneration)
 		return osrmv1alpha1.PhaseDeployingWorkers
 	}
 
-	r.log.Info("PhaseWorkersDeployed")
+	if activeMapGenerationInteger > 1 {
+		r.log.Info("PhaseWorkersRedeployed", "activeMapGeneration", activeMapGeneration, "futureMapGeneration", futureMapGeneration)
+		return osrmv1alpha1.PhaseWorkersRedeployed
+	}
+
+	r.log.Info("PhaseWorkersDeployed", "activeMapGeneration", activeMapGeneration, "futureMapGeneration", futureMapGeneration)
 	return osrmv1alpha1.PhaseWorkersDeployed
 }
 
@@ -459,32 +481,36 @@ func (r *OSRMClusterReconciler) updateStatusConditions(
 	return 0, nil
 }
 
-func (r *OSRMClusterReconciler) getActiveMapGeneration(profilesDeployments []*appsv1.Deployment) string {
+func (r *OSRMClusterReconciler) getActiveMapGeneration(profilesDeployments []*appsv1.Deployment) (string, error) {
 	activeMapGeneration := "1"
 	if len(profilesDeployments) > 0 {
 		suffix := getResourceNameSuffix(profilesDeployments[0].Spec.Template.Spec.Volumes[0].VolumeSource.PersistentVolumeClaim.ClaimName)
-		if _, err := strconv.Atoi(suffix); err != nil {
-			activeMapGeneration = suffix
+		_, err := strconv.Atoi(suffix)
+		if err != nil {
+			return "", fmt.Errorf("failed to convert map generation %s to integer: %w", suffix, err)
 		}
+		activeMapGeneration = suffix
+	} else {
+		r.log.Info("No profiles deployments found, using default active map generation 1")
 	}
 
-	return activeMapGeneration
+	return activeMapGeneration, nil
 }
 
-func (r *OSRMClusterReconciler) getFutureMapGeneration(pvcs []*corev1.PersistentVolumeClaim) string {
+func (r *OSRMClusterReconciler) getFutureMapGeneration(pvcs []*corev1.PersistentVolumeClaim) (string, error) {
 	higestMapGeneration := 1
 	for _, pvc := range pvcs {
 		mapGeneration := getResourceNameSuffix(pvc.Name)
 		mapGenerationInteger, err := strconv.Atoi(mapGeneration)
 		if err != nil {
-			break
+			return "", fmt.Errorf("failed to convert map generation %s to integer: %w", mapGeneration, err)
 		}
 
 		if mapGenerationInteger > higestMapGeneration {
 			higestMapGeneration = mapGenerationInteger
 		}
 	}
-	return strconv.Itoa(higestMapGeneration)
+	return strconv.Itoa(higestMapGeneration), nil
 }
 
 func (r *OSRMClusterReconciler) getProfilesDeployments(
@@ -726,12 +752,14 @@ func (r *OSRMClusterReconciler) garbageCollection(ctx context.Context, instance 
 		return err
 	}
 
-	err = r.Client.DeleteAllOf(ctx, &corev1.PersistentVolumeClaim{}, &client.DeleteAllOfOptions{
-		ListOptions: client.ListOptions{
-			Namespace: instance.Namespace,
-			Raw:       &metav1.ListOptions{LabelSelector: labelSelector},
-		},
-	})
+	/*
+		err = r.Client.DeleteAllOf(ctx, &corev1.PersistentVolumeClaim{}, &client.DeleteAllOfOptions{
+			ListOptions: client.ListOptions{
+				Namespace: instance.Namespace,
+				Raw:       &metav1.ListOptions{LabelSelector: labelSelector},
+			},
+		})
+	*/
 
 	return err
 }

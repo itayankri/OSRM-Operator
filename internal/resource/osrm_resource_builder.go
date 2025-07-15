@@ -22,6 +22,31 @@ type OSRMResourceBuilder struct {
 	FutureMapGeneration string
 }
 
+func NewOSRMResourceBuilder(
+	instance *osrmv1alpha1.OSRMCluster,
+	scheme *runtime.Scheme,
+	mapGeneration string,
+	nextMapGeneration string,
+) *OSRMResourceBuilder {
+	currentMapGeneration := mapGeneration
+	futureMapGeneration := nextMapGeneration
+
+	if mapGeneration == "" {
+		currentMapGeneration = "1"
+	}
+
+	if futureMapGeneration == "" {
+		futureMapGeneration = currentMapGeneration
+	}
+
+	return &OSRMResourceBuilder{
+		Instance:            instance,
+		Scheme:              scheme,
+		MapGeneration:       currentMapGeneration,
+		FutureMapGeneration: futureMapGeneration,
+	}
+}
+
 type ProfileScopedBuilder struct {
 	profile *osrmv1alpha1.ProfileSpec
 }
@@ -40,7 +65,7 @@ func (builder *OSRMResourceBuilder) ResourceBuildersForPhase(phase osrmv1alpha1.
 		return builder.MapBuildingPhaseBuilders()
 	case osrmv1alpha1.PhaseDeployingWorkers:
 		return builder.DeployingWorkersPhaseBuilders()
-	case osrmv1alpha1.PhaseWorkersDeployed:
+	case osrmv1alpha1.PhaseWorkersDeployed, osrmv1alpha1.PhaseWorkersRedeployed:
 		return builder.WorkersDeployedPhaseBuilders()
 	case osrmv1alpha1.PhaseUpdatingMap:
 		return builder.MapUpdatingResourceBuilders()
