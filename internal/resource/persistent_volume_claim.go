@@ -49,8 +49,6 @@ func (builder *PersistentVolumeClaimBuilder) Build() (client.Object, error) {
 		},
 	}
 
-	builder.setAnnotations(pvc)
-
 	return pvc, nil
 }
 
@@ -59,20 +57,9 @@ func (builder *PersistentVolumeClaimBuilder) Update(object client.Object, siblin
 
 	pvc.ObjectMeta.Labels = metadata.GetLabels(builder.Instance, metadata.ComponentLabelProfile)
 
-	builder.setAnnotations(pvc)
-
 	if err := controllerutil.SetControllerReference(builder.Instance, pvc, builder.Scheme); err != nil {
 		return fmt.Errorf("failed setting controller reference: %v", err)
 	}
 
 	return nil
-}
-
-func (builder *PersistentVolumeClaimBuilder) setAnnotations(pvc *corev1.PersistentVolumeClaim) {
-	annotations := pvc.GetAnnotations()
-	if annotations == nil {
-		annotations = make(map[string]string)
-	}
-	annotations[metadata.MapGenerationAnnotation] = builder.MapGenerationScopedBuilder.generation
-	pvc.SetAnnotations(annotations)
 }

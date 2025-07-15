@@ -458,9 +458,6 @@ func (r *OSRMClusterReconciler) setReconciliationSuccess(
 
 func (r *OSRMClusterReconciler) initialize(ctx context.Context, instance *osrmv1alpha1.OSRMCluster) error {
 	controllerutil.AddFinalizer(instance, finalizerName)
-	annotations := instance.GetAnnotations()
-	annotations[metadata.MapGenerationAnnotation] = "1"
-	instance.SetAnnotations(annotations)
 	return r.updateOSRMClusterResource(ctx, instance)
 }
 

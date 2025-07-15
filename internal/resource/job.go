@@ -36,8 +36,6 @@ func (builder *JobBuilder) Build() (client.Object, error) {
 		},
 	}
 
-	builder.setAnnotations(job)
-
 	env := []corev1.EnvVar{
 		{
 			Name:  "ROOT_DIR",
@@ -127,20 +125,9 @@ func (builder *JobBuilder) Update(object client.Object, siblings []runtime.Objec
 
 	job.ObjectMeta.Labels = metadata.GetLabels(builder.Instance, metadata.ComponentLabelProfile)
 
-	builder.setAnnotations(job)
-
 	if err := controllerutil.SetControllerReference(builder.Instance, job, builder.Scheme); err != nil {
 		return fmt.Errorf("failed setting controller reference: %v", err)
 	}
 
 	return nil
-}
-
-func (builder *JobBuilder) setAnnotations(job *batchv1.Job) {
-	annotations := job.GetAnnotations()
-	if annotations == nil {
-		annotations = make(map[string]string)
-	}
-	annotations[metadata.MapGenerationAnnotation] = builder.MapGenerationScopedBuilder.generation
-	job.SetAnnotations(annotations)
 }

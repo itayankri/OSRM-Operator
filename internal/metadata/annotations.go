@@ -1,7 +1,5 @@
 package metadata
 
-const MapGenerationAnnotation = "osrmcluster.itayankri/map-generation"
-
 func ReconcileAnnotations(existing map[string]string, defaults ...map[string]string) map[string]string {
 	return merge(existing, defaults...)
 }
