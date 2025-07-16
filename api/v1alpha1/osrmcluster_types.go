@@ -55,6 +55,9 @@ const (
 	// PhaseWorkersRedeployed signals that the workers are being redeployed
 	PhaseWorkersRedeployed Phase = "WorkersRedeployed"
 
+	// PhaseReady signals that the osrm cluster is being deleted
+	PhaseDeleting Phase = "Deleting"
+
 	// PhaseEmpty is an uninitialized phase
 	PhaseEmpty Phase = ""
 )

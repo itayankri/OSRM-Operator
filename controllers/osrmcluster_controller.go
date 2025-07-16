@@ -228,7 +228,7 @@ func (r *OSRMClusterReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 		profilesDeployments,
 	)
 
-	logger.Info("Reconciling OSRMCluster", "namespace", instance.Namespace, "instance", instance.Name)
+	logger.Info("Reconciling OSRMCluster", "namespace", instance.Namespace, "instance", instance.Name, "phase", phase)
 
 	resourceBuilder := resource.NewOSRMResourceBuilder(
 		instance,
@@ -238,7 +238,6 @@ func (r *OSRMClusterReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 	)
 
 	if instance.Status.Phase != phase {
-		logger.Info("OSRMCluster phase changed", "current", instance.Status.Phase, "new", phase)
 		instance.Status.Phase = phase
 		if err := r.Client.Status().Update(ctx, instance); err != nil {
 			logger.Error(err, "Failed to update phase for OSRMCluster %v/%v", instance.Namespace, instance.Name)
@@ -821,6 +820,7 @@ func (r *OSRMClusterReconciler) cleanup(ctx context.Context, instance *osrmv1alp
 			Reason:  "Cleanup",
 			Message: "Deleting OSRMCluster resources",
 		})
+		instance.Status.Phase = osrmv1alpha1.PhaseDeleting
 
 		err := r.Client.Status().Update(ctx, instance)
 		if err != nil {
