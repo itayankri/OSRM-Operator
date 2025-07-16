@@ -268,15 +268,6 @@ func (r *OSRMClusterReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 		}
 	}
 
-	if phase == osrmv1alpha1.PhaseWorkersRedeployed {
-		logger.Info("Cleaning up previous map generation resources for OSRMCluster", "namespace", instance.Namespace, "instance", instance.Name)
-		err = r.cleanPreviousMapGenerationResources(ctx, instance, activeMapGeneration)
-		if err != nil {
-			logger.Error(err, "Failed to clean previous map generation resources for OSRMCluster %v/%v", instance.Namespace, instance.Name)
-			r.setReconciliationSuccess(ctx, instance, metav1.ConditionFalse, "FailedToCleanPreviousMapGenerationResources", err.Error())
-			return ctrl.Result{}, err
-		}
-	}
 
 	err = r.setLastAppliedSpecAnnotation(ctx, instance)
 	if err != nil {
@@ -682,48 +673,6 @@ func (r *OSRMClusterReconciler) getChildResources(
 	return children, nil
 }
 
-func (r *OSRMClusterReconciler) cleanPreviousMapGenerationResources(
-	ctx context.Context,
-	instance *osrmv1alpha1.OSRMCluster,
-	currentMapGeneration string,
-) error {
-	currentMapGenerationInteger, err := strconv.Atoi(currentMapGeneration)
-	if err != nil {
-		return fmt.Errorf("invalid map generation: %w", err)
-	}
-
-	previousMapGeneration := strconv.Itoa(currentMapGenerationInteger - 1)
-	objectsToDelete := make([]client.Object, 0)
-	for _, profile := range instance.Spec.Profiles {
-		name := instance.ChildResourceName(profile.Name, previousMapGeneration)
-		objectsToDelete = append(objectsToDelete, []client.Object{
-			&batchv1.Job{
-				ObjectMeta: metav1.ObjectMeta{
-					Name:      name,
-					Namespace: instance.Namespace,
-				},
-			},
-			&corev1.PersistentVolumeClaim{
-				ObjectMeta: metav1.ObjectMeta{
-					Name:      name,
-					Namespace: instance.Namespace,
-				},
-			},
-		}...)
-	}
-
-	propagationPolicy := metav1.DeletePropagationBackground
-	for _, object := range objectsToDelete {
-		r.log.Info("Deleting previous map generation resource", "name", object.GetName())
-		err := r.Client.Delete(ctx, object, &client.DeleteOptions{PropagationPolicy: &propagationPolicy})
-		if err != nil {
-			r.log.Error(err, "Failed to delete previous map generation resource", "name", object.GetName())
-			return err
-		}
-	}
-
-	return nil
-}
 
 func (r *OSRMClusterReconciler) garbageCollection(ctx context.Context, instance *osrmv1alpha1.OSRMCluster) error {
 	propagationPolicy := metav1.DeletePropagationBackground
@@ -842,7 +791,12 @@ func (r *OSRMClusterReconciler) garbageCollection(ctx context.Context, instance 
 		return fmt.Errorf("failed to get Jobs for garbage collection: %w", err)
 	}
 
-	activeMapGeneration, err := r.getActiveMapGeneration(nil)
+	profilesDeployments, err := r.getProfilesDeployments(ctx, instance)
+	if err != nil {
+		return fmt.Errorf("failed to get profiles deployments for garbage collection: %w", err)
+	}
+
+	activeMapGeneration, err := r.getActiveMapGeneration(profilesDeployments)
 	if err != nil {
 		return fmt.Errorf("failed to get active map generation: %w", err)
 	}
