@@ -206,19 +206,19 @@ func (r *OSRMClusterReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 	pvcs, _ := r.getPersistentVolumeClaims(ctx, instance)
 	jobs, _ := r.getJobs(ctx, instance)
 	profilesDeployments, _ := r.getProfilesDeployments(ctx, instance)
-	activeMapGeneration, err := r.getActiveMapGeneration(profilesDeployments)
+	activeMapGeneration, err := r.GetActiveMapGeneration(profilesDeployments)
 	if err != nil {
 		logger.Error(err, "Failed to get active map generation for OSRMCluster")
 		return ctrl.Result{}, err
 	}
 
-	futureMapGeneration, err := r.getFutureMapGeneration(pvcs)
+	futureMapGeneration, err := r.GetFutureMapGeneration(pvcs)
 	if err != nil {
 		logger.Error(err, "Failed to get future map generation for OSRMCluster")
 		return ctrl.Result{}, err
 	}
 
-	phase := r.determinePhase(
+	phase := r.DeterminePhase(
 		instance,
 		oldSpec,
 		activeMapGeneration,
@@ -274,7 +274,7 @@ func (r *OSRMClusterReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 		return ctrl.Result{RequeueAfter: time.Second * 10}, err
 	}
 
-	err = r.garbageCollection(ctx, instance)
+	err = r.GarbageCollection(ctx, instance)
 	if err != nil {
 		logger.Error(err, "Garbage collection failed for OSRMCluster %v/%v", instance.Namespace, instance.Name)
 		return ctrl.Result{RequeueAfter: time.Second * 10}, err
@@ -338,7 +338,8 @@ func IsMapBuildingInProgress(
 	return !allVolumesBound || !allMapsBuilt
 }
 
-func (r *OSRMClusterReconciler) determinePhase(
+// DeterminePhase is exported for testing
+func (r *OSRMClusterReconciler) DeterminePhase(
 	instance *osrmv1alpha1.OSRMCluster,
 	oldSpec *osrmv1alpha1.OSRMClusterSpec,
 	activeMapGeneration string,
@@ -469,7 +470,8 @@ func (r *OSRMClusterReconciler) updateStatusConditions(
 	return 0, nil
 }
 
-func (r *OSRMClusterReconciler) getActiveMapGeneration(profilesDeployments []*appsv1.Deployment) (string, error) {
+// GetActiveMapGeneration is exported for testing
+func (r *OSRMClusterReconciler) GetActiveMapGeneration(profilesDeployments []*appsv1.Deployment) (string, error) {
 	activeMapGeneration := "1"
 	if len(profilesDeployments) > 0 {
 		suffix := getResourceNameSuffix(profilesDeployments[0].Spec.Template.Spec.Volumes[0].VolumeSource.PersistentVolumeClaim.ClaimName)
@@ -485,7 +487,8 @@ func (r *OSRMClusterReconciler) getActiveMapGeneration(profilesDeployments []*ap
 	return activeMapGeneration, nil
 }
 
-func (r *OSRMClusterReconciler) getFutureMapGeneration(pvcs []*corev1.PersistentVolumeClaim) (string, error) {
+// GetFutureMapGeneration is exported for testing
+func (r *OSRMClusterReconciler) GetFutureMapGeneration(pvcs []*corev1.PersistentVolumeClaim) (string, error) {
 	higestMapGeneration := 1
 	for _, pvc := range pvcs {
 		mapGeneration := getResourceNameSuffix(pvc.Name)
@@ -672,7 +675,7 @@ func (r *OSRMClusterReconciler) getChildResources(
 	return children, nil
 }
 
-func (r *OSRMClusterReconciler) garbageCollection(ctx context.Context, instance *osrmv1alpha1.OSRMCluster) error {
+func (r *OSRMClusterReconciler) GarbageCollection(ctx context.Context, instance *osrmv1alpha1.OSRMCluster) error {
 	propagationPolicy := metav1.DeletePropagationBackground
 
 	expectedResources := make(map[string]bool)
@@ -794,23 +797,32 @@ func (r *OSRMClusterReconciler) garbageCollection(ctx context.Context, instance 
 		return fmt.Errorf("failed to get profiles deployments for garbage collection: %w", err)
 	}
 
-	activeMapGeneration, err := r.getActiveMapGeneration(profilesDeployments)
+	activeMapGeneration, err := r.GetActiveMapGeneration(profilesDeployments)
 	if err != nil {
 		return fmt.Errorf("failed to get active map generation: %w", err)
 	}
 
-	futureMapGeneration, err := r.getFutureMapGeneration(pvcs)
+	futureMapGeneration, err := r.GetFutureMapGeneration(pvcs)
 	if err != nil {
 		return fmt.Errorf("failed to get future map generation: %w", err)
 	}
 
 	for _, profile := range instance.Spec.Profiles {
+		// Always keep the active generation (what deployments are currently using)
 		expectedPVCs[instance.ChildResourceName(profile.Name, activeMapGeneration)] = true
 		expectedJobs[instance.ChildResourceName(profile.Name, activeMapGeneration)] = true
 
+		// During blue-green deployment, also keep the future generation
 		if activeMapGeneration != futureMapGeneration {
-			expectedPVCs[instance.ChildResourceName(profile.Name, futureMapGeneration)] = true
-			expectedJobs[instance.ChildResourceName(profile.Name, futureMapGeneration)] = true
+			// Only keep future generation during active deployment phases
+			phase := instance.Status.Phase
+			if phase == osrmv1alpha1.PhaseUpdatingMap || 
+			   phase == osrmv1alpha1.PhaseRedepoloyingWorkers || 
+			   phase == osrmv1alpha1.PhaseDeployingWorkers {
+				expectedPVCs[instance.ChildResourceName(profile.Name, futureMapGeneration)] = true
+				expectedJobs[instance.ChildResourceName(profile.Name, futureMapGeneration)] = true
+			}
+			// In PhaseWorkersRedeployed, only keep active generation to clean up old future generation
 		}
 	}
 

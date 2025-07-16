@@ -99,13 +99,25 @@ fmt: ## Run go fmt against code.
 vet: ## Run go vet against code.
 	go vet ./...
 
+.PHONY: test
+test: unit-test integration-test e2e-test ## Run all tests.
+
 .PHONY: unit-test
-unit-test: manifests generate fmt vet envtest ## Run tests.
+unit-test: manifests generate fmt vet envtest ## Run unit tests.
 	KUBEBUILDER_ASSETS="$(shell $(ENVTEST) use $(ENVTEST_K8S_VERSION) -p path)" go test ./api/... ./internal/...
+	KUBEBUILDER_ASSETS="$(shell $(ENVTEST) use $(ENVTEST_K8S_VERSION) -p path)" go test -v -timeout 300s ./controllers/... -args -ginkgo.focus="Unit Tests"
 
 .PHONY: integration-test
-integration-test: manifests generate fmt vet envtest ## Run tests.
-	KUBEBUILDER_ASSETS="$(shell $(ENVTEST) use $(ENVTEST_K8S_VERSION) -p path)" USE_EXISTING_CLUSTER=true go test -v -timeout 900s ./controllers/... -args -ginkgo.v
+integration-test: manifests generate fmt vet envtest ## Run integration tests.
+	KUBEBUILDER_ASSETS="$(shell $(ENVTEST) use $(ENVTEST_K8S_VERSION) -p path)" USE_EXISTING_CLUSTER=true go test -v -timeout 900s ./controllers/... -args -ginkgo.focus="Integration Tests"
+
+.PHONY: e2e-test
+e2e-test: manifests generate fmt vet envtest ## Run end-to-end tests.
+	KUBEBUILDER_ASSETS="$(shell $(ENVTEST) use $(ENVTEST_K8S_VERSION) -p path)" USE_EXISTING_CLUSTER=true go test -v -timeout 1800s ./controllers/... -args -ginkgo.focus="End-to-End Tests"
+
+.PHONY: controller-test
+controller-test: manifests generate fmt vet envtest ## Run all controller tests.
+	KUBEBUILDER_ASSETS="$(shell $(ENVTEST) use $(ENVTEST_K8S_VERSION) -p path)" USE_EXISTING_CLUSTER=true go test -v -timeout 1800s ./controllers/... -args -ginkgo.v
 
 ##@ Build
 
