@@ -10,13 +10,3 @@ spec:
   pbfUrl: https://download.geofabrik.de/australia-oceania/marshall-islands-latest.osm.pbf
   #pbfUrl: https://download.geofabrik.de/australia-oceania/marshall-islands-250713.osm.pbf
   profiles:
-  - name: foot
-    endpointName: foot
-    minReplicas: 3
-    maxReplicas: 4
-  service:
-    exposingServices: ["route", "table", "match"]
-  persistence:
-    storage: "1000Mi"
-    storageClassName: standard
-    accessMode: ReadWriteOnce

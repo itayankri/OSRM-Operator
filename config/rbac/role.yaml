@@ -8,8 +8,11 @@ rules:
   - ""
   resources:
   - configmaps
+  - persistentvolumeclaims
+  - services
   verbs:
   - create
+  - delete
   - get
   - list
   - update
@@ -21,18 +24,6 @@ rules:
   verbs:
   - get
   - list
-  - watch
-- apiGroups:
-  - ""
-  resources:
-  - persistentvolumeclaims
-  - services
-  verbs:
-  - create
-  - deletecollection
-  - get
-  - list
-  - update
   - watch
 - apiGroups:
   - ""
@@ -55,7 +46,7 @@ rules:
   - deployments
   verbs:
   - create
-  - deletecollection
+  - delete
   - get
   - list
   - update
@@ -66,7 +57,7 @@ rules:
   - horizontalpodautoscalers
   verbs:
   - create
-  - deletecollection
+  - delete
   - get
   - list
   - update
@@ -79,7 +70,6 @@ rules:
   verbs:
   - create
   - delete
-  - deletecollection
   - get
   - list
   - update
@@ -126,7 +116,7 @@ rules:
   - poddisruptionbudgets
   verbs:
   - create
-  - deletecollection
+  - delete
   - get
   - list
   - update

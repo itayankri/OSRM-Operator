@@ -6,17 +6,6 @@ spec:
   #pbfUrl: https://download.geofabrik.de/australia-oceania/marshall-islands-latest.osm.pbf
   pbfUrl: https://download.geofabrik.de/australia-oceania/marshall-islands-250713.osm.pbf
   profiles:
-  - name: car
-    endpointName: driving
-    minReplicas: 1
-    maxReplicas: 10
-    resources:
-      requests:
-        cpu: 100m
-        memory: 100Mi
-      limits:
-        cpu: 500m
-        memory: 500Mi
   - name: bicycle
     endpointName: cycling
     minReplicas: 1

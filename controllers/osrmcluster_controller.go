@@ -110,19 +110,19 @@ func getLabelSelector(instance *osrmv1alpha1.OSRMCluster) string {
 // the rbac rule requires an empty row at the end to render
 // +kubebuilder:rbac:groups="",resources=pods/exec,verbs=create
 // +kubebuilder:rbac:groups="",resources=pods,verbs=update;get;list;watch
-// +kubebuilder:rbac:groups="",resources=services,verbs=get;list;watch;create;update;deletecollection
-// +kubebuilder:rbac:groups="",resources=configmaps,verbs=get;list;watch;create;update
-// +kubebuilder:rbac:groups="batch",resources=jobs,verbs=get;list;watch;create;update;delete;deletecollection
-// +kubebuilder:rbac:groups="batch",resources=cronjobs,verbs=get;list;watch;create;update;delete;deletecollection
-// +kubebuilder:rbac:groups="apps",resources=deployments,verbs=get;list;watch;create;update;deletecollection
-// +kubebuilder:rbac:groups="autoscaling",resources=horizontalpodautoscalers,verbs=get;list;watch;create;update;deletecollection
+// +kubebuilder:rbac:groups="",resources=services,verbs=get;list;watch;create;update;delete
+// +kubebuilder:rbac:groups="",resources=configmaps,verbs=get;list;watch;create;update;delete
+// +kubebuilder:rbac:groups="batch",resources=jobs,verbs=get;list;watch;create;update;delete
+// +kubebuilder:rbac:groups="batch",resources=cronjobs,verbs=get;list;watch;create;update;delete
+// +kubebuilder:rbac:groups="apps",resources=deployments,verbs=get;list;watch;create;update;delete
+// +kubebuilder:rbac:groups="autoscaling",resources=horizontalpodautoscalers,verbs=get;list;watch;create;update;delete
 // +kubebuilder:rbac:groups="networking.k8s.io",resources=ingresses,verbs=get;list;watch;create;update
 // +kubebuilder:rbac:groups="",resources=endpoints,verbs=get;watch;list
-// +kubebuilder:rbac:groups="policy",resources=poddisruptionbudgets,verbs=get;list;watch;create;update;deletecollection
+// +kubebuilder:rbac:groups="policy",resources=poddisruptionbudgets,verbs=get;list;watch;create;update;delete
 // +kubebuilder:rbac:groups=osrm.itayankri,resources=osrmclusters,verbs=get;list;watch;create;update;patch;delete
 // +kubebuilder:rbac:groups=osrm.itayankri,resources=osrmclusters/status,verbs=get;update;patch
 // +kubebuilder:rbac:groups=osrm.itayankri,resources=osrmclusters/finalizers,verbs=update
-// +kubebuilder:rbac:groups="",resources=persistentvolumeclaims,verbs=get;list;watch;create;update;deletecollection
+// +kubebuilder:rbac:groups="",resources=persistentvolumeclaims,verbs=get;list;watch;create;update;delete
 // +kubebuilder:rbac:groups="rbac.authorization.k8s.io",resources=roles,verbs=get;list;watch;create;update
 // +kubebuilder:rbac:groups="rbac.authorization.k8s.io",resources=rolebindings,verbs=get;list;watch;create;update
 
@@ -280,7 +280,7 @@ func (r *OSRMClusterReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 
 	err = r.setLastAppliedSpecAnnotation(ctx, instance)
 	if err != nil {
-		logger.Error(err, "Garbage collection failed for OSRMCluster %v/%v", instance.Namespace, instance.Name)
+		logger.Error(err, "Failed to apply last spec annotation for OSRMCluster %v/%v", instance.Namespace, instance.Name)
 		return ctrl.Result{RequeueAfter: time.Second * 10}, err
 	}
 
@@ -358,22 +358,18 @@ func (r *OSRMClusterReconciler) determinePhase(
 	profilesDeployments []*appsv1.Deployment,
 ) osrmv1alpha1.Phase {
 	if len(instance.Spec.Profiles) == 0 {
-		r.log.Info("PhaseEmpty")
 		return osrmv1alpha1.PhaseEmpty
 	}
 
 	if IsMapBuildingInProgress(instance, pvcs, jobs, activeMapGeneration) {
-		r.log.Info("PhaseBuildingMap", "activeMapGenration", activeMapGeneration)
 		return osrmv1alpha1.PhaseBuildingMap
 	}
 
 	if instance.Spec.PBFURL != oldSpec.PBFURL || IsMapBuildingInProgress(instance, pvcs, jobs, futureMapGeneration) {
-		r.log.Info("PhaseUpdatingMap", "pbfChanged", instance.Spec.PBFURL != oldSpec.PBFURL, "IsMapBuildingInProgress", IsMapBuildingInProgress(instance, pvcs, jobs, futureMapGeneration))
 		return osrmv1alpha1.PhaseUpdatingMap
 	}
 
 	if activeMapGeneration != futureMapGeneration {
-		r.log.Info("PhaseRedepoloyingWorkers", "activeMapGeneration", activeMapGeneration, "futureMapGeneration", futureMapGeneration)
 		return osrmv1alpha1.PhaseRedepoloyingWorkers
 	}
 
@@ -401,20 +397,16 @@ func (r *OSRMClusterReconciler) determinePhase(
 
 	if !allWorkersDeployed {
 		if activeMapGenerationInteger > 1 {
-			r.log.Info("PhaseRedepoloyingWorkers", "activeMapGeneration", activeMapGeneration, "futureMapGeneration", futureMapGeneration)
 			return osrmv1alpha1.PhaseRedepoloyingWorkers
 		}
 
-		r.log.Info("PhaseDeployingWorkers", "activeMapGeneration", activeMapGeneration, "futureMapGeneration", futureMapGeneration)
 		return osrmv1alpha1.PhaseDeployingWorkers
 	}
 
 	if activeMapGenerationInteger > 1 {
-		r.log.Info("PhaseWorkersRedeployed", "activeMapGeneration", activeMapGeneration, "futureMapGeneration", futureMapGeneration)
 		return osrmv1alpha1.PhaseWorkersRedeployed
 	}
 
-	r.log.Info("PhaseWorkersDeployed", "activeMapGeneration", activeMapGeneration, "futureMapGeneration", futureMapGeneration)
 	return osrmv1alpha1.PhaseWorkersDeployed
 }
 
@@ -497,7 +489,7 @@ func (r *OSRMClusterReconciler) getActiveMapGeneration(profilesDeployments []*ap
 		}
 		activeMapGeneration = suffix
 	} else {
-		r.log.Info("No profiles deployments found, using default active map generation 1")
+		r.log.Info("No profile deployments found, using default active map generation 1")
 	}
 
 	return activeMapGeneration, nil
@@ -734,81 +726,161 @@ func (r *OSRMClusterReconciler) cleanPreviousMapGenerationResources(
 }
 
 func (r *OSRMClusterReconciler) garbageCollection(ctx context.Context, instance *osrmv1alpha1.OSRMCluster) error {
-	labelSelector := getLabelSelector(instance)
 	propagationPolicy := metav1.DeletePropagationBackground
 
-	err := r.Client.DeleteAllOf(ctx, &batchv1.CronJob{}, &client.DeleteAllOfOptions{
-		ListOptions: client.ListOptions{
-			Namespace: instance.Namespace,
-			Raw:       &metav1.ListOptions{LabelSelector: labelSelector},
-		},
-		DeleteOptions: client.DeleteOptions{PropagationPolicy: &propagationPolicy},
-	})
-	if err != nil {
-		return err
-	}
+	expectedResources := make(map[string]bool)
+	for _, profile := range instance.Spec.Profiles {
+		expectedResources[instance.ChildResourceName(profile.Name, resource.DeploymentSuffix)] = true
+		expectedResources[instance.ChildResourceName(profile.Name, resource.ServiceSuffix)] = true
+		expectedResources[instance.ChildResourceName(profile.Name, resource.HorizontalPodAutoscalerSuffix)] = true
+		expectedResources[instance.ChildResourceName(profile.Name, resource.PodDisruptionBudgetSuffix)] = true
 
-	/*
-		err = r.Client.DeleteAllOf(ctx, &batchv1.Job{}, &client.DeleteAllOfOptions{
-			ListOptions: client.ListOptions{
-				Namespace: instance.Namespace,
-				Raw:       &metav1.ListOptions{LabelSelector: labelSelector},
-			},
-			DeleteOptions: client.DeleteOptions{PropagationPolicy: &propagationPolicy},
-		})
-		if err != nil {
-			return err
+		if profile.SpeedUpdates != nil {
+			expectedResources[instance.ChildResourceName(profile.Name, resource.CronJobSuffix)] = true
 		}
-	*/
-
-	err = r.Client.DeleteAllOf(ctx, &autoscalingv1.HorizontalPodAutoscaler{}, &client.DeleteAllOfOptions{
-		ListOptions: client.ListOptions{
-			Namespace: instance.Namespace,
-			Raw:       &metav1.ListOptions{LabelSelector: labelSelector},
-		},
-	})
-	if err != nil {
-		return err
 	}
 
-	err = r.Client.DeleteAllOf(ctx, &policyv1.PodDisruptionBudget{}, &client.DeleteAllOfOptions{
-		ListOptions: client.ListOptions{
-			Namespace: instance.Namespace,
-			Raw:       &metav1.ListOptions{LabelSelector: labelSelector},
-		},
-	})
-	if err != nil {
-		return err
+	if len(instance.Spec.Profiles) > 0 {
+		expectedResources[instance.ChildResourceName(resource.GatewaySuffix, resource.DeploymentSuffix)] = true
+		expectedResources[instance.ChildResourceName(resource.GatewaySuffix, resource.ServiceSuffix)] = true
+		expectedResources[instance.ChildResourceName(resource.GatewaySuffix, resource.ConfigMapSuffix)] = true
 	}
 
-	err = r.Client.DeleteAllOf(ctx, &corev1.Service{}, &client.DeleteAllOfOptions{
-		ListOptions: client.ListOptions{
-			Namespace: instance.Namespace,
-			Raw:       &metav1.ListOptions{LabelSelector: labelSelector},
-		},
-	})
-	if err != nil {
-		return err
+	listOptions := &client.ListOptions{
+		Namespace: instance.Namespace,
+		Raw:       &metav1.ListOptions{LabelSelector: fmt.Sprintf("%s=%s", metadata.NameLabelKey, instance.Name)},
 	}
 
-	err = r.Client.DeleteAllOf(ctx, &appsv1.Deployment{}, &client.DeleteAllOfOptions{
-		ListOptions: client.ListOptions{
-			Namespace: instance.Namespace,
-			Raw:       &metav1.ListOptions{LabelSelector: labelSelector},
-		},
-	})
-	if err != nil {
-		return err
+	cronJobList := &batchv1.CronJobList{}
+	if err := r.Client.List(ctx, cronJobList, listOptions); err != nil {
+		return fmt.Errorf("failed to list CronJobs: %w", err)
+	}
+	for _, cronJob := range cronJobList.Items {
+		if !expectedResources[cronJob.Name] {
+			err := r.Client.Delete(ctx, &cronJob, &client.DeleteOptions{PropagationPolicy: &propagationPolicy})
+			if err != nil && !errors.IsNotFound(err) {
+				return fmt.Errorf("failed to delete CronJob %s: %w", cronJob.Name, err)
+			}
+		}
 	}
 
-	err = r.Client.DeleteAllOf(ctx, &corev1.PersistentVolumeClaim{}, &client.DeleteAllOfOptions{
-		ListOptions: client.ListOptions{
-			Namespace: instance.Namespace,
-			Raw:       &metav1.ListOptions{LabelSelector: labelSelector},
-		},
-	})
+	deploymentList := &appsv1.DeploymentList{}
+	if err := r.Client.List(ctx, deploymentList, listOptions); err != nil {
+		return fmt.Errorf("failed to list Deployments: %w", err)
+	}
+	for _, deployment := range deploymentList.Items {
+		if !expectedResources[deployment.Name] {
+			err := r.Client.Delete(ctx, &deployment, &client.DeleteOptions{PropagationPolicy: &propagationPolicy})
+			if err != nil && !errors.IsNotFound(err) {
+				return fmt.Errorf("failed to delete Deployment %s: %w", deployment.Name, err)
+			}
+		}
+	}
 
-	return err
+	hpaList := &autoscalingv1.HorizontalPodAutoscalerList{}
+	if err := r.Client.List(ctx, hpaList, listOptions); err != nil {
+		return fmt.Errorf("failed to list HPAs: %w", err)
+	}
+	for _, hpa := range hpaList.Items {
+		if !expectedResources[hpa.Name] {
+			err := r.Client.Delete(ctx, &hpa, &client.DeleteOptions{PropagationPolicy: &propagationPolicy})
+			if err != nil && !errors.IsNotFound(err) {
+				return fmt.Errorf("failed to delete HPA %s: %w", hpa.Name, err)
+			}
+		}
+	}
+
+	pdbList := &policyv1.PodDisruptionBudgetList{}
+	if err := r.Client.List(ctx, pdbList, listOptions); err != nil {
+		return fmt.Errorf("failed to list PDBs: %w", err)
+	}
+	for _, pdb := range pdbList.Items {
+		if !expectedResources[pdb.Name] {
+			err := r.Client.Delete(ctx, &pdb, &client.DeleteOptions{PropagationPolicy: &propagationPolicy})
+			if err != nil && !errors.IsNotFound(err) {
+				return fmt.Errorf("failed to delete PDB %s: %w", pdb.Name, err)
+			}
+		}
+	}
+
+	serviceList := &corev1.ServiceList{}
+	if err := r.Client.List(ctx, serviceList, listOptions); err != nil {
+		return fmt.Errorf("failed to list Services: %w", err)
+	}
+	for _, service := range serviceList.Items {
+		if !expectedResources[service.Name] {
+			err := r.Client.Delete(ctx, &service, &client.DeleteOptions{PropagationPolicy: &propagationPolicy})
+			if err != nil && !errors.IsNotFound(err) {
+				return fmt.Errorf("failed to delete Service %s: %w", service.Name, err)
+			}
+		}
+	}
+
+	configMapList := &corev1.ConfigMapList{}
+	if err := r.Client.List(ctx, configMapList, listOptions); err != nil {
+		return fmt.Errorf("failed to list ConfigMaps: %w", err)
+	}
+	for _, configMap := range configMapList.Items {
+		if !expectedResources[configMap.Name] {
+			err := r.Client.Delete(ctx, &configMap, &client.DeleteOptions{PropagationPolicy: &propagationPolicy})
+			if err != nil && !errors.IsNotFound(err) {
+				return fmt.Errorf("failed to delete ConfigMap %s: %w", configMap.Name, err)
+			}
+		}
+	}
+
+	expectedPVCs := make(map[string]bool)
+	expectedJobs := make(map[string]bool)
+
+	pvcs, err := r.getPersistentVolumeClaims(ctx, instance)
+	if err != nil {
+		return fmt.Errorf("failed to get PVCs for garbage collection: %w", err)
+	}
+
+	jobs, err := r.getJobs(ctx, instance)
+	if err != nil {
+		return fmt.Errorf("failed to get Jobs for garbage collection: %w", err)
+	}
+
+	activeMapGeneration, err := r.getActiveMapGeneration(nil)
+	if err != nil {
+		return fmt.Errorf("failed to get active map generation: %w", err)
+	}
+
+	futureMapGeneration, err := r.getFutureMapGeneration(pvcs)
+	if err != nil {
+		return fmt.Errorf("failed to get future map generation: %w", err)
+	}
+
+	for _, profile := range instance.Spec.Profiles {
+		expectedPVCs[instance.ChildResourceName(profile.Name, activeMapGeneration)] = true
+		expectedJobs[instance.ChildResourceName(profile.Name, activeMapGeneration)] = true
+
+		if activeMapGeneration != futureMapGeneration {
+			expectedPVCs[instance.ChildResourceName(profile.Name, futureMapGeneration)] = true
+			expectedJobs[instance.ChildResourceName(profile.Name, futureMapGeneration)] = true
+		}
+	}
+
+	for _, pvc := range pvcs {
+		if !expectedPVCs[pvc.Name] {
+			err := r.Client.Delete(ctx, pvc, &client.DeleteOptions{PropagationPolicy: &propagationPolicy})
+			if err != nil && !errors.IsNotFound(err) {
+				return fmt.Errorf("failed to delete PVC %s: %w", pvc.Name, err)
+			}
+		}
+	}
+
+	for _, job := range jobs {
+		if !expectedJobs[job.Name] {
+			err := r.Client.Delete(ctx, job, &client.DeleteOptions{PropagationPolicy: &propagationPolicy})
+			if err != nil && !errors.IsNotFound(err) {
+				return fmt.Errorf("failed to delete Job %s: %w", job.Name, err)
+			}
+		}
+	}
+
+	return nil
 }
 
 func (r *OSRMClusterReconciler) cleanup(ctx context.Context, instance *osrmv1alpha1.OSRMCluster) error {
