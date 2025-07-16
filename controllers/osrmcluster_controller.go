@@ -208,13 +208,13 @@ func (r *OSRMClusterReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 	profilesDeployments, _ := r.getProfilesDeployments(ctx, instance)
 	activeMapGeneration, err := r.getActiveMapGeneration(profilesDeployments)
 	if err != nil {
-		logger.Error(err, "Failed to get active map generation for OSRMCluster", "namespace", instance.Namespace, "instance", instance.Name)
+		logger.Error(err, "Failed to get active map generation for OSRMCluster")
 		return ctrl.Result{}, err
 	}
 
 	futureMapGeneration, err := r.getFutureMapGeneration(pvcs)
 	if err != nil {
-		logger.Error(err, "Failed to get future map generation for OSRMCluster", "namespace", instance.Namespace, "instance", instance.Name)
+		logger.Error(err, "Failed to get future map generation for OSRMCluster")
 		return ctrl.Result{}, err
 	}
 
@@ -228,7 +228,7 @@ func (r *OSRMClusterReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 		profilesDeployments,
 	)
 
-	logger.Info("Reconciling OSRMCluster", "namespace", instance.Namespace, "instance", instance.Name, "phase", phase)
+	logger.Info("Reconciling OSRMCluster")
 
 	resourceBuilder := resource.NewOSRMResourceBuilder(
 		instance,
@@ -267,7 +267,6 @@ func (r *OSRMClusterReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 			return ctrl.Result{}, err
 		}
 	}
-
 
 	err = r.setLastAppliedSpecAnnotation(ctx, instance)
 	if err != nil {
@@ -672,7 +671,6 @@ func (r *OSRMClusterReconciler) getChildResources(
 
 	return children, nil
 }
-
 
 func (r *OSRMClusterReconciler) garbageCollection(ctx context.Context, instance *osrmv1alpha1.OSRMCluster) error {
 	propagationPolicy := metav1.DeletePropagationBackground
