@@ -25,6 +25,7 @@ import (
 	"time"
 
 	"k8s.io/apimachinery/pkg/api/errors"
+	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -470,7 +471,6 @@ func (r *OSRMClusterReconciler) updateStatusConditions(
 	return 0, nil
 }
 
-// GetActiveMapGeneration is exported for testing
 func (r *OSRMClusterReconciler) GetActiveMapGeneration(profilesDeployments []*appsv1.Deployment) (string, error) {
 	activeMapGeneration := "1"
 	if len(profilesDeployments) > 0 {
@@ -698,7 +698,9 @@ func (r *OSRMClusterReconciler) GarbageCollection(ctx context.Context, instance 
 
 	listOptions := &client.ListOptions{
 		Namespace: instance.Namespace,
-		Raw:       &metav1.ListOptions{LabelSelector: fmt.Sprintf("%s=%s", metadata.NameLabelKey, instance.Name)},
+		LabelSelector: labels.SelectorFromSet(labels.Set{
+			metadata.NameLabelKey: instance.Name,
+		}),
 	}
 
 	cronJobList := &batchv1.CronJobList{}
@@ -720,6 +722,7 @@ func (r *OSRMClusterReconciler) GarbageCollection(ctx context.Context, instance 
 	}
 	for _, deployment := range deploymentList.Items {
 		if !expectedResources[deployment.Name] {
+			r.log.Info(fmt.Sprintf("Deleting Deployment %s while reconciling instance %s", deployment.Name, instance.Name))
 			err := r.Client.Delete(ctx, &deployment, &client.DeleteOptions{PropagationPolicy: &propagationPolicy})
 			if err != nil && !errors.IsNotFound(err) {
 				return fmt.Errorf("failed to delete Deployment %s: %w", deployment.Name, err)
@@ -733,6 +736,7 @@ func (r *OSRMClusterReconciler) GarbageCollection(ctx context.Context, instance 
 	}
 	for _, hpa := range hpaList.Items {
 		if !expectedResources[hpa.Name] {
+			r.log.Info(fmt.Sprintf("Deleting HorizontalPodAutoscalerList %s while reconciling instance %s", hpa.Name, instance.Name))
 			err := r.Client.Delete(ctx, &hpa, &client.DeleteOptions{PropagationPolicy: &propagationPolicy})
 			if err != nil && !errors.IsNotFound(err) {
 				return fmt.Errorf("failed to delete HPA %s: %w", hpa.Name, err)
@@ -746,6 +750,7 @@ func (r *OSRMClusterReconciler) GarbageCollection(ctx context.Context, instance 
 	}
 	for _, pdb := range pdbList.Items {
 		if !expectedResources[pdb.Name] {
+			r.log.Info(fmt.Sprintf("Deleting PodDisruptionBudgetList %s while reconciling instance %s", pdb.Name, instance.Name))
 			err := r.Client.Delete(ctx, &pdb, &client.DeleteOptions{PropagationPolicy: &propagationPolicy})
 			if err != nil && !errors.IsNotFound(err) {
 				return fmt.Errorf("failed to delete PDB %s: %w", pdb.Name, err)
@@ -759,6 +764,7 @@ func (r *OSRMClusterReconciler) GarbageCollection(ctx context.Context, instance 
 	}
 	for _, service := range serviceList.Items {
 		if !expectedResources[service.Name] {
+			r.log.Info(fmt.Sprintf("Deleting Service %s while reconciling instance %s", service.Name, instance.Name))
 			err := r.Client.Delete(ctx, &service, &client.DeleteOptions{PropagationPolicy: &propagationPolicy})
 			if err != nil && !errors.IsNotFound(err) {
 				return fmt.Errorf("failed to delete Service %s: %w", service.Name, err)
@@ -816,9 +822,9 @@ func (r *OSRMClusterReconciler) GarbageCollection(ctx context.Context, instance 
 		if activeMapGeneration != futureMapGeneration {
 			// Only keep future generation during active deployment phases
 			phase := instance.Status.Phase
-			if phase == osrmv1alpha1.PhaseUpdatingMap || 
-			   phase == osrmv1alpha1.PhaseRedepoloyingWorkers || 
-			   phase == osrmv1alpha1.PhaseDeployingWorkers {
+			if phase == osrmv1alpha1.PhaseUpdatingMap ||
+				phase == osrmv1alpha1.PhaseRedepoloyingWorkers ||
+				phase == osrmv1alpha1.PhaseDeployingWorkers {
 				expectedPVCs[instance.ChildResourceName(profile.Name, futureMapGeneration)] = true
 				expectedJobs[instance.ChildResourceName(profile.Name, futureMapGeneration)] = true
 			}
@@ -828,6 +834,7 @@ func (r *OSRMClusterReconciler) GarbageCollection(ctx context.Context, instance 
 
 	for _, pvc := range pvcs {
 		if !expectedPVCs[pvc.Name] {
+			r.log.Info(fmt.Sprintf("Deleting PersistentVolumeClaim %s while reconciling instance %s", pvc.Name, instance.Name))
 			err := r.Client.Delete(ctx, pvc, &client.DeleteOptions{PropagationPolicy: &propagationPolicy})
 			if err != nil && !errors.IsNotFound(err) {
 				return fmt.Errorf("failed to delete PVC %s: %w", pvc.Name, err)
@@ -837,6 +844,7 @@ func (r *OSRMClusterReconciler) GarbageCollection(ctx context.Context, instance 
 
 	for _, job := range jobs {
 		if !expectedJobs[job.Name] {
+			r.log.Info(fmt.Sprintf("Deleting Job %s while reconciling instance %s", job.Name, instance.Name))
 			err := r.Client.Delete(ctx, job, &client.DeleteOptions{PropagationPolicy: &propagationPolicy})
 			if err != nil && !errors.IsNotFound(err) {
 				return fmt.Errorf("failed to delete Job %s: %w", job.Name, err)
