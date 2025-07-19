@@ -95,19 +95,6 @@ func getResourceNameSuffix(name string) string {
 	return tokens[len(tokens)-1]
 }
 
-func getLabelSelector(instance *osrmv1alpha1.OSRMCluster) string {
-	return fmt.Sprintf(
-		"%s=%s,%s=%s,%s,%s notin (%d)",
-		metadata.NameLabelKey,
-		instance.Name,
-		metadata.ComponentLabelKey,
-		metadata.ComponentLabelProfile,
-		metadata.GenerationLabelKey,
-		metadata.GenerationLabelKey,
-		instance.ObjectMeta.Generation,
-	)
-}
-
 // the rbac rule requires an empty row at the end to render
 // +kubebuilder:rbac:groups="",resources=pods/exec,verbs=create
 // +kubebuilder:rbac:groups="",resources=pods,verbs=update;get;list;watch
@@ -529,10 +516,11 @@ func (r *OSRMClusterReconciler) getPersistentVolumeClaims(
 	ctx context.Context,
 	instance *osrmv1alpha1.OSRMCluster,
 ) ([]*corev1.PersistentVolumeClaim, error) {
-	labelSelector := getLabelSelector(instance)
 	listOptions := &client.ListOptions{
 		Namespace: instance.Namespace,
-		Raw:       &metav1.ListOptions{LabelSelector: labelSelector},
+		LabelSelector: labels.SelectorFromSet(labels.Set{
+			metadata.NameLabelKey: instance.Name,
+		}),
 	}
 
 	pvcList := &corev1.PersistentVolumeClaimList{}
@@ -550,10 +538,11 @@ func (r *OSRMClusterReconciler) getPersistentVolumeClaims(
 func (r *OSRMClusterReconciler) getJobs(ctx context.Context,
 	instance *osrmv1alpha1.OSRMCluster,
 ) ([]*batchv1.Job, error) {
-	labelSelector := getLabelSelector(instance)
 	listOptions := &client.ListOptions{
 		Namespace: instance.Namespace,
-		Raw:       &metav1.ListOptions{LabelSelector: labelSelector},
+		LabelSelector: labels.SelectorFromSet(labels.Set{
+			metadata.NameLabelKey: instance.Name,
+		}),
 	}
 
 	jobList := &batchv1.JobList{}
