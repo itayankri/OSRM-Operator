@@ -578,7 +578,7 @@ var _ = Describe("OSRMClusterController Integration Tests", func() {
 			Expect(actualResources).To(Equal(expectedResources))
 		})
 
-		FIt("should update deployment CPU and memory requests and limits", func() {
+		It("should update deployment CPU and memory requests and limits", func() {
 			testInstance = generateOSRMCluster("custom-resource-updates")
 			Expect(k8sClient.Create(ctx, testInstance)).To(Succeed())
 			waitForDeployment(ctx, testInstance, k8sClient)
@@ -862,7 +862,7 @@ var _ = Describe("OSRMClusterController Integration Tests", func() {
 			}
 		})
 
-		FIt("should skip OSRMCluster if pause reconciliation annotation is set to true", func() {
+		It("should skip OSRMCluster if pause reconciliation annotation is set to true", func() {
 			minReplicas := int32(2)
 			originalMinReplicas := *testInstance.Spec.Profiles[0].MinReplicas
 

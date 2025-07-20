@@ -1,18 +1,14 @@
 package resource_test
 
 import (
-	"fmt"
 	"testing"
 
 	osrmv1alpha1 "github.com/itayankri/OSRM-Operator/api/v1alpha1"
 	"github.com/itayankri/OSRM-Operator/internal/resource"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
-	batchv1 "k8s.io/api/batch/v1"
-	corev1 "k8s.io/api/core/v1"
 	k8sresource "k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/runtime"
 )
 
 var osrmResourceBuilder *resource.OSRMResourceBuilder
@@ -29,49 +25,6 @@ var _ = BeforeSuite(func() {
 		Instance: instance,
 	}
 })
-
-func generateChildResources(
-	pvcBound bool,
-	jobCompleted bool,
-	instanceName string,
-	profile string,
-) []runtime.Object {
-	pvcPhase := corev1.ClaimPending
-	if pvcBound {
-		pvcPhase = corev1.ClaimBound
-	}
-
-	jobConditionStatus := corev1.ConditionFalse
-	if jobCompleted {
-		jobConditionStatus = corev1.ConditionTrue
-	}
-
-	childResources := []runtime.Object{
-		&batchv1.Job{
-			ObjectMeta: metav1.ObjectMeta{
-				Name: fmt.Sprintf("%s-%s-%s", instanceName, profile, resource.JobSuffix),
-			},
-			Status: batchv1.JobStatus{
-				Conditions: []batchv1.JobCondition{
-					{
-						Type:   batchv1.JobComplete,
-						Status: jobConditionStatus,
-					},
-				},
-			},
-		},
-		&corev1.PersistentVolumeClaim{
-			ObjectMeta: metav1.ObjectMeta{
-				Name: fmt.Sprintf("%s-%s", instanceName, profile),
-			},
-			Status: corev1.PersistentVolumeClaimStatus{
-				Phase: pvcPhase,
-			},
-		},
-	}
-
-	return childResources
-}
 
 func generateOSRMCluster() *osrmv1alpha1.OSRMCluster {
 	minReplicas := int32(2)
