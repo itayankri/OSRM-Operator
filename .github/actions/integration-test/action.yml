@@ -1,4 +1,4 @@
-name: Integration test
+name: Integration + E2E tests
 
 runs:
   using: "composite"
@@ -62,7 +62,4 @@ runs:
   - name: Run tests
     shell: bash
     run: |
-      kubectl apply -f examples/single_profile_osrm_cluster.yaml
-      sleep 20
-      kubectl get all
-      kubectl logs job/single-profile-example-foot-1
+      make integration-test e2e-test
