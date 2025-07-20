@@ -33,7 +33,7 @@ runs:
       export GOPATH=$HOME/go
       export PATH=$PATH:$GOPATH/bin
       sudo mkdir -p /etc/docker
-      jq '. += {"storage-driver":"vfs"}' > /etc/docker/daemon.json
+      sudo jq '. += {"storage-driver":"vfs"}' > /etc/docker/daemon.json
       sudo systemctl restart docker.service
       kind create cluster --name osrm --config examples/kind-config.yaml
       kubectl create -f https://raw.githubusercontent.com/kubernetes-csi/csi-driver-nfs/master/deploy/example/nfs-provisioner/nfs-server.yaml
