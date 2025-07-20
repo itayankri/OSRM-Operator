@@ -39,6 +39,7 @@ runs:
       sudo bash -c 'echo ''{"storage-driver":"vfs"}'' > /etc/docker/daemon.json'
       echo "Docker daemon.json configured:"
       sudo cat /etc/docker/daemon.json
+      sudo sudo jq . /etc/docker/daemon.json
 
   - name: Restart Docker service
     shell: bash
