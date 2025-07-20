@@ -33,6 +33,7 @@ runs:
       install_only: true
 
   - name: Configure Docker daemon
+    shell: bash
     run: |
       sudo mkdir -p /etc/docker
       sudo bash -c 'echo ''{"storage-driver":"vfs"}'' > /etc/docker/daemon.json'
@@ -40,6 +41,7 @@ runs:
       sudo cat /etc/docker/daemon.json
 
   - name: Restart Docker service
+    shell: bash
     run: sudo systemctl restart docker
 
   - name: Run tests
