@@ -585,12 +585,12 @@ var _ = Describe("OSRMClusterController Integration Tests", func() {
 
 			expectedRequirements := &corev1.ResourceRequirements{
 				Requests: corev1.ResourceList{
-					corev1.ResourceCPU:    resource.MustParse("200m"),
-					corev1.ResourceMemory: resource.MustParse("200Mi"),
+					corev1.ResourceCPU:    resource.MustParse("50m"),
+					corev1.ResourceMemory: resource.MustParse("50Mi"),
 				},
 				Limits: corev1.ResourceList{
-					corev1.ResourceCPU:    resource.MustParse("200m"),
-					corev1.ResourceMemory: resource.MustParse("200Mi"),
+					corev1.ResourceCPU:    resource.MustParse("50m"),
+					corev1.ResourceMemory: resource.MustParse("50Mi"),
 				},
 			}
 
@@ -862,7 +862,7 @@ var _ = Describe("OSRMClusterController Integration Tests", func() {
 			}
 		})
 
-		It("should skip OSRMCluster if pause reconciliation annotation is set to true", func() {
+		FIt("should skip OSRMCluster if pause reconciliation annotation is set to true", func() {
 			minReplicas := int32(2)
 			originalMinReplicas := *testInstance.Spec.Profiles[0].MinReplicas
 

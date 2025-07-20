@@ -137,6 +137,11 @@ func (builder *OSRMResourceBuilder) WorkersDeployedPhaseBuilders() []ResourceBui
 
 	// Add CronJobs for speed updates if configured
 	for _, profile := range builder.Instance.Spec.Profiles {
+		builders = append(builders, builder.Service(profile))
+		builders = append(builders, builder.HorizontalPodAutoscaler(profile))
+		builders = append(builders, builder.PodDisruptionBudget(profile))
+		builders = append(builders, builder.Deployment(profile, builder.MapGeneration))
+
 		if profile.SpeedUpdates != nil {
 			builders = append(builders, builder.CronJob(profile, builder.MapGeneration))
 		}
