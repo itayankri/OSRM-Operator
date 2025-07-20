@@ -4,7 +4,7 @@ runs:
   using: "composite"
   steps:
   - name: Install Go
-    uses: actions/setup-go@v2
+    uses: actions/setup-go@v5
     with:
       go-version: ${{ env.GO_VERSION }}
   - name: Setup Golang caches

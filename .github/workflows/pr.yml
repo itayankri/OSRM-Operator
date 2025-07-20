@@ -6,7 +6,7 @@ on:
 
 env:
   GO_VERSION: 1.23.1
-  K8S_VERSION: v1.29.7
+  K8S_VERSION: v1.33.0
   ENV: test
 
 jobs:
