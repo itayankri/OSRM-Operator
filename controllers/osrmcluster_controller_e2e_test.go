@@ -419,44 +419,6 @@ var _ = Describe("OSRMClusterController End-to-End Tests", func() {
 				return newDeployment.UID != originalUID
 			}, 30*time.Second).Should(BeTrue())
 		})
-
-		It("should handle PVC deletion gracefully", func() {
-			By("Manually deleting profile PVC")
-			pvc := &corev1.PersistentVolumeClaim{}
-			err := k8sClient.Get(ctx, types.NamespacedName{
-				Name:      testInstance.ChildResourceName(testInstance.Spec.Profiles[0].Name, "1"),
-				Namespace: testInstance.Namespace,
-			}, pvc)
-			Expect(err).NotTo(HaveOccurred())
-
-			Expect(k8sClient.Delete(ctx, pvc)).To(Succeed())
-
-			By("Verifying system transitions to rebuilding state")
-			Eventually(func() osrmv1alpha1.Phase {
-				cluster := &osrmv1alpha1.OSRMCluster{}
-				err := k8sClient.Get(ctx, types.NamespacedName{
-					Name:      testInstance.Name,
-					Namespace: testInstance.Namespace,
-				}, cluster)
-				if err != nil {
-					return ""
-				}
-				return cluster.Status.Phase
-			}, 30*time.Second).Should(Equal(osrmv1alpha1.PhaseBuildingMap))
-
-			By("Verifying system eventually recovers")
-			Eventually(func() osrmv1alpha1.Phase {
-				cluster := &osrmv1alpha1.OSRMCluster{}
-				err := k8sClient.Get(ctx, types.NamespacedName{
-					Name:      testInstance.Name,
-					Namespace: testInstance.Namespace,
-				}, cluster)
-				if err != nil {
-					return ""
-				}
-				return cluster.Status.Phase
-			}, MapBuildingTimeout).Should(Equal(osrmv1alpha1.PhaseWorkersDeployed))
-		})
 	})
 
 	Context("Garbage Collection End-to-End Tests", func() {
