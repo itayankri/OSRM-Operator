@@ -862,7 +862,7 @@ var _ = Describe("OSRMClusterController Integration Tests", func() {
 			}
 		})
 
-		FIt("should skip OSRMCluster if pause reconciliation annotation is set to true", func() {
+		It("should skip OSRMCluster if pause reconciliation annotation is set to true", func() {
 			minReplicas := int32(2)
 			originalMinReplicas := *testInstance.Spec.Profiles[0].MinReplicas
 
