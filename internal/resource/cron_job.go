@@ -15,12 +15,14 @@ import (
 
 type CronJobBuilder struct {
 	ProfileScopedBuilder
+	MapGenerationScopedBuilder
 	*OSRMResourceBuilder
 }
 
-func (builder *OSRMResourceBuilder) CronJob(profile *osrmv1alpha1.ProfileSpec) *CronJobBuilder {
+func (builder *OSRMResourceBuilder) CronJob(profile *osrmv1alpha1.ProfileSpec, mapGeneration string) *CronJobBuilder {
 	return &CronJobBuilder{
 		ProfileScopedBuilder{profile},
+		MapGenerationScopedBuilder{generation: mapGeneration},
 		builder,
 	}
 }
@@ -92,7 +94,7 @@ func (builder *CronJobBuilder) Update(object client.Object, siblings []runtime.O
 								Name: osrmDataVolumeName,
 								VolumeSource: corev1.VolumeSource{
 									PersistentVolumeClaim: &corev1.PersistentVolumeClaimVolumeSource{
-										ClaimName: builder.Instance.ChildResourceName(builder.profile.Name, PersistentVolumeClaimSuffix),
+										ClaimName: builder.Instance.ChildResourceName(builder.profile.Name, builder.MapGenerationScopedBuilder.generation),
 										ReadOnly:  false,
 									},
 								},
