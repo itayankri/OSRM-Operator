@@ -45,12 +45,15 @@ runs:
     shell: bash
     run: sudo systemctl restart docker
 
-  - name: Run tests
+  - name: Setup kind cluster
     shell: bash
     run: |
-      export GOPATH=$HOME/go
-      export PATH=$PATH:$GOPATH/bin
       kind create cluster --name osrm --config examples/kind-config.yaml
+      kubectl cluster-info
+
+  - name: Setup NFS infrastructure
+    shell: bash
+    run: |
       kubectl create -f https://raw.githubusercontent.com/kubernetes-csi/csi-driver-nfs/master/deploy/example/nfs-provisioner/nfs-server.yaml
       helm repo add csi-driver-nfs https://raw.githubusercontent.com/kubernetes-csi/csi-driver-nfs/master/charts
       helm install csi-driver-nfs csi-driver-nfs/csi-driver-nfs --namespace kube-system --version v4.9.0
@@ -58,6 +61,16 @@ runs:
       kubectl wait --for condition=Available deployment/nfs-server --timeout=60s
       sleep 5
       kubectl logs $(kubectl get pods | grep nfs | awk '{print $1}')
+
+  - name: Install OSRM controller manager
+    shell: bash
+    run: |
+      export GOPATH=$HOME/go
+      export PATH=$PATH:$GOPATH/bin
       make install deploy
       kubectl -n osrm-system wait --for condition=Available deployment/osrm-controller-manager --timeout=60s
+
+  - name: Run tests
+    shell: bash
+    run: |
       make integration-test
