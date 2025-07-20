@@ -55,7 +55,6 @@ var updateWithRetry = func(v *osrmv1alpha1.OSRMCluster, callback func(v *osrmv1a
 
 func TestAPIs(t *testing.T) {
 	RegisterFailHandler(Fail)
-
 	RunSpecs(t, "Controller Suite")
 }
 
@@ -85,7 +84,6 @@ var _ = BeforeSuite(func() {
 	Expect(err).NotTo(HaveOccurred())
 
 	ctx = context.Background()
-
 })
 
 var _ = AfterSuite(func() {
