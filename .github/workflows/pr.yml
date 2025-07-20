@@ -31,7 +31,7 @@ jobs:
         dockerhub-token: ${{ secrets.DOCKERHUB_TOKEN }}
 
   integration-tests:
-    # needs: ["build"]
+    needs: ["build"]
     name: Integration tests
     timeout-minutes: 15
     runs-on: ubuntu-latest
