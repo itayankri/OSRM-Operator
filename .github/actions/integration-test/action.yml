@@ -36,7 +36,7 @@ runs:
     shell: bash
     run: |
       sudo mkdir -p /etc/docker
-      echo '{"storage-driver":"vfs"}' > /etc/docker/daemon.json
+      sudo echo '{"storage-driver":"vfs"}' > /etc/docker/daemon.json
       echo "Docker daemon.json configured:"
       sudo cat /etc/docker/daemon.json
       sudo sudo jq . /etc/docker/daemon.json
