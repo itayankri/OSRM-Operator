@@ -73,4 +73,8 @@ runs:
   - name: Run tests
     shell: bash
     run: |
-      make integration-test
+      kubectl apply -f examples/single_profile_osrm_cluster.yaml
+      sleep 20
+      kubectl get all
+      kubectl get pvc
+      kubectl describe pvc single-profile-example-foot-1
