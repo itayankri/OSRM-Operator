@@ -10,7 +10,7 @@ spec:
   profiles:
   - name: foot
     endpointName: foot
-    minReplicas: 2
+    minReplicas: 1
     maxReplicas: 4
   service:
     exposingServices: ["route", "table", "match"]
