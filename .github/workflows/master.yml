@@ -32,7 +32,7 @@ jobs:
 
   integration-tests:
     needs: ["build"]
-    name: Integration tests
+    name: Integration + E2E tests
     timeout-minutes: 15
     runs-on: ubuntu-latest
     steps:
