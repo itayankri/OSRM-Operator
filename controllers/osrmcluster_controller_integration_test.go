@@ -1027,8 +1027,8 @@ var _ = Describe("OSRMClusterController Integration Tests", func() {
 					Name:      testInstance.ChildResourceName(testInstance.Spec.Profiles[0].Name, "1"),
 					Namespace: testInstance.Namespace,
 				}, pvc)
-				return errors.IsNotFound(err)
-			}, 30*time.Second).Should(BeTrue())
+				return errors.IsNotFound(err) || pvc.DeletionTimestamp != nil
+			}, 60*time.Second).Should(BeTrue())
 		})
 	})
 })

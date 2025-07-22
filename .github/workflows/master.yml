@@ -5,8 +5,8 @@ on:
     branches: [ master ]
 
 env:
-  GO_VERSION: 1.23.1
-  K8S_VERSION: v1.29.7
+  GO_VERSION: 1.24.0
+  K8S_VERSION: v1.33.0
   ENV: production
 
 jobs:
@@ -32,7 +32,7 @@ jobs:
 
   integration-tests:
     needs: ["build"]
-    name: Integration tests
+    name: Integration + E2E tests
     timeout-minutes: 15
     runs-on: ubuntu-latest
     steps:
