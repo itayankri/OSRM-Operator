@@ -3,6 +3,7 @@ package status
 import (
 	"time"
 
+	"github.com/go-logr/logr"
 	appsv1 "k8s.io/api/apps/v1"
 	batchv1 "k8s.io/api/batch/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -93,7 +94,7 @@ func IsPersistentVolumeClaimBound(pvc *corev1.PersistentVolumeClaim) bool {
 	return pvc != nil && pvc.Status.Phase == corev1.ClaimBound
 }
 
-func IsJobCompleted(job *batchv1.Job) bool {
+func IsJobCompleted(job *batchv1.Job, logger logr.Logger) bool {
 	jobCompleted := false
 	if job != nil {
 		for _, condition := range job.Status.Conditions {
@@ -103,6 +104,7 @@ func IsJobCompleted(job *batchv1.Job) bool {
 			break
 		}
 	}
+	logger.Info("IsJobCompleted result", "jobName", job.Name, "completed", jobCompleted, "conditions", job.Status.Conditions)
 	return jobCompleted
 }
 

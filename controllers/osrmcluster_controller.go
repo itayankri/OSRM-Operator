@@ -314,7 +314,7 @@ func IsMapBuildingInProgress(
 		for _, job := range jobs {
 			if job.Name == instance.ChildResourceName(profile.Name, mapGeneration) {
 				jobFound = true
-				if !status.IsJobCompleted(job) {
+				if !status.IsJobCompleted(job, logger) {
 					allMapsBuilt = false
 					break
 				}
