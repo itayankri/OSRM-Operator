@@ -99,8 +99,8 @@ func IsJobCompleted(job *batchv1.Job) bool {
 		for _, condition := range job.Status.Conditions {
 			if condition.Type == batchv1.JobComplete && condition.Status == corev1.ConditionTrue {
 				jobCompleted = true
+				break
 			}
-			break
 		}
 	}
 	return jobCompleted
