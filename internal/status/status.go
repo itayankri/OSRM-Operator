@@ -100,8 +100,8 @@ func IsJobCompleted(job *batchv1.Job, logger logr.Logger) bool {
 		for _, condition := range job.Status.Conditions {
 			if condition.Type == batchv1.JobComplete && condition.Status == corev1.ConditionTrue {
 				jobCompleted = true
+				break
 			}
-			break
 		}
 	}
 	logger.Info("IsJobCompleted result", "jobName", job.Name, "completed", jobCompleted, "conditions", job.Status.Conditions)
