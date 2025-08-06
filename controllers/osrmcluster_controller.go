@@ -216,7 +216,7 @@ func (r *OSRMClusterReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 		profilesDeployments,
 	)
 
-	logger.Info("Reconciling OSRMCluster")
+	logger.Info("Reconciling OSRMCluster", "phase", phase)
 
 	resourceBuilder := resource.NewOSRMResourceBuilder(
 		instance,
@@ -285,6 +285,7 @@ func IsMapBuildingInProgress(
 	jobs []*batchv1.Job,
 	mapGeneration string,
 ) bool {
+
 	allVolumesBound := true
 	for _, profile := range instance.Spec.Profiles {
 		pvcFound := false
