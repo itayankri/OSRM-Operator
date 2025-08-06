@@ -195,6 +195,7 @@ func (r *OSRMClusterReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 	jobs, _ := r.getJobs(ctx, instance)
 	profilesDeployments, _ := r.getProfilesDeployments(ctx, instance)
 	activeMapGeneration, err := r.GetActiveMapGeneration(profilesDeployments)
+	logger.Info("Number of resources", "pvcs", len(pvcs), "jobs", len(jobs), "profilesDeployments", len(profilesDeployments), "activeMapGeneration", activeMapGeneration)
 	if err != nil {
 		logger.Error(err, "Failed to get active map generation for OSRMCluster")
 		return ctrl.Result{}, err
