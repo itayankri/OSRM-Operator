@@ -285,6 +285,7 @@ func IsMapBuildingInProgress(
 	pvcs []*corev1.PersistentVolumeClaim,
 	jobs []*batchv1.Job,
 	mapGeneration string,
+	logger logr.Logger,
 ) bool {
 
 	allVolumesBound := true
@@ -300,6 +301,7 @@ func IsMapBuildingInProgress(
 			}
 		}
 
+		logger.Info("IsMapBuildingInProgress pvcFound", "lookedFor", instance.ChildResourceName(profile.Name, mapGeneration), "found", pvcFound)
 		if !pvcFound {
 			allVolumesBound = false
 			break
@@ -319,12 +321,14 @@ func IsMapBuildingInProgress(
 			}
 		}
 
+		logger.Info("IsMapBuildingInProgress jobFound", "lookedFor", instance.ChildResourceName(profile.Name, mapGeneration), "found", jobFound)
 		if !jobFound {
 			allMapsBuilt = false
 			break
 		}
 	}
 
+	logger.Info("IsMapBuildingInProgress results", "allVolumesBound", allVolumesBound, "allMapsBuilt", allMapsBuilt)
 	return !allVolumesBound || !allMapsBuilt
 }
 
@@ -342,11 +346,11 @@ func (r *OSRMClusterReconciler) DeterminePhase(
 		return osrmv1alpha1.PhaseEmpty
 	}
 
-	if IsMapBuildingInProgress(instance, pvcs, jobs, activeMapGeneration) {
+	if IsMapBuildingInProgress(instance, pvcs, jobs, activeMapGeneration, r.log) {
 		return osrmv1alpha1.PhaseBuildingMap
 	}
 
-	if instance.Spec.PBFURL != oldSpec.PBFURL || IsMapBuildingInProgress(instance, pvcs, jobs, futureMapGeneration) {
+	if instance.Spec.PBFURL != oldSpec.PBFURL || IsMapBuildingInProgress(instance, pvcs, jobs, futureMapGeneration, r.log) {
 		return osrmv1alpha1.PhaseUpdatingMap
 	}
 
