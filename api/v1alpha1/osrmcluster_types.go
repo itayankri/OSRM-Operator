@@ -149,6 +149,7 @@ type MapBuilderSpec struct {
 	PartitionOptions *string                      `json:"partitionOptions,omitempty"`
 	CustomizeOptions *string                      `json:"customizeOptions,omitempty"`
 	Resources        *corev1.ResourceRequirements `json:"resources,omitempty"`
+	Env              []corev1.EnvVar              `json:"env,omitempty"`
 }
 
 func (spec *MapBuilderSpec) GetImage() string {

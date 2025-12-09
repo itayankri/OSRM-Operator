@@ -80,6 +80,10 @@ func (builder *JobBuilder) Build() (client.Object, error) {
 		})
 	}
 
+	if builder.Instance.Spec.MapBuilder.Env != nil {
+		env = append(env, builder.Instance.Spec.MapBuilder.Env...)
+	}
+
 	job.Spec = batchv1.JobSpec{
 		Selector: job.Spec.Selector,
 		Template: corev1.PodTemplateSpec{
