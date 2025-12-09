@@ -976,7 +976,7 @@ var _ = Describe("OSRMClusterController Integration Tests", func() {
 			}, 30*time.Second).Should(Equal(metav1.ConditionTrue))
 		})
 
-		FIt("should properly clean up old map generation resources", func() {
+		It("should properly clean up old map generation resources", func() {
 			testInstance = generateOSRMCluster("gc-map-generations")
 
 			By("Creating initial cluster")
