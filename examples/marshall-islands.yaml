@@ -3,7 +3,7 @@ kind: OSRMCluster
 metadata:
   name: marshall-islands-vanilla
 spec:
-  pbfUrl: https://download.geofabrik.de/australia-oceania/marshall-islands-latest.osm.pbf
+  pbfUrl: https://download.geofabrik.de/australia-oceania/marshall-islands-210101.osm.pbf
   profiles:
   - name: car
     endpointName: driving

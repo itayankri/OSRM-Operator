@@ -5,8 +5,10 @@ metadata:
 spec:
   mapBuilder:
     image: itayankri/osrm-builder:osrm-v5.27.1
-    extractOptions: "--parse-conditional-restrictions"
-  pbfUrl: https://download.geofabrik.de/australia-oceania/marshall-islands-latest.osm.pbf
+    env:
+    - name: EXAMPLE
+      value: "--max-matching-size=1000"
+  pbfUrl: https://download.geofabrik.de/australia-oceania/marshall-islands-210101.osm.pbf
   profiles:
   - name: foot
     endpointName: foot

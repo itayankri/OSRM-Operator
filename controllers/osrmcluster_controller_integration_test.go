@@ -209,7 +209,7 @@ var _ = Describe("OSRMClusterController Integration Tests", func() {
 		It("should transition to UpdatingMap phase when PBF URL changes", func() {
 			By("Updating the PBF URL")
 			Expect(updateWithRetry(testInstance, func(v *osrmv1alpha1.OSRMCluster) {
-				v.Spec.PBFURL = "https://download.geofabrik.de/europe/andorra-latest.osm.pbf"
+				v.Spec.PBFURL = "https://download.geofabrik.de/europe/andorra-140101.osm.pbf"
 			})).To(Succeed())
 
 			By("Verifying phase transition to UpdatingMap")
@@ -254,7 +254,7 @@ var _ = Describe("OSRMClusterController Integration Tests", func() {
 		It("should handle multiple successive PBF URL changes", func() {
 			By("Making first PBF URL change")
 			Expect(updateWithRetry(testInstance, func(v *osrmv1alpha1.OSRMCluster) {
-				v.Spec.PBFURL = "https://download.geofabrik.de/europe/andorra-latest.osm.pbf"
+				v.Spec.PBFURL = "https://download.geofabrik.de/europe/andorra-140101.osm.pbf"
 			})).To(Succeed())
 
 			By("Waiting for first update to start")
@@ -272,7 +272,7 @@ var _ = Describe("OSRMClusterController Integration Tests", func() {
 
 			By("Making second PBF URL change")
 			Expect(updateWithRetry(testInstance, func(v *osrmv1alpha1.OSRMCluster) {
-				v.Spec.PBFURL = "https://download.geofabrik.de/europe/monaco-latest.osm.pbf"
+				v.Spec.PBFURL = "https://download.geofabrik.de/europe/monaco-140101.osm.pbf"
 			})).To(Succeed())
 
 			By("Verifying system handles multiple changes gracefully")
@@ -985,7 +985,7 @@ var _ = Describe("OSRMClusterController Integration Tests", func() {
 
 			By("Triggering multiple map generation updates")
 			Expect(updateWithRetry(testInstance, func(v *osrmv1alpha1.OSRMCluster) {
-				v.Spec.PBFURL = "https://download.geofabrik.de/australia-oceania/marshall-islands-250713.osm.pbf"
+				v.Spec.PBFURL = "https://download.geofabrik.de/australia-oceania/marshall-islands-220101.osm.pbf"
 			})).To(Succeed())
 
 			// Wait for update to complete
@@ -1002,7 +1002,7 @@ var _ = Describe("OSRMClusterController Integration Tests", func() {
 			}, MapBuildingTimeout).Should(Equal(osrmv1alpha1.PhaseWorkersRedeployed))
 
 			Expect(updateWithRetry(testInstance, func(v *osrmv1alpha1.OSRMCluster) {
-				v.Spec.PBFURL = "https://download.geofabrik.de/australia-oceania/marshall-islands-250715.osm.pbf"
+				v.Spec.PBFURL = "https://download.geofabrik.de/australia-oceania/marshall-islands-230101.osm.pbf"
 			})).To(Succeed())
 
 			// Wait for update to complete
@@ -1082,7 +1082,7 @@ func generateOSRMCluster(name string) *osrmv1alpha1.OSRMCluster {
 			Namespace: "default",
 		},
 		Spec: osrmv1alpha1.OSRMClusterSpec{
-			PBFURL: "https://download.geofabrik.de/australia-oceania/marshall-islands-latest.osm.pbf",
+			PBFURL: "https://download.geofabrik.de/australia-oceania/marshall-islands-210101.osm.pbf",
 			Persistence: osrmv1alpha1.PersistenceSpec{
 				StorageClassName: "standard",
 				Storage:          &storage,
