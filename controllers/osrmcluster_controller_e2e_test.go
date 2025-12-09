@@ -565,7 +565,7 @@ func generateE2EOSRMCluster(name string) *osrmv1alpha1.OSRMCluster {
 			Namespace: "default",
 		},
 		Spec: osrmv1alpha1.OSRMClusterSpec{
-			PBFURL: "https://download.geofabrik.de/australia-oceania/marshall-islands-210101.osm.pbf",
+			PBFURL: "https://download.geofabrik.de/australia-oceania/marshall-islands-220101.osm.pbf",
 			Persistence: osrmv1alpha1.PersistenceSpec{
 				StorageClassName: "standard",
 				Storage:          &storage,
