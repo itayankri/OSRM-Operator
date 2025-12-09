@@ -209,7 +209,7 @@ var _ = Describe("OSRMClusterController Integration Tests", func() {
 		It("should transition to UpdatingMap phase when PBF URL changes", func() {
 			By("Updating the PBF URL")
 			Expect(updateWithRetry(testInstance, func(v *osrmv1alpha1.OSRMCluster) {
-				v.Spec.PBFURL = "https://download.geofabrik.de/europe/andorra-latest.osm.pbf"
+				v.Spec.PBFURL = "https://download.geofabrik.de/europe/andorra-140101.osm.pbf"
 			})).To(Succeed())
 
 			By("Verifying phase transition to UpdatingMap")
@@ -254,7 +254,7 @@ var _ = Describe("OSRMClusterController Integration Tests", func() {
 		It("should handle multiple successive PBF URL changes", func() {
 			By("Making first PBF URL change")
 			Expect(updateWithRetry(testInstance, func(v *osrmv1alpha1.OSRMCluster) {
-				v.Spec.PBFURL = "https://download.geofabrik.de/europe/andorra-latest.osm.pbf"
+				v.Spec.PBFURL = "https://download.geofabrik.de/europe/andorra-140101.osm.pbf"
 			})).To(Succeed())
 
 			By("Waiting for first update to start")
@@ -272,7 +272,7 @@ var _ = Describe("OSRMClusterController Integration Tests", func() {
 
 			By("Making second PBF URL change")
 			Expect(updateWithRetry(testInstance, func(v *osrmv1alpha1.OSRMCluster) {
-				v.Spec.PBFURL = "https://download.geofabrik.de/europe/monaco-latest.osm.pbf"
+				v.Spec.PBFURL = "https://download.geofabrik.de/europe/monaco-140101.osm.pbf"
 			})).To(Succeed())
 
 			By("Verifying system handles multiple changes gracefully")

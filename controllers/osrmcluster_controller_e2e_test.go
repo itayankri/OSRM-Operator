@@ -111,7 +111,7 @@ var _ = Describe("OSRMClusterController End-to-End Tests", func() {
 
 			By("Step 3: Updating PBF URL")
 			Expect(updateWithRetry(testInstance, func(v *osrmv1alpha1.OSRMCluster) {
-				v.Spec.PBFURL = "https://download.geofabrik.de/europe/andorra-latest.osm.pbf"
+				v.Spec.PBFURL = "https://download.geofabrik.de/europe/andorra-140101.osm.pbf"
 			})).To(Succeed())
 
 			By("Step 3: Verifying phase transition to UpdatingMap")
@@ -243,7 +243,7 @@ var _ = Describe("OSRMClusterController End-to-End Tests", func() {
 
 			Expect(updateWithRetry(testInstance, func(v *osrmv1alpha1.OSRMCluster) {
 				v.Spec.Profiles = append(v.Spec.Profiles, newProfile)
-				v.Spec.PBFURL = "https://download.geofabrik.de/europe/andorra-latest.osm.pbf"
+				v.Spec.PBFURL = "https://download.geofabrik.de/europe/andorra-140101.osm.pbf"
 			})).To(Succeed())
 
 			By("Verifying system reaches stable state")
@@ -440,7 +440,7 @@ var _ = Describe("OSRMClusterController End-to-End Tests", func() {
 		It("should not have duplicate deletion errors during PBF updates", func() {
 			By("Updating PBF URL to trigger map update")
 			Expect(updateWithRetry(testInstance, func(v *osrmv1alpha1.OSRMCluster) {
-				v.Spec.PBFURL = "https://download.geofabrik.de/europe/andorra-latest.osm.pbf"
+				v.Spec.PBFURL = "https://download.geofabrik.de/europe/andorra-140101.osm.pbf"
 			})).To(Succeed())
 
 			By("Verifying system progresses through phases without errors")
