@@ -59,27 +59,6 @@ func (builder *JobBuilder) Build() (client.Object, error) {
 		},
 	}
 
-	if builder.Instance.Spec.MapBuilder.ExtractOptions != nil {
-		env = append(env, corev1.EnvVar{
-			Name:  "EXTRACT_OPTIONS",
-			Value: *builder.Instance.Spec.MapBuilder.ExtractOptions,
-		})
-	}
-
-	if builder.Instance.Spec.MapBuilder.PartitionOptions != nil {
-		env = append(env, corev1.EnvVar{
-			Name:  "PARTITION_OPTIONS",
-			Value: *builder.Instance.Spec.MapBuilder.PartitionOptions,
-		})
-	}
-
-	if builder.Instance.Spec.MapBuilder.CustomizeOptions != nil {
-		env = append(env, corev1.EnvVar{
-			Name:  "CUSTOMIZE_OPTIONS",
-			Value: *builder.Instance.Spec.MapBuilder.CustomizeOptions,
-		})
-	}
-
 	if builder.Instance.Spec.MapBuilder.Env != nil {
 		env = append(env, builder.Instance.Spec.MapBuilder.Env...)
 	}
