@@ -34,21 +34,6 @@ func (in *MapBuilderSpec) DeepCopyInto(out *MapBuilderSpec) {
 		*out = new(string)
 		**out = **in
 	}
-	if in.ExtractOptions != nil {
-		in, out := &in.ExtractOptions, &out.ExtractOptions
-		*out = new(string)
-		**out = **in
-	}
-	if in.PartitionOptions != nil {
-		in, out := &in.PartitionOptions, &out.PartitionOptions
-		*out = new(string)
-		**out = **in
-	}
-	if in.CustomizeOptions != nil {
-		in, out := &in.CustomizeOptions, &out.CustomizeOptions
-		*out = new(string)
-		**out = **in
-	}
 	if in.Resources != nil {
 		in, out := &in.Resources, &out.Resources
 		*out = new(v1.ResourceRequirements)
