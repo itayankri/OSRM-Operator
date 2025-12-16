@@ -5,6 +5,11 @@ metadata:
 spec:
   mapBuilder:
     image: itayankri/osrm-builder:osrm-v5.27.1
+    tolerations:
+    - key: key1
+      operator: Equal
+      value: value1
+      effect: NoSchedule
     env:
     - name: EXAMPLE
       value: "--max-matching-size=1000"
