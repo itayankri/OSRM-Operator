@@ -144,10 +144,11 @@ func (spec *ProfileSpec) GetInternalEndpoint() string {
 }
 
 type MapBuilderSpec struct {
-	Image       *string                      `json:"image,omitempty"`
-	Resources   *corev1.ResourceRequirements `json:"resources,omitempty"`
-	Env         []corev1.EnvVar              `json:"env,omitempty"`
-	Tolerations []corev1.Toleration          `json:"tolerations,omitempty"`
+	Image        *string                      `json:"image,omitempty"`
+	Resources    *corev1.ResourceRequirements `json:"resources,omitempty"`
+	Env          []corev1.EnvVar              `json:"env,omitempty"`
+	Tolerations  []corev1.Toleration          `json:"tolerations,omitempty"`
+	NodeAffinity *corev1.NodeAffinity         `json:"affinity,omitempty"`
 }
 
 func (spec *MapBuilderSpec) GetImage() string {
