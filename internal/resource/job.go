@@ -97,6 +97,9 @@ func (builder *JobBuilder) Build() (client.Object, error) {
 					},
 				},
 				Tolerations: builder.Instance.Spec.MapBuilder.Tolerations,
+				Affinity: &corev1.Affinity{
+					NodeAffinity: builder.Instance.Spec.MapBuilder.NodeAffinity,
+				},
 			},
 		},
 	}
