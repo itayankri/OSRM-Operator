@@ -5,14 +5,14 @@ metadata:
 spec:
   mapBuilder:
     image: itayankri/osrm-builder:osrm-v5.27.1
-    tolerations:
-    - key: key1
-      operator: Equal
-      value: value1
-      effect: NoSchedule
     env:
     - name: EXAMPLE
       value: "--max-matching-size=1000"
+    tolerations:
+    - key: dedicated
+      operator: Equal
+      value: map-building
+      effect: NoSchedule
     nodeAffinity:
       requiredDuringSchedulingIgnoredDuringExecution:
         nodeSelectorTerms:
@@ -30,7 +30,7 @@ spec:
   service:
     exposingServices: ["route", "table", "match"]
   persistence:
-    storage: "1000Mi"
-    storageClassName: standard
+    storage: "100Gi"
+    storageClassName: gcnv-nfs-sc
     accessMode: ReadWriteOnce
     
