@@ -13,6 +13,14 @@ spec:
     env:
     - name: EXAMPLE
       value: "--max-matching-size=1000"
+    nodeAffinity:
+      requiredDuringSchedulingIgnoredDuringExecution:
+        nodeSelectorTerms:
+        - matchExpressions:
+          - key: cloud.google.com/gke-nodepool
+            operator: In
+            values:
+            - map-builder
   pbfUrl: https://download.geofabrik.de/australia-oceania/marshall-islands-210101.osm.pbf
   profiles:
   - name: foot

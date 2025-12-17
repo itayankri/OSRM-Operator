@@ -148,7 +148,7 @@ type MapBuilderSpec struct {
 	Resources    *corev1.ResourceRequirements `json:"resources,omitempty"`
 	Env          []corev1.EnvVar              `json:"env,omitempty"`
 	Tolerations  []corev1.Toleration          `json:"tolerations,omitempty"`
-	NodeAffinity *corev1.NodeAffinity         `json:"affinity,omitempty"`
+	NodeAffinity *corev1.NodeAffinity         `json:"nodeAffinity,omitempty"`
 }
 
 func (spec *MapBuilderSpec) GetImage() string {
