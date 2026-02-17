@@ -120,12 +120,14 @@ func (builder *OSRMResourceBuilder) DeployingWorkersPhaseBuilders() []ResourceBu
 	builders := []ResourceBuilder{}
 
 	for _, profile := range builder.Instance.Spec.Profiles {
-		builders = append(builders, []ResourceBuilder{
-			builder.Deployment(profile, builder.MapGeneration),
-			builder.Service(profile),
-			builder.PodDisruptionBudget(profile),
-			builder.HorizontalPodAutoscaler(profile),
-		}...)
+		builders = append(builders, builder.Deployment(profile, builder.MapGeneration))
+		builders = append(builders, builder.Service(profile))
+		builders = append(builders, builder.PodDisruptionBudget(profile))
+
+		// Only add HPA if autoscaling is configured (both minReplicas and maxReplicas)
+		if profile.MinReplicas != nil && profile.MaxReplicas != nil {
+			builders = append(builders, builder.HorizontalPodAutoscaler(profile))
+		}
 	}
 
 	return builders
@@ -138,7 +140,12 @@ func (builder *OSRMResourceBuilder) WorkersDeployedPhaseBuilders() []ResourceBui
 	// Add CronJobs for speed updates if configured
 	for _, profile := range builder.Instance.Spec.Profiles {
 		builders = append(builders, builder.Service(profile))
-		builders = append(builders, builder.HorizontalPodAutoscaler(profile))
+
+		// Only add HPA if autoscaling is configured (both minReplicas and maxReplicas)
+		if profile.MinReplicas != nil && profile.MaxReplicas != nil {
+			builders = append(builders, builder.HorizontalPodAutoscaler(profile))
+		}
+
 		builders = append(builders, builder.PodDisruptionBudget(profile))
 		builders = append(builders, builder.Deployment(profile, builder.MapGeneration))
 

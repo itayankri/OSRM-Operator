@@ -624,16 +624,19 @@ func (r *OSRMClusterReconciler) getChildResources(
 			children = append(children, deployment)
 		}
 
-		hpa := &autoscalingv1.HorizontalPodAutoscaler{}
-		if err := r.Client.Get(ctx, types.NamespacedName{
-			Name:      instance.ChildResourceName(profileSpec.Name, resource.HorizontalPodAutoscalerSuffix),
-			Namespace: instance.Namespace,
-		}, hpa); err != nil {
-			if !errors.IsNotFound(err) {
-				return nil, err
+		// Only fetch HPA if autoscaling is configured (both minReplicas and maxReplicas)
+		if profileSpec.MinReplicas != nil && profileSpec.MaxReplicas != nil {
+			hpa := &autoscalingv1.HorizontalPodAutoscaler{}
+			if err := r.Client.Get(ctx, types.NamespacedName{
+				Name:      instance.ChildResourceName(profileSpec.Name, resource.HorizontalPodAutoscalerSuffix),
+				Namespace: instance.Namespace,
+			}, hpa); err != nil {
+				if !errors.IsNotFound(err) {
+					return nil, err
+				}
+			} else {
+				children = append(children, hpa)
 			}
-		} else {
-			children = append(children, hpa)
 		}
 
 		pdb := &policyv1.PodDisruptionBudget{}
@@ -671,7 +674,12 @@ func (r *OSRMClusterReconciler) GarbageCollection(ctx context.Context, instance 
 	for _, profile := range instance.Spec.Profiles {
 		expectedResources[instance.ChildResourceName(profile.Name, resource.DeploymentSuffix)] = true
 		expectedResources[instance.ChildResourceName(profile.Name, resource.ServiceSuffix)] = true
-		expectedResources[instance.ChildResourceName(profile.Name, resource.HorizontalPodAutoscalerSuffix)] = true
+
+		// Only expect HPA if autoscaling is configured (both minReplicas and maxReplicas)
+		if profile.MinReplicas != nil && profile.MaxReplicas != nil {
+			expectedResources[instance.ChildResourceName(profile.Name, resource.HorizontalPodAutoscalerSuffix)] = true
+		}
+
 		expectedResources[instance.ChildResourceName(profile.Name, resource.PodDisruptionBudgetSuffix)] = true
 
 		if profile.SpeedUpdates != nil {
