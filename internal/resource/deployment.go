@@ -75,7 +75,7 @@ func (builder *DeploymentBuilder) Update(object client.Object, siblings []runtim
 					Args: []string{
 						fmt.Sprintf(`
 							cd %s/%s && \
-							osrm-routed %s --algorithm mld --max-matching-size 21474836
+							osrm-routed %s --algorithm mld --max-matching-size 21474836 --max-viaroute-size 1000
 						`,
 							osrmDataPath,
 							osrmCustomizedData,
