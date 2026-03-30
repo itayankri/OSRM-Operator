@@ -41,26 +41,4 @@ var _ = Describe("Service builder", func() {
 			})
 		})
 	})
-
-	Context("ShouldDeploy", func() {
-		It("Should return 'false' when both PVC is bound and map builder Job is not completed yet", func() {
-			resources := generateChildResources(false, false, instance.ObjectMeta.Name, instance.Spec.Profiles[0].Name)
-			Expect(serviceBuilder.ShouldDeploy(resources)).To(Equal(false))
-		})
-
-		It("Should return 'false' when PVC is bound but map builder Job is not completed yet", func() {
-			resources := generateChildResources(true, false, instance.ObjectMeta.Name, instance.Spec.Profiles[0].Name)
-			Expect(serviceBuilder.ShouldDeploy(resources)).To(Equal(false))
-		})
-
-		It("Should return 'false' when PVC is not bound but map builder Job is completed", func() {
-			resources := generateChildResources(false, true, instance.ObjectMeta.Name, instance.Spec.Profiles[0].Name)
-			Expect(serviceBuilder.ShouldDeploy(resources)).To(Equal(false))
-		})
-
-		It("Should return 'true' when both PVC is bound and map builder Job is compoleted", func() {
-			resources := generateChildResources(true, true, instance.ObjectMeta.Name, instance.Spec.Profiles[0].Name)
-			Expect(serviceBuilder.ShouldDeploy(resources)).To(Equal(true))
-		})
-	})
 })

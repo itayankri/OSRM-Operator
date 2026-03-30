@@ -7,24 +7,26 @@ import (
 
 	osrmv1alpha1 "github.com/itayankri/OSRM-Operator/api/v1alpha1"
 	"github.com/itayankri/OSRM-Operator/internal/metadata"
-	"github.com/itayankri/OSRM-Operator/internal/status"
 	appsv1 "k8s.io/api/apps/v1"
 	batchv1 "k8s.io/api/batch/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/util/intstr"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 )
 
 type DeploymentBuilder struct {
 	ProfileScopedBuilder
+	MapGenerationScopedBuilder
 	*OSRMResourceBuilder
 }
 
-func (builder *OSRMResourceBuilder) Deployment(profile *osrmv1alpha1.ProfileSpec) *DeploymentBuilder {
+func (builder *OSRMResourceBuilder) Deployment(profile *osrmv1alpha1.ProfileSpec, mapGeneration string) *DeploymentBuilder {
 	return &DeploymentBuilder{
 		ProfileScopedBuilder{profile},
+		MapGenerationScopedBuilder{generation: mapGeneration},
 		builder,
 	}
 }
@@ -65,7 +67,7 @@ func (builder *DeploymentBuilder) Update(object client.Object, siblings []runtim
 					Image: builder.Instance.Spec.GetImage(),
 					Ports: []corev1.ContainerPort{
 						{
-							ContainerPort: 5000,
+							ContainerPort: containerPort,
 						},
 					},
 					Resources: *builder.profile.GetResources(),
@@ -90,6 +92,15 @@ func (builder *DeploymentBuilder) Update(object client.Object, siblings []runtim
 							MountPath: osrmDataPath,
 						},
 					},
+					ReadinessProbe: &corev1.Probe{
+						ProbeHandler: corev1.ProbeHandler{
+							HTTPGet: &corev1.HTTPGetAction{
+								Path:   fmt.Sprintf("/nearest/v1/%s/34.761122,32.051346", builder.profile.Name),
+								Port:   intstr.IntOrString{IntVal: containerPort},
+								Scheme: corev1.URISchemeHTTP,
+							},
+						},
+					},
 				},
 			},
 			Volumes: []corev1.Volume{
@@ -97,7 +108,7 @@ func (builder *DeploymentBuilder) Update(object client.Object, siblings []runtim
 					Name: osrmDataVolumeName,
 					VolumeSource: corev1.VolumeSource{
 						PersistentVolumeClaim: &corev1.PersistentVolumeClaimVolumeSource{
-							ClaimName: builder.Instance.ChildResourceName(builder.profile.Name, PersistentVolumeClaimSuffix),
+							ClaimName: builder.Instance.ChildResourceName(builder.profile.Name, builder.MapGenerationScopedBuilder.generation),
 							ReadOnly:  true,
 						},
 					},
@@ -113,17 +124,6 @@ func (builder *DeploymentBuilder) Update(object client.Object, siblings []runtim
 	}
 
 	return nil
-}
-
-func (builder *DeploymentBuilder) ShouldDeploy(resources []runtime.Object) bool {
-	return status.IsPersistentVolumeClaimBound(
-		builder.Instance.ChildResourceName(builder.profile.Name, PersistentVolumeClaimSuffix),
-		resources,
-	) &&
-		status.IsJobCompleted(
-			builder.Instance.ChildResourceName(builder.profile.Name, JobSuffix),
-			resources,
-		)
 }
 
 func (builder *DeploymentBuilder) setAnnotations(deployment *appsv1.Deployment, siblings []runtime.Object) {

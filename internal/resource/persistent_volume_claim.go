@@ -15,19 +15,21 @@ import (
 
 type PersistentVolumeClaimBuilder struct {
 	ProfileScopedBuilder
+	MapGenerationScopedBuilder
 	*OSRMResourceBuilder
 }
 
-func (builder *OSRMResourceBuilder) PersistentVolumeClaim(profile *osrmv1alpha1.ProfileSpec) *PersistentVolumeClaimBuilder {
+func (builder *OSRMResourceBuilder) PersistentVolumeClaim(profile *osrmv1alpha1.ProfileSpec, mapGeneration string) *PersistentVolumeClaimBuilder {
 	return &PersistentVolumeClaimBuilder{
 		ProfileScopedBuilder{profile},
+		MapGenerationScopedBuilder{generation: mapGeneration},
 		builder,
 	}
 }
 
 func (builder *PersistentVolumeClaimBuilder) Build() (client.Object, error) {
-	name := builder.Instance.ChildResourceName(builder.profile.Name, PersistentVolumeClaimSuffix)
-	return &corev1.PersistentVolumeClaim{
+	name := builder.Instance.ChildResourceName(builder.profile.Name, builder.MapGenerationScopedBuilder.generation)
+	pvc := &corev1.PersistentVolumeClaim{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      name,
 			Namespace: builder.Instance.Namespace,
@@ -45,7 +47,9 @@ func (builder *PersistentVolumeClaimBuilder) Build() (client.Object, error) {
 			VolumeName:       "",
 			StorageClassName: &builder.Instance.Spec.Persistence.StorageClassName,
 		},
-	}, nil
+	}
+
+	return pvc, nil
 }
 
 func (builder *PersistentVolumeClaimBuilder) Update(object client.Object, siblings []runtime.Object) error {
@@ -58,8 +62,4 @@ func (builder *PersistentVolumeClaimBuilder) Update(object client.Object, siblin
 	}
 
 	return nil
-}
-
-func (*PersistentVolumeClaimBuilder) ShouldDeploy(resources []runtime.Object) bool {
-	return true
 }

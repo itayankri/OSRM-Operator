@@ -10,7 +10,6 @@ import (
 
 	osrmv1alpha1 "github.com/itayankri/OSRM-Operator/api/v1alpha1"
 	"github.com/itayankri/OSRM-Operator/internal/metadata"
-	"github.com/itayankri/OSRM-Operator/internal/status"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -62,7 +61,7 @@ func (builder *ConfigMapBuilder) Update(object client.Object, siblings []runtime
 func generateNginxConf(instance *osrmv1alpha1.OSRMCluster, profiles []*osrmv1alpha1.ProfileSpec, osrmServices []string) string {
 	config := `
 	events {
-	
+		worker_connections 2048;
 	}
 	http {
 		large_client_header_buffers 4 128k;
@@ -98,14 +97,4 @@ func formatNginxLocation(instance *osrmv1alpha1.OSRMCluster, profile osrmv1alpha
 			location /%s {
 				proxy_pass http://${%s}/%s;
 			}`, externalPath, envVar, internalPath)
-}
-
-func (builder *ConfigMapBuilder) ShouldDeploy(resources []runtime.Object) bool {
-	for _, profile := range builder.Instance.Spec.Profiles {
-		if !status.IsJobCompleted(builder.Instance.ChildResourceName(profile.Name, JobSuffix), resources) ||
-			!status.IsPersistentVolumeClaimBound(builder.Instance.ChildResourceName(profile.Name, PersistentVolumeClaimSuffix), resources) {
-			return false
-		}
-	}
-	return true
 }

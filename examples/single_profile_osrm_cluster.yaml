@@ -4,10 +4,24 @@ metadata:
   name: single-profile-example
 spec:
   mapBuilder:
-    image: itayankri/osrm-builder:test-timezone-file-6
-    extractOptions: "--parse-conditional-restrictions"
-    customizeOptions: "--parse-conditionals-from-now 1727194872"
-  pbfUrl: https://download.geofabrik.de/australia-oceania/marshall-islands-latest.osm.pbf
+    image: itayankri/osrm-builder:osrm-v5.27.1
+    env:
+    - name: EXAMPLE
+      value: "--max-matching-size=1000"
+    tolerations:
+    - key: dedicated
+      operator: Equal
+      value: map-building
+      effect: NoSchedule
+    nodeAffinity:
+      requiredDuringSchedulingIgnoredDuringExecution:
+        nodeSelectorTerms:
+        - matchExpressions:
+          - key: cloud.google.com/gke-nodepool
+            operator: In
+            values:
+            - map-builder
+  pbfUrl: https://download.geofabrik.de/australia-oceania/marshall-islands-210101.osm.pbf
   profiles:
   - name: foot
     endpointName: foot
@@ -16,6 +30,7 @@ spec:
   service:
     exposingServices: ["route", "table", "match"]
   persistence:
-    storage: "1000Mi"
-    storageClassName: standard
+    storage: "100Gi"
+    storageClassName: gcnv-nfs-sc
     accessMode: ReadWriteOnce
+    

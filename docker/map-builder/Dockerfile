@@ -4,8 +4,6 @@ RUN apt update
 
 RUN apt --assume-yes install curl
 
-COPY timezone-file.json timezone-file.json
-
 COPY run.sh run.sh
 
 RUN chmod +x run.sh

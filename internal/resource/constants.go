@@ -1,5 +1,7 @@
 package resource
 
+const containerPort = 5000
+
 const (
 	NearestService OSRMService = "nearest"
 	RouteService   OSRMService = "route"

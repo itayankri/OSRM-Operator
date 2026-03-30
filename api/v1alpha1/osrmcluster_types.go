@@ -43,20 +43,23 @@ const (
 	// PhaseBuildingMap signals that the map building phase is in progress
 	PhaseBuildingMap Phase = "BuildingMap"
 
+	// PhaseBuildingNewMap signals that a new map is being built
+	PhaseUpdatingMap Phase = "UpdatingMap"
+
+	// PhaseWaitingForMap signals that the deployment is waiting for the map to be ready
+	PhaseRedepoloyingWorkers Phase = "RedeployingWorkers"
+
 	// PhaseDeployingWorkers signals that the workers are being deployed
 	PhaseDeployingWorkers Phase = "DeployingWorkers"
 
 	// PhaseWorkersDeployed signals that the resources are successfully deployed
 	PhaseWorkersDeployed Phase = "WorkersDeployed"
 
-	// PhaseDeleting signals that the resources are being removed
+	// PhaseWorkersRedeployed signals that the workers are being redeployed
+	PhaseWorkersRedeployed Phase = "WorkersRedeployed"
+
+	// PhaseReady signals that the osrm cluster is being deleted
 	PhaseDeleting Phase = "Deleting"
-
-	// PhaseDeleted signals that the resources are deleted
-	PhaseDeleted Phase = "Deleted"
-
-	// PhaseError signals that the deployment is in an error state
-	PhaseError Phase = "Error"
 
 	// PhaseEmpty is an uninitialized phase
 	PhaseEmpty Phase = ""
@@ -110,7 +113,7 @@ type ProfileSpec struct {
 
 func (spec *ProfileSpec) GetMinAvailable() *intstr.IntOrString {
 	if spec.MinReplicas != nil {
-		return &intstr.IntOrString{IntVal: *spec.MinReplicas}
+		return &intstr.IntOrString{IntVal: *spec.MinReplicas - 1}
 	}
 
 	return &intstr.IntOrString{IntVal: 1}
@@ -198,11 +201,11 @@ func (spec *OsrmRoutedSpec) GetFlags() string {
 }
 
 type MapBuilderSpec struct {
-	Image            *string                      `json:"image,omitempty"`
-	ExtractOptions   *string                      `json:"extractOptions,omitempty"`
-	PartitionOptions *string                      `json:"partitionOptions,omitempty"`
-	CustomizeOptions *string                      `json:"customizeOptions,omitempty"`
-	Resources        *corev1.ResourceRequirements `json:"resources,omitempty"`
+	Image        *string                      `json:"image,omitempty"`
+	Resources    *corev1.ResourceRequirements `json:"resources,omitempty"`
+	Env          []corev1.EnvVar              `json:"env,omitempty"`
+	Tolerations  []corev1.Toleration          `json:"tolerations,omitempty"`
+	NodeAffinity *corev1.NodeAffinity         `json:"nodeAffinity,omitempty"`
 }
 
 func (spec *MapBuilderSpec) GetImage() string {
