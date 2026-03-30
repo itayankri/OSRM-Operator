@@ -3,16 +3,18 @@ kind: OSRMCluster
 metadata:
   name: marshall-islands-vanilla
 spec:
-  pbfUrl: https://download.geofabrik.de/australia-oceania/marshall-islands-latest.osm.pbf
+  pbfUrl: https://download.geofabrik.de/australia-oceania/marshall-islands-260328.osm.pbf
   profiles:
   - name: car
     endpointName: driving
     minReplicas: 2
     maxReplicas: 4
+    osrmRouted:
+      maxViaRouteSize: 1000
   service:
     type: LoadBalancer
     exposingServices: ["route", "table", "match"]
   persistence:
     storage: "1Gi"
-    storageClassName: standard-rwx
-    accessMode: ReadWriteMany
+    storageClassName: premium-rwo
+    accessMode: ReadWriteOnce

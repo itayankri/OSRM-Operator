@@ -17,6 +17,7 @@ limitations under the License.
 package v1alpha1
 
 import (
+	"fmt"
 	"strings"
 
 	"github.com/itayankri/OSRM-Operator/internal/status"
@@ -30,6 +31,8 @@ import (
 const defaultImage = "ghcr.io/project-osrm/osrm-backend:v5.27.1"
 const defaultSpeedUpdatesFetcherImage = "itayankri/osrm-speed-updates:osrm-v5.27.1"
 const defaultBuilderImage = "itayankri/osrm-builder:osrm-v5.27.1"
+const defaultMaxMatchingSize = 21474836
+const defaultAlgorithm = "mld"
 
 const OperatorPausedAnnotation = "osrm.itayankri/operator.paused"
 
@@ -101,7 +104,8 @@ type ProfileSpec struct {
 	MinReplicas      *int32                       `json:"minReplicas,omitempty"`
 	MaxReplicas      *int32                       `json:"maxReplicas,omitempty"`
 	Resources        *corev1.ResourceRequirements `json:"resources,omitempty"`
-	SpeedUpdates     *SpeedUpdatesSpec            `json:"speedUpdates,omitempty"`
+	SpeedUpdates 		 *SpeedUpdatesSpec 						`json:"speedUpdates,omitempty"`
+	OsrmRouted       *OsrmRoutedSpec   						`json:"osrmRouted,omitempty"`
 }
 
 func (spec *ProfileSpec) GetMinAvailable() *intstr.IntOrString {
@@ -138,6 +142,59 @@ func (spec *ProfileSpec) GetInternalEndpoint() string {
 		return spec.EndpointName
 	}
 	return *spec.InternalEndpoint
+}
+
+type OsrmRoutedSpec struct {
+	Algorithm       *string `json:"algorithm,omitempty"`
+	MaxViaRouteSize *int32  `json:"maxViaRouteSize,omitempty"`
+	MaxTripSize     *int32  `json:"maxTripSize,omitempty"`
+	MaxTableSize    *int32  `json:"maxTableSize,omitempty"`
+	MaxMatchingSize *int32  `json:"maxMatchingSize,omitempty"`
+	MaxNearestSize  *int32  `json:"maxNearestSize,omitempty"`
+}
+
+func formatInt(v *int32) string {
+	if v == nil {
+		return ""
+	}
+	return fmt.Sprintf("%d", *v)
+}
+
+func (spec *OsrmRoutedSpec) GetFlags() string {
+	if spec == nil {
+		spec = &OsrmRoutedSpec{}
+	}
+
+	algorithm := defaultAlgorithm
+	if spec.Algorithm != nil {
+		algorithm = *spec.Algorithm
+	}
+
+	matchingSize := int32(defaultMaxMatchingSize)
+	if spec.MaxMatchingSize != nil {
+		matchingSize = *spec.MaxMatchingSize
+	}
+
+	type entry struct {
+		flag string
+		val  string
+	}
+	entries := []entry{
+		{"--algorithm", algorithm},
+		{"--max-viaroute-size", formatInt(spec.MaxViaRouteSize)},
+		{"--max-trip-size", formatInt(spec.MaxTripSize)},
+		{"--max-table-size", formatInt(spec.MaxTableSize)},
+		{"--max-matching-size", fmt.Sprintf("%d", matchingSize)},
+		{"--max-nearest-size", formatInt(spec.MaxNearestSize)},
+	}
+
+	var flags []string
+	for _, e := range entries {
+		if e.val != "" {
+			flags = append(flags, fmt.Sprintf("%s %s", e.flag, e.val))
+		}
+	}
+	return strings.Join(flags, " ")
 }
 
 type MapBuilderSpec struct {

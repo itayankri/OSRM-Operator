@@ -44,6 +44,7 @@ func (builder *DeploymentBuilder) Update(object client.Object, siblings []runtim
 	deployment := object.(*appsv1.Deployment)
 	pbfFileName := builder.Instance.Spec.GetPbfFileName()
 	osrmFileName := strings.ReplaceAll(pbfFileName, "osm.pbf", "osrm")
+	osrmRoutedFlags := builder.profile.OsrmRouted.GetFlags()
 	labelSelector := map[string]string{
 		"app": name,
 	}
@@ -75,11 +76,12 @@ func (builder *DeploymentBuilder) Update(object client.Object, siblings []runtim
 					Args: []string{
 						fmt.Sprintf(`
 							cd %s/%s && \
-							osrm-routed %s --algorithm mld --max-matching-size 21474836 --max-viaroute-size 1000
+							osrm-routed %s %s
 						`,
 							osrmDataPath,
 							osrmCustomizedData,
 							osrmFileName,
+							osrmRoutedFlags,
 						),
 					},
 					VolumeMounts: []corev1.VolumeMount{

@@ -147,6 +147,26 @@ spec:
                       type: string
                     osrmProfile:
                       type: string
+                    osrmRouted:
+                      properties:
+                        algorithm:
+                          type: string
+                        maxMatchingSize:
+                          format: int32
+                          type: integer
+                        maxNearestSize:
+                          format: int32
+                          type: integer
+                        maxTableSize:
+                          format: int32
+                          type: integer
+                        maxTripSize:
+                          format: int32
+                          type: integer
+                        maxViaRouteSize:
+                          format: int32
+                          type: integer
+                      type: object
                     replicas:
                       format: int32
                       type: integer
