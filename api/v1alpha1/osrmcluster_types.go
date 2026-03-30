@@ -31,8 +31,6 @@ import (
 const defaultImage = "ghcr.io/project-osrm/osrm-backend:v5.27.1"
 const defaultSpeedUpdatesFetcherImage = "itayankri/osrm-speed-updates:osrm-v5.27.1"
 const defaultBuilderImage = "itayankri/osrm-builder:osrm-v5.27.1"
-const defaultMaxMatchingSize = 21474836
-const defaultAlgorithm = "mld"
 
 const OperatorPausedAnnotation = "osrm.itayankri/operator.paused"
 
@@ -108,7 +106,7 @@ type ProfileSpec struct {
 	MaxReplicas      *int32                       `json:"maxReplicas,omitempty"`
 	Resources        *corev1.ResourceRequirements `json:"resources,omitempty"`
 	SpeedUpdates 		 *SpeedUpdatesSpec 						`json:"speedUpdates,omitempty"`
-	OsrmRouted       *OsrmRoutedSpec   						`json:"osrmRouted,omitempty"`
+	OsrmRouted       *OSRMRoutedOptions   				`json:"osrmRouted,omitempty"`
 }
 
 func (spec *ProfileSpec) GetMinAvailable() *intstr.IntOrString {
@@ -147,8 +145,7 @@ func (spec *ProfileSpec) GetInternalEndpoint() string {
 	return *spec.InternalEndpoint
 }
 
-type OsrmRoutedSpec struct {
-	Algorithm       *string `json:"algorithm,omitempty"`
+type OSRMRoutedOptions struct {
 	MaxViaRouteSize *int32  `json:"maxViaRouteSize,omitempty"`
 	MaxTripSize     *int32  `json:"maxTripSize,omitempty"`
 	MaxTableSize    *int32  `json:"maxTableSize,omitempty"`
@@ -163,38 +160,23 @@ func formatInt(v *int32) string {
 	return fmt.Sprintf("%d", *v)
 }
 
-func (spec *OsrmRoutedSpec) GetFlags() string {
-	if spec == nil {
-		spec = &OsrmRoutedSpec{}
+func (options *OSRMRoutedOptions) ToString() string {
+	if options == nil {
+		return ""
 	}
 
-	algorithm := defaultAlgorithm
-	if spec.Algorithm != nil {
-		algorithm = *spec.Algorithm
-	}
-
-	matchingSize := int32(defaultMaxMatchingSize)
-	if spec.MaxMatchingSize != nil {
-		matchingSize = *spec.MaxMatchingSize
-	}
-
-	type entry struct {
-		flag string
-		val  string
-	}
-	entries := []entry{
-		{"--algorithm", algorithm},
-		{"--max-viaroute-size", formatInt(spec.MaxViaRouteSize)},
-		{"--max-trip-size", formatInt(spec.MaxTripSize)},
-		{"--max-table-size", formatInt(spec.MaxTableSize)},
-		{"--max-matching-size", fmt.Sprintf("%d", matchingSize)},
-		{"--max-nearest-size", formatInt(spec.MaxNearestSize)},
+	flagMap := map[string]string{
+		"--max-viaroute-size": formatInt(options.MaxViaRouteSize),
+		"--max-trip-size":     formatInt(options.MaxTripSize),
+		"--max-table-size":    formatInt(options.MaxTableSize),
+		"--max-matching-size": formatInt(options.MaxMatchingSize),
+		"--max-nearest-size":  formatInt(options.MaxNearestSize),
 	}
 
 	var flags []string
-	for _, e := range entries {
-		if e.val != "" {
-			flags = append(flags, fmt.Sprintf("%s %s", e.flag, e.val))
+	for flag, val := range flagMap {
+		if val != "" {
+			flags = append(flags, fmt.Sprintf("%s %s", flag, val))
 		}
 	}
 	return strings.Join(flags, " ")
