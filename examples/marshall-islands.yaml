@@ -9,7 +9,7 @@ spec:
     endpointName: driving
     minReplicas: 2
     maxReplicas: 4
-    osrmRouted:
+    osrmRoutedOptions:
       maxViaRouteSize: 1000
   service:
     type: LoadBalancer

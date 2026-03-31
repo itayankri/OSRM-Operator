@@ -276,8 +276,8 @@ func (in *ProfileSpec) DeepCopyInto(out *ProfileSpec) {
 		*out = new(SpeedUpdatesSpec)
 		(*in).DeepCopyInto(*out)
 	}
-	if in.OsrmRouted != nil {
-		in, out := &in.OsrmRouted, &out.OsrmRouted
+	if in.OSRMRoutedOptions != nil {
+		in, out := &in.OSRMRoutedOptions, &out.OSRMRoutedOptions
 		*out = new(OSRMRoutedOptions)
 		(*in).DeepCopyInto(*out)
 	}

@@ -46,7 +46,7 @@ func (builder *DeploymentBuilder) Update(object client.Object, siblings []runtim
 	deployment := object.(*appsv1.Deployment)
 	pbfFileName := builder.Instance.Spec.GetPbfFileName()
 	osrmFileName := strings.ReplaceAll(pbfFileName, "osm.pbf", "osrm")
-	osrmRoutedFlags := builder.profile.OsrmRouted.ToString()
+	osrmRoutedFlags := builder.profile.OSRMRoutedOptions.ToString()
 	labelSelector := map[string]string{
 		"app": name,
 	}

@@ -106,7 +106,7 @@ type ProfileSpec struct {
 	MaxReplicas      *int32                       `json:"maxReplicas,omitempty"`
 	Resources        *corev1.ResourceRequirements `json:"resources,omitempty"`
 	SpeedUpdates 		 *SpeedUpdatesSpec 						`json:"speedUpdates,omitempty"`
-	OsrmRouted       *OSRMRoutedOptions   				`json:"osrmRouted,omitempty"`
+	OSRMRoutedOptions *OSRMRoutedOptions   				`json:"osrmRoutedOptions,omitempty"`
 }
 
 func (spec *ProfileSpec) GetMinAvailable() *intstr.IntOrString {

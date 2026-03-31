@@ -535,7 +535,7 @@ spec:
                       type: string
                     osrmProfile:
                       type: string
-                    osrmRouted:
+                    osrmRoutedOptions:
                       description: OsrmRouted configures the osrm-routed process
                         flags for this profile.
                       properties:
