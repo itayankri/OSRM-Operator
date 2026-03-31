@@ -47,7 +47,7 @@ runs:
   - name: Load OSRM Operator image into kind cluster
     shell: bash
     run: |
-      BRANCH_NAME=$${{ github.ref_name }}"
+      BRANCH_NAME=$${{ github.head_ref }}"
       kind load docker-image itayankri/osrm-operator:$BRANCH_NAME-latest --name osrm
 
   - name: Setup NFS infrastructure
