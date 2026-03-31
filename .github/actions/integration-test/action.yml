@@ -39,6 +39,16 @@ runs:
     run: |
       kind create cluster --name osrm --config examples/kind-config.yaml
       kubectl cluster-info
+  
+  - name: Build OSRM Operator image
+    shell: bash
+    run: make docker-build
+
+  - name: Load OSRM Operator image into kind cluster
+    shell: bash
+    run: |
+      IMAGE_TAG=$(git rev-parse --short HEAD)
+      kind load docker-image itayankri/osrm-operator:$IMAGE_TAG --name osrm
 
   - name: Setup NFS infrastructure
     shell: bash
