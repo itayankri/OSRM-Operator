@@ -541,7 +541,7 @@ spec:
                       properties:
                         maxMatchingSize:
                           description: MaxMatchingSize is the maximum number of locations
-                            supported in a map matching query. Defaults to 21474836.
+                            supported in a map matching query. Defaults to 100.
                           format: int32
                           type: integer
                         maxNearestSize:
