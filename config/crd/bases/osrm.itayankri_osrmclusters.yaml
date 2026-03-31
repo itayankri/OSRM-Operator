@@ -536,7 +536,7 @@ spec:
                     osrmProfile:
                       type: string
                     osrmRoutedOptions:
-                      description: OsrmRouted configures the osrm-routed process
+                      description: OSRMRoutedOptions configures the osrm-routed process
                         flags for this profile.
                       properties:
                         maxMatchingSize:
