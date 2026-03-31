@@ -19,7 +19,6 @@ jobs:
       uses: ./.github/actions/unit-test
 
   integration-tests:
-    needs: ["build"]
     name: Integration + E2E tests
     timeout-minutes: 15
     runs-on: ubuntu-latest
