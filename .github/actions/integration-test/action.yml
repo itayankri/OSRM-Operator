@@ -42,12 +42,13 @@ runs:
   
   - name: Build OSRM Operator image
     shell: bash
-    run: make docker-build
+    run: |
+      BRANCH_NAME="${{ github.head_ref }}"
+      make docker-build
 
   - name: Load OSRM Operator image into kind cluster
     shell: bash
     run: |
-      BRANCH_NAME="${{ github.head_ref }}"
       docker images
       kind load docker-image itayankri/osrm-operator:$BRANCH_NAME-latest --name osrm
 
