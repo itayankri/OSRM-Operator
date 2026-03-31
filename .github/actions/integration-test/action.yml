@@ -42,9 +42,9 @@ runs:
   
   - name: Build OSRM Operator image
     shell: bash
-    run: |
-      BRANCH_NAME="${{ github.head_ref }}"
-      make docker-build
+    env:
+      BRANCH_NAME: ${{ github.head_ref }}
+    run: make docker-build
 
   - name: Load OSRM Operator image into kind cluster
     shell: bash
