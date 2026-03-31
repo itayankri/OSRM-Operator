@@ -48,6 +48,8 @@ runs:
 
   - name: Load OSRM Operator image into kind cluster
     shell: bash
+    env:
+      BRANCH_NAME: ${{ github.head_ref }}
     run: |
       docker images
       kind load docker-image itayankri/osrm-operator:$BRANCH_NAME-latest --name osrm
