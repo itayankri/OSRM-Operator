@@ -17,6 +17,7 @@ limitations under the License.
 package v1alpha1
 
 import (
+	"fmt"
 	"strings"
 
 	"github.com/itayankri/OSRM-Operator/internal/status"
@@ -104,7 +105,8 @@ type ProfileSpec struct {
 	MinReplicas      *int32                       `json:"minReplicas,omitempty"`
 	MaxReplicas      *int32                       `json:"maxReplicas,omitempty"`
 	Resources        *corev1.ResourceRequirements `json:"resources,omitempty"`
-	SpeedUpdates     *SpeedUpdatesSpec            `json:"speedUpdates,omitempty"`
+	SpeedUpdates 		 *SpeedUpdatesSpec 						`json:"speedUpdates,omitempty"`
+	OSRMRoutedOptions *OSRMRoutedOptions   				`json:"osrmRoutedOptions,omitempty"`
 }
 
 func (spec *ProfileSpec) GetMinAvailable() *intstr.IntOrString {
@@ -141,6 +143,43 @@ func (spec *ProfileSpec) GetInternalEndpoint() string {
 		return spec.EndpointName
 	}
 	return *spec.InternalEndpoint
+}
+
+type OSRMRoutedOptions struct {
+	MaxViaRouteSize *int32  `json:"maxViaRouteSize,omitempty"`
+	MaxTripSize     *int32  `json:"maxTripSize,omitempty"`
+	MaxTableSize    *int32  `json:"maxTableSize,omitempty"`
+	MaxMatchingSize *int32  `json:"maxMatchingSize,omitempty"`
+	MaxNearestSize  *int32  `json:"maxNearestSize,omitempty"`
+}
+
+func formatInt(v *int32) string {
+	if v == nil {
+		return ""
+	}
+	return fmt.Sprintf("%d", *v)
+}
+
+func (options *OSRMRoutedOptions) ToString() string {
+	if options == nil {
+		return ""
+	}
+
+	flagMap := map[string]string{
+		"--max-viaroute-size": formatInt(options.MaxViaRouteSize),
+		"--max-trip-size":     formatInt(options.MaxTripSize),
+		"--max-table-size":    formatInt(options.MaxTableSize),
+		"--max-matching-size": formatInt(options.MaxMatchingSize),
+		"--max-nearest-size":  formatInt(options.MaxNearestSize),
+	}
+
+	var flags []string
+	for flag, val := range flagMap {
+		if val != "" {
+			flags = append(flags, fmt.Sprintf("%s %s", flag, val))
+		}
+	}
+	return strings.Join(flags, " ")
 }
 
 type MapBuilderSpec struct {
