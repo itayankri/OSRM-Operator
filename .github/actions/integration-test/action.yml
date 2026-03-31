@@ -48,6 +48,7 @@ runs:
     shell: bash
     run: |
       BRANCH_NAME="${{ github.head_ref }}"
+      docker images
       kind load docker-image itayankri/osrm-operator:$BRANCH_NAME-latest --name osrm
 
   - name: Setup NFS infrastructure
