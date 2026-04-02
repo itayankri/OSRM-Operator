@@ -335,7 +335,6 @@ func (cluster *OSRMCluster) ChildResourceName(service string, suffix string) str
 	return strings.TrimSuffix(strings.Join([]string{nameWithService, suffix}, "-"), "-")
 }
 
-// Methods to satisfy OSRMResourceInstance interface
 func (c *OSRMCluster) GetPbfURL() string                { return c.Spec.PBFURL }
 func (c *OSRMCluster) GetImage() string                 { return c.Spec.GetImage() }
 func (c *OSRMCluster) GetPbfFileName() string           { return c.Spec.GetPbfFileName() }

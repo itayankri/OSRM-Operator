@@ -59,8 +59,6 @@ type ClusterScopedBuilder struct {
 	profiles []*osrmv1alpha1.ProfileSpec
 }
 
-// cluster returns the underlying *OSRMCluster. OSRMResourceBuilder is only used
-// with *OSRMCluster so this assertion is always safe.
 func (builder *OSRMResourceBuilder) cluster() *osrmv1alpha1.OSRMCluster {
 	return builder.Instance.(*osrmv1alpha1.OSRMCluster)
 }
@@ -137,11 +135,9 @@ func (builder *OSRMResourceBuilder) DeployingWorkersPhaseBuilders() []ResourceBu
 	return builders
 }
 
-// WorkersDeployedPhaseBuilders returns builders for the workers deployed phase
 func (builder *OSRMResourceBuilder) WorkersDeployedPhaseBuilders() []ResourceBuilder {
 	builders := []ResourceBuilder{}
 
-	// Add CronJobs for speed updates if configured
 	for _, profile := range builder.cluster().Spec.Profiles {
 		builders = append(builders, builder.Service(profile))
 		builders = append(builders, builder.HorizontalPodAutoscaler(profile))
@@ -153,7 +149,6 @@ func (builder *OSRMResourceBuilder) WorkersDeployedPhaseBuilders() []ResourceBui
 		}
 	}
 
-	// Add gateway resources
 	if len(builder.cluster().Spec.Profiles) > 0 {
 		builders = append(builders, []ResourceBuilder{
 			builder.ConfigMap(builder.cluster().Spec.Profiles),

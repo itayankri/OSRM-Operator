@@ -6,8 +6,6 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 )
 
-// OSRMResourceInstance is the interface that both *OSRMCluster and *OSRMInstance satisfy,
-// allowing builders to work with either CRD type.
 type OSRMResourceInstance interface {
 	metav1.Object
 	runtime.Object

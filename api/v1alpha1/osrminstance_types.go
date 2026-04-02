@@ -26,44 +26,19 @@ import (
 	"k8s.io/apimachinery/pkg/util/intstr"
 )
 
-// OSRMInstanceSpec defines the desired state of OSRMInstance
 type OSRMInstanceSpec struct {
-	// PBFURL is the URL of the PBF map file to download and process
-	PBFURL string `json:"pbfUrl,omitempty"`
-
-	// OSRMProfile is the OSRM routing profile to use (e.g. car, foot, bicycle)
-	// +kubebuilder:validation:Required
-	OSRMProfile string `json:"osrmProfile"`
-
-	// Replicas is the desired number of OSRM backend replicas
-	Replicas *int32 `json:"replicas,omitempty"`
-
-	// MinReplicas is the minimum number of replicas for HPA
-	MinReplicas *int32 `json:"minReplicas,omitempty"`
-
-	// MaxReplicas is the maximum number of replicas for HPA; enables HPA when set
-	MaxReplicas *int32 `json:"maxReplicas,omitempty"`
-
-	// Image is the OSRM backend container image
-	Image *string `json:"image,omitempty"`
-
-	// Resources sets CPU/memory requests and limits for OSRM backend pods
-	Resources *corev1.ResourceRequirements `json:"resources,omitempty"`
-
-	// Service configures the Kubernetes Service for this instance
-	Service ServiceSpec `json:"service,omitempty"`
-
-	// Persistence configures the PersistentVolumeClaim for map data
-	Persistence PersistenceSpec `json:"persistence,omitempty"`
-
-	// MapBuilder configures the map-building Job
-	MapBuilder MapBuilderSpec `json:"mapBuilder,omitempty"`
-
-	// SpeedUpdates configures the optional speed-update CronJob
-	SpeedUpdates *SpeedUpdatesSpec `json:"speedUpdates,omitempty"`
-
-	// OSRMRoutedOptions configures additional osrm-routed flags
-	OSRMRoutedOptions *OSRMRoutedOptions `json:"osrmRoutedOptions,omitempty"`
+	PBFURL            string                       `json:"pbfUrl,omitempty"`
+	OSRMProfile       string                       `json:"osrmProfile"`
+	Replicas          *int32                       `json:"replicas,omitempty"`
+	MinReplicas       *int32                       `json:"minReplicas,omitempty"`
+	MaxReplicas       *int32                       `json:"maxReplicas,omitempty"`
+	Image             *string                      `json:"image,omitempty"`
+	Resources         *corev1.ResourceRequirements `json:"resources,omitempty"`
+	Service           ServiceSpec                  `json:"service,omitempty"`
+	Persistence       PersistenceSpec              `json:"persistence,omitempty"`
+	MapBuilder        MapBuilderSpec               `json:"mapBuilder,omitempty"`
+	SpeedUpdates      *SpeedUpdatesSpec            `json:"speedUpdates,omitempty"`
+	OSRMRoutedOptions *OSRMRoutedOptions           `json:"osrmRoutedOptions,omitempty"`
 }
 
 func (spec *OSRMInstanceSpec) GetImage() string {
@@ -96,12 +71,8 @@ func (spec *OSRMInstanceSpec) GetResources() *corev1.ResourceRequirements {
 	return spec.Resources
 }
 
-// OSRMInstanceStatus defines the observed state of OSRMInstance
 type OSRMInstanceStatus struct {
-	// Paused is true when the operator notices paused annotation.
-	Paused bool `json:"paused,omitempty"`
-
-	// ObservedGeneration is the latest generation observed by the operator.
+	Paused             bool  `json:"paused,omitempty"`
 	ObservedGeneration int64 `json:"observedGeneration,omitempty"`
 
 	Phase Phase `json:"phase,omitempty"`
@@ -158,7 +129,6 @@ func (s *OSRMInstanceStatus) SetCondition(condition metav1.Condition) {
 //+kubebuilder:object:root=true
 //+kubebuilder:subresource:status
 
-// OSRMInstance is the Schema for the osrminstances API
 type OSRMInstance struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
@@ -172,7 +142,6 @@ func (instance *OSRMInstance) ChildResourceName(component string, suffix string)
 	return strings.TrimSuffix(strings.Join([]string{nameWithComponent, suffix}, "-"), "-")
 }
 
-// Methods to satisfy OSRMResourceInstance interface
 func (instance *OSRMInstance) GetImage() string                 { return instance.Spec.GetImage() }
 func (instance *OSRMInstance) GetPbfURL() string                { return instance.Spec.PBFURL }
 func (instance *OSRMInstance) GetPbfFileName() string           { return instance.Spec.GetPbfFileName() }
@@ -183,7 +152,6 @@ func (instance *OSRMInstance) GetService() ServiceSpec          { return instanc
 
 //+kubebuilder:object:root=true
 
-// OSRMInstanceList contains a list of OSRMInstance
 type OSRMInstanceList struct {
 	metav1.TypeMeta `json:",inline"`
 	metav1.ListMeta `json:"metadata,omitempty"`

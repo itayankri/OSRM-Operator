@@ -49,7 +49,6 @@ import (
 const instanceFinalizerName = "osrminstance.itayankri/finalizer"
 const instanceLastAppliedSpecAnnotation = "osrminstance.itayankri/last-applied-spec"
 
-// OSRMInstanceReconciler reconciles a OSRMInstance object
 type OSRMInstanceReconciler struct {
 	client.Client
 	Scheme *runtime.Scheme

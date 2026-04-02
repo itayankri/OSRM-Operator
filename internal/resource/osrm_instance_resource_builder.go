@@ -5,9 +5,6 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 )
 
-// OSRMInstanceResourceBuilder builds resources for an OSRMInstance (single-profile,
-// no NGINX gateway). It reuses all non-gateway builders by delegating to an inner
-// OSRMResourceBuilder whose Instance is set to the OSRMInstance itself.
 type OSRMInstanceResourceBuilder struct {
 	Instance            *osrmv1alpha1.OSRMInstance
 	Scheme              *runtime.Scheme
@@ -31,7 +28,7 @@ func NewOSRMInstanceResourceBuilder(
 	}
 
 	inner := &OSRMResourceBuilder{
-		Instance:            instance, // *OSRMInstance satisfies OSRMResourceInstance
+		Instance:            instance,
 		Scheme:              scheme,
 		MapGeneration:       currentMapGeneration,
 		FutureMapGeneration: futureMapGeneration,
@@ -46,9 +43,6 @@ func NewOSRMInstanceResourceBuilder(
 	}
 }
 
-// toProfileSpec synthesizes a ProfileSpec from OSRMInstanceSpec.
-// profile.Name is empty so that ChildResourceName("", suffix) produces just instance.Name.
-// profile.OSRMProfile carries the actual OSRM profile name for map building and the readiness probe.
 func (b *OSRMInstanceResourceBuilder) toProfileSpec() *osrmv1alpha1.ProfileSpec {
 	return &osrmv1alpha1.ProfileSpec{
 		Name:              "",
@@ -113,8 +107,6 @@ func (b *OSRMInstanceResourceBuilder) DeployingWorkersPhaseBuilders() []Resource
 	}
 }
 
-// WorkersDeployedPhaseBuilders returns builders for the steady-state phase.
-// Unlike OSRMResourceBuilder, no gateway resources are included.
 func (b *OSRMInstanceResourceBuilder) WorkersDeployedPhaseBuilders() []ResourceBuilder {
 	profile := b.toProfileSpec()
 	builders := []ResourceBuilder{
