@@ -35,7 +35,7 @@ func (builder *DeploymentBuilder) Build() (client.Object, error) {
 	return &appsv1.Deployment{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      builder.Instance.ChildResourceName(builder.profile.Name, DeploymentSuffix),
-			Namespace: builder.Instance.Namespace,
+			Namespace: builder.Instance.GetNamespace(),
 			Labels:    metadata.GetLabels(builder.Instance, metadata.ComponentLabelProfile),
 		},
 	}, nil
@@ -44,7 +44,7 @@ func (builder *DeploymentBuilder) Build() (client.Object, error) {
 func (builder *DeploymentBuilder) Update(object client.Object, siblings []runtime.Object) error {
 	name := builder.Instance.ChildResourceName(builder.profile.Name, DeploymentSuffix)
 	deployment := object.(*appsv1.Deployment)
-	pbfFileName := builder.Instance.Spec.GetPbfFileName()
+	pbfFileName := builder.Instance.GetPbfFileName()
 	osrmFileName := strings.ReplaceAll(pbfFileName, "osm.pbf", "osrm")
 	osrmRoutedOptions := builder.profile.OSRMRoutedOptions.ToString()
 	labelSelector := map[string]string{
@@ -64,7 +64,7 @@ func (builder *DeploymentBuilder) Update(object client.Object, siblings []runtim
 			Containers: []corev1.Container{
 				{
 					Name:  osrmContainerName,
-					Image: builder.Instance.Spec.GetImage(),
+					Image: builder.Instance.GetImage(),
 					Ports: []corev1.ContainerPort{
 						{
 							ContainerPort: containerPort,
@@ -95,7 +95,7 @@ func (builder *DeploymentBuilder) Update(object client.Object, siblings []runtim
 					ReadinessProbe: &corev1.Probe{
 						ProbeHandler: corev1.ProbeHandler{
 							HTTPGet: &corev1.HTTPGetAction{
-								Path:   fmt.Sprintf("/nearest/v1/%s/34.761122,32.051346", builder.profile.Name),
+								Path:   fmt.Sprintf("/nearest/v1/%s/34.761122,32.051346", builder.profile.GetProfile()),
 								Port:   intstr.IntOrString{IntVal: containerPort},
 								Scheme: corev1.URISchemeHTTP,
 							},

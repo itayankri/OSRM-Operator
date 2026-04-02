@@ -29,23 +29,24 @@ func (builder *OSRMResourceBuilder) PersistentVolumeClaim(profile *osrmv1alpha1.
 
 func (builder *PersistentVolumeClaimBuilder) Build() (client.Object, error) {
 	name := builder.Instance.ChildResourceName(builder.profile.Name, builder.MapGenerationScopedBuilder.generation)
+	persistence := builder.Instance.GetPersistence()
 	pvc := &corev1.PersistentVolumeClaim{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      name,
-			Namespace: builder.Instance.Namespace,
+			Namespace: builder.Instance.GetNamespace(),
 			Labels:    metadata.GetLabels(builder.Instance, metadata.ComponentLabelProfile),
 		},
 		Spec: corev1.PersistentVolumeClaimSpec{
 			AccessModes: []corev1.PersistentVolumeAccessMode{
-				builder.Instance.Spec.Persistence.GetAccessMode(),
+				persistence.GetAccessMode(),
 			},
 			Resources: corev1.VolumeResourceRequirements{
 				Requests: map[corev1.ResourceName]resource.Quantity{
-					corev1.ResourceStorage: *builder.Instance.Spec.Persistence.Storage,
+					corev1.ResourceStorage: *persistence.Storage,
 				},
 			},
 			VolumeName:       "",
-			StorageClassName: &builder.Instance.Spec.Persistence.StorageClassName,
+			StorageClassName: &persistence.StorageClassName,
 		},
 	}
 

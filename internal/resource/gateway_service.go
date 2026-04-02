@@ -28,8 +28,8 @@ func (builder *OSRMResourceBuilder) GatewayService(profiles []*osrmv1alpha1.Prof
 func (builder *GatewayServiceBuilder) Build() (client.Object, error) {
 	return &corev1.Service{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      builder.Instance.Name,
-			Namespace: builder.Instance.Namespace,
+			Name:      builder.Instance.GetName(),
+			Namespace: builder.Instance.GetNamespace(),
 			Labels:    metadata.GetLabels(builder.Instance, metadata.ComponentLabelGateway),
 		},
 	}, nil
@@ -42,7 +42,7 @@ func (builder *GatewayServiceBuilder) Update(object client.Object, siblings []ru
 
 	service.Spec.Ports = []corev1.ServicePort{
 		{
-			Name:     fmt.Sprintf("%s-port", builder.Instance.Name),
+			Name:     fmt.Sprintf("%s-port", builder.Instance.GetName()),
 			Protocol: corev1.ProtocolTCP,
 			Port:     80,
 			TargetPort: intstr.IntOrString{
@@ -55,11 +55,12 @@ func (builder *GatewayServiceBuilder) Update(object client.Object, siblings []ru
 		"app": builder.Instance.ChildResourceName(GatewaySuffix, ServiceSuffix),
 	}
 
-	service.Spec.Type = builder.Instance.Spec.Service.GetType()
+	svc := builder.Instance.GetService()
+	service.Spec.Type = svc.GetType()
 	builder.setAnnotations(service)
 
-	if builder.Instance.Spec.Service.LoadBalancerIP != nil {
-		service.Spec.LoadBalancerIP = *builder.Instance.Spec.Service.LoadBalancerIP
+	if svc.LoadBalancerIP != nil {
+		service.Spec.LoadBalancerIP = *svc.LoadBalancerIP
 	}
 
 	if err := controllerutil.SetControllerReference(builder.Instance, service, builder.Scheme); err != nil {
@@ -70,7 +71,7 @@ func (builder *GatewayServiceBuilder) Update(object client.Object, siblings []ru
 }
 
 func (builder *GatewayServiceBuilder) setAnnotations(service *corev1.Service) {
-	if builder.Instance.Spec.Service.Annotations != nil {
-		service.Annotations = metadata.ReconcileAnnotations(service.Annotations, builder.Instance.Spec.Service.Annotations)
+	if builder.Instance.GetService().Annotations != nil {
+		service.Annotations = metadata.ReconcileAnnotations(service.Annotations, builder.Instance.GetService().Annotations)
 	}
 }

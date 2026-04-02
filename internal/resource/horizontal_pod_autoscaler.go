@@ -28,7 +28,7 @@ func (builder *HorizontalPodAutoscalerBuilder) Build() (client.Object, error) {
 	return &autoscalingv1.HorizontalPodAutoscaler{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      builder.Instance.ChildResourceName(builder.profile.Name, HorizontalPodAutoscalerSuffix),
-			Namespace: builder.Instance.Namespace,
+			Namespace: builder.Instance.GetNamespace(),
 			Labels:    metadata.GetLabels(builder.Instance, metadata.ComponentLabelProfile),
 		},
 	}, nil
@@ -41,15 +41,14 @@ func (builder *HorizontalPodAutoscalerBuilder) Update(object client.Object, sibl
 	hpa.ObjectMeta.Labels = metadata.GetLabels(builder.Instance, metadata.ComponentLabelProfile)
 
 	targetCPUUtilizationPercentage := int32(85)
-	profileSpec := getProfileSpec(builder.profile.Name, builder.Instance)
 
 	hpa.Spec.ScaleTargetRef = autoscalingv1.CrossVersionObjectReference{
 		Kind:       "Deployment",
 		Name:       name,
 		APIVersion: "apps/v1",
 	}
-	hpa.Spec.MinReplicas = profileSpec.MinReplicas
-	hpa.Spec.MaxReplicas = *profileSpec.MaxReplicas
+	hpa.Spec.MinReplicas = builder.profile.MinReplicas
+	hpa.Spec.MaxReplicas = *builder.profile.MaxReplicas
 	hpa.Spec.TargetCPUUtilizationPercentage = &targetCPUUtilizationPercentage
 
 	if err := controllerutil.SetControllerReference(builder.Instance, hpa, builder.Scheme); err != nil {

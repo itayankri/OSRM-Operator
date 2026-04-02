@@ -97,16 +97,16 @@ func (spec *OSRMClusterSpec) GetOsrmFileName() string {
 type ProfilesSpec []*ProfileSpec
 
 type ProfileSpec struct {
-	Name             string                       `json:"name,omitempty"`
-	EndpointName     string                       `json:"endpointName,omitempty"`
-	Replicas         *int32                       `json:"replicas,omitempty"`
-	InternalEndpoint *string                      `json:"internalEndpoint,omitempty"`
-	OSRMProfile      *string                      `json:"osrmProfile,omitempty"`
-	MinReplicas      *int32                       `json:"minReplicas,omitempty"`
-	MaxReplicas      *int32                       `json:"maxReplicas,omitempty"`
-	Resources        *corev1.ResourceRequirements `json:"resources,omitempty"`
-	SpeedUpdates 		 *SpeedUpdatesSpec 						`json:"speedUpdates,omitempty"`
-	OSRMRoutedOptions *OSRMRoutedOptions   				`json:"osrmRoutedOptions,omitempty"`
+	Name              string                       `json:"name,omitempty"`
+	EndpointName      string                       `json:"endpointName,omitempty"`
+	Replicas          *int32                       `json:"replicas,omitempty"`
+	InternalEndpoint  *string                      `json:"internalEndpoint,omitempty"`
+	OSRMProfile       *string                      `json:"osrmProfile,omitempty"`
+	MinReplicas       *int32                       `json:"minReplicas,omitempty"`
+	MaxReplicas       *int32                       `json:"maxReplicas,omitempty"`
+	Resources         *corev1.ResourceRequirements `json:"resources,omitempty"`
+	SpeedUpdates      *SpeedUpdatesSpec            `json:"speedUpdates,omitempty"`
+	OSRMRoutedOptions *OSRMRoutedOptions           `json:"osrmRoutedOptions,omitempty"`
 }
 
 func (spec *ProfileSpec) GetMinAvailable() *intstr.IntOrString {
@@ -146,11 +146,11 @@ func (spec *ProfileSpec) GetInternalEndpoint() string {
 }
 
 type OSRMRoutedOptions struct {
-	MaxViaRouteSize *int32  `json:"maxViaRouteSize,omitempty"`
-	MaxTripSize     *int32  `json:"maxTripSize,omitempty"`
-	MaxTableSize    *int32  `json:"maxTableSize,omitempty"`
-	MaxMatchingSize *int32  `json:"maxMatchingSize,omitempty"`
-	MaxNearestSize  *int32  `json:"maxNearestSize,omitempty"`
+	MaxViaRouteSize *int32 `json:"maxViaRouteSize,omitempty"`
+	MaxTripSize     *int32 `json:"maxTripSize,omitempty"`
+	MaxTableSize    *int32 `json:"maxTableSize,omitempty"`
+	MaxMatchingSize *int32 `json:"maxMatchingSize,omitempty"`
+	MaxNearestSize  *int32 `json:"maxNearestSize,omitempty"`
 }
 
 func formatInt(v *int32) string {
@@ -334,6 +334,15 @@ func (cluster *OSRMCluster) ChildResourceName(service string, suffix string) str
 	nameWithService := strings.TrimSuffix(strings.Join([]string{cluster.ObjectMeta.Name, service}, "-"), "-")
 	return strings.TrimSuffix(strings.Join([]string{nameWithService, suffix}, "-"), "-")
 }
+
+// Methods to satisfy OSRMResourceInstance interface
+func (c *OSRMCluster) GetPbfURL() string                { return c.Spec.PBFURL }
+func (c *OSRMCluster) GetImage() string                 { return c.Spec.GetImage() }
+func (c *OSRMCluster) GetPbfFileName() string           { return c.Spec.GetPbfFileName() }
+func (c *OSRMCluster) GetOsrmFileName() string          { return c.Spec.GetOsrmFileName() }
+func (c *OSRMCluster) GetPersistence() *PersistenceSpec { return &c.Spec.Persistence }
+func (c *OSRMCluster) GetMapBuilder() *MapBuilderSpec   { return &c.Spec.MapBuilder }
+func (c *OSRMCluster) GetService() ServiceSpec          { return c.Spec.Service }
 
 //+kubebuilder:object:root=true
 
