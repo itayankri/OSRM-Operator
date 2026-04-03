@@ -145,12 +145,18 @@ func (spec *ProfileSpec) GetInternalEndpoint() string {
 	return *spec.InternalEndpoint
 }
 
+// OSRMRoutedOptions configures the osrm-routed process flags for this profile.
 type OSRMRoutedOptions struct {
+	// MaxViaRouteSize is the maximum number of locations supported in a viaroute query. Defaults to 500.
 	MaxViaRouteSize *int32 `json:"maxViaRouteSize,omitempty"`
-	MaxTripSize     *int32 `json:"maxTripSize,omitempty"`
-	MaxTableSize    *int32 `json:"maxTableSize,omitempty"`
+	// MaxTripSize is the maximum number of locations supported in a trip query. Defaults to 100.
+	MaxTripSize *int32 `json:"maxTripSize,omitempty"`
+	// MaxTableSize is the maximum number of locations supported in a distance table query. Defaults to 100.
+	MaxTableSize *int32 `json:"maxTableSize,omitempty"`
+	// MaxMatchingSize is the maximum number of locations supported in a map matching query. Defaults to 100.
 	MaxMatchingSize *int32 `json:"maxMatchingSize,omitempty"`
-	MaxNearestSize  *int32 `json:"maxNearestSize,omitempty"`
+	// MaxNearestSize is the maximum number of results supported in a nearest query. Defaults to 100.
+	MaxNearestSize *int32 `json:"maxNearestSize,omitempty"`
 }
 
 func formatInt(v *int32) string {
