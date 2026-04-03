@@ -72,7 +72,10 @@ func (spec *OSRMInstanceSpec) GetResources() *corev1.ResourceRequirements {
 }
 
 type OSRMInstanceStatus struct {
-	Paused             bool  `json:"paused,omitempty"`
+	// Paused is true when the operator notices paused annotation.
+	Paused bool `json:"paused,omitempty"`
+
+	// ObservedGeneration is the latest generation observed by the operator.
 	ObservedGeneration int64 `json:"observedGeneration,omitempty"`
 
 	Phase Phase `json:"phase,omitempty"`
