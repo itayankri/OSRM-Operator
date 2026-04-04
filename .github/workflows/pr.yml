@@ -20,6 +20,7 @@ jobs:
 
   integration-tests:
     name: Integration + E2E tests
+    needs: ["unit-tests"]
     timeout-minutes: 15
     runs-on: ubuntu-latest
     steps:

@@ -1,0 +1,35 @@
+apiVersion: osrm.itayankri/v1alpha1
+kind: OSRMInstance
+metadata:
+  name: instance-example
+spec:
+  mapBuilder:
+    image: itayankri/osrm-builder:osrm-v5.27.1
+    env:
+    - name: EXAMPLE
+      value: "--max-matching-size=1000"
+    tolerations:
+    - key: dedicated
+      operator: Equal
+      value: map-building
+      effect: NoSchedule
+    nodeAffinity:
+      requiredDuringSchedulingIgnoredDuringExecution:
+        nodeSelectorTerms:
+        - matchExpressions:
+          - key: cloud.google.com/gke-nodepool
+            operator: In
+            values:
+            - map-builder
+  pbfUrl: https://download.geofabrik.de/australia-oceania/marshall-islands-210101.osm.pbf
+  profile: foot
+  minReplicas: 1
+  maxReplicas: 4
+  service:
+    type: ClusterIP
+    annotations:
+      test: "true"
+  persistence:
+    storage: "1Gi"
+    storageClassName: standard
+    accessMode: ReadWriteOnce

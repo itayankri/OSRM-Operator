@@ -130,6 +130,7 @@ docker-build: ## Build docker image with the manager.
 .PHONY: docker-push
 docker-push: ## Push docker image with the manager.
 	docker push ${IMG}
+	docker push ${LATEST_IMG}
 
 ##@ Deployment
 
