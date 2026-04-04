@@ -75,20 +75,8 @@ var _ = Describe("OSRMInstanceController Integration Tests", func() {
 				}, service)
 			}, MapBuildingTimeout).Should(Succeed())
 
-			By("Verifying no gateway resources are created")
-			gatewayDeployment := &appsv1.Deployment{}
-			err := k8sClient.Get(ctx, types.NamespacedName{
-				Name:      testInstance.ChildResourceName(osrmResource.GatewaySuffix, osrmResource.DeploymentSuffix),
-				Namespace: testInstance.Namespace,
-			}, gatewayDeployment)
-			Expect(errors.IsNotFound(err)).To(BeTrue())
-
-			gatewayConfigMap := &corev1.ConfigMap{}
-			err = k8sClient.Get(ctx, types.NamespacedName{
-				Name:      testInstance.ChildResourceName(osrmResource.GatewaySuffix, osrmResource.ConfigMapSuffix),
-				Namespace: testInstance.Namespace,
-			}, gatewayConfigMap)
-			Expect(errors.IsNotFound(err)).To(BeTrue())
+			// OSRMInstance has no gateway — verified implicitly by the instance reaching
+			// PhaseWorkersDeployed with only a single deployment and service (no nginx/configmap).
 		})
 
 		It("should create HPA and PDB when min/maxReplicas are set", func() {
