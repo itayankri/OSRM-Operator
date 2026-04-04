@@ -393,52 +393,24 @@ func (r *OSRMClusterReconciler) setLastAppliedSpecAnnotation(
 	ctx context.Context,
 	instance *osrmv1alpha1.OSRMCluster,
 ) error {
-	newSpecjson, err := json.Marshal(instance.Spec)
-	if err != nil {
-		return fmt.Errorf("failed to marshal OSRMCluster spec: %w", err)
-	}
-	if instance.Annotations == nil {
-		instance.Annotations = make(map[string]string)
-	}
-	instance.Annotations[lastAppliedSpecAnnotation] = string(newSpecjson)
-	return r.Client.Update(ctx, instance)
+	return applyLastSpecAnnotation(ctx, r.Client, instance, lastAppliedSpecAnnotation, instance.Spec)
 }
 
 func (r *OSRMClusterReconciler) setReconciliationSuccess(
 	ctx context.Context,
-	osrmCluster *osrmv1alpha1.OSRMCluster,
+	instance *osrmv1alpha1.OSRMCluster,
 	conditionStatus metav1.ConditionStatus,
 	reason, msg string,
 ) {
-	osrmCluster.Status.SetCondition(metav1.Condition{
-		Type:    status.ConditionReconciliationSuccess,
-		Status:  conditionStatus,
-		Reason:  reason,
-		Message: msg,
-		LastTransitionTime: metav1.Time{
-			Time: time.Now(),
-		},
-	})
-	if err := r.Status().Update(ctx, osrmCluster); err != nil {
-		ctrl.LoggerFrom(ctx).Error(err, "Failed to update Custom Resource status",
-			"namespace", osrmCluster.Namespace,
-			"name", osrmCluster.Name)
-	}
+	setReconciliationResult(ctx, r.Client, instance, conditionStatus, reason, msg)
 }
 
 func (r *OSRMClusterReconciler) initialize(ctx context.Context, instance *osrmv1alpha1.OSRMCluster) error {
-	controllerutil.AddFinalizer(instance, finalizerName)
-	return r.updateOSRMClusterResource(ctx, instance)
+	return initializeResource(ctx, r.Client, instance, finalizerName)
 }
 
 func (r *OSRMClusterReconciler) updateOSRMClusterResource(ctx context.Context, instance *osrmv1alpha1.OSRMCluster) error {
-	err := r.Client.Update(ctx, instance)
-	if err != nil {
-		return err
-	}
-
-	instance.Status.ObservedGeneration = instance.Generation
-	return r.Client.Status().Update(ctx, instance)
+	return updateResource(ctx, r.Client, instance)
 }
 
 func (r *OSRMClusterReconciler) updateStatusConditions(
@@ -446,16 +418,7 @@ func (r *OSRMClusterReconciler) updateStatusConditions(
 	instance *osrmv1alpha1.OSRMCluster,
 	childResources []runtime.Object,
 ) (time.Duration, error) {
-	instance.Status.SetConditions(childResources)
-	err := r.Client.Status().Update(ctx, instance)
-	if err != nil {
-		if errors.IsConflict(err) {
-			r.log.Info("failed to update status because of conflict; requeueing...")
-			return 2 * time.Second, nil
-		}
-		return 0, err
-	}
-	return 0, nil
+	return refreshStatusConditions(ctx, r.log, r.Client, instance, childResources)
 }
 
 func (r *OSRMClusterReconciler) GetActiveMapGeneration(profilesDeployments []*appsv1.Deployment) (string, error) {
@@ -476,19 +439,7 @@ func (r *OSRMClusterReconciler) GetActiveMapGeneration(profilesDeployments []*ap
 
 // GetFutureMapGeneration is exported for testing
 func (r *OSRMClusterReconciler) GetFutureMapGeneration(pvcs []*corev1.PersistentVolumeClaim) (string, error) {
-	higestMapGeneration := 1
-	for _, pvc := range pvcs {
-		mapGeneration := getResourceNameSuffix(pvc.Name)
-		mapGenerationInteger, err := strconv.Atoi(mapGeneration)
-		if err != nil {
-			return "", fmt.Errorf("failed to convert map generation %s to integer: %w", mapGeneration, err)
-		}
-
-		if mapGenerationInteger > higestMapGeneration {
-			higestMapGeneration = mapGenerationInteger
-		}
-	}
-	return strconv.Itoa(higestMapGeneration), nil
+	return computeFutureMapGeneration(pvcs)
 }
 
 func (r *OSRMClusterReconciler) getProfilesDeployments(
@@ -516,45 +467,14 @@ func (r *OSRMClusterReconciler) getPersistentVolumeClaims(
 	ctx context.Context,
 	instance *osrmv1alpha1.OSRMCluster,
 ) ([]*corev1.PersistentVolumeClaim, error) {
-	listOptions := &client.ListOptions{
-		Namespace: instance.Namespace,
-		LabelSelector: labels.SelectorFromSet(labels.Set{
-			metadata.NameLabelKey: instance.Name,
-		}),
-	}
-
-	pvcList := &corev1.PersistentVolumeClaimList{}
-	if err := r.Client.List(ctx, pvcList, listOptions); err != nil {
-		return nil, fmt.Errorf("failed to list PVCs: %w", err)
-	}
-
-	pvcs := make([]*corev1.PersistentVolumeClaim, 0)
-	for _, pvc := range pvcList.Items {
-		pvcs = append(pvcs, &pvc)
-	}
-	return pvcs, nil
+	return listPersistentVolumeClaims(ctx, r.Client, instance.Namespace, instance.Name)
 }
 
-func (r *OSRMClusterReconciler) getJobs(ctx context.Context,
+func (r *OSRMClusterReconciler) getJobs(
+	ctx context.Context,
 	instance *osrmv1alpha1.OSRMCluster,
 ) ([]*batchv1.Job, error) {
-	listOptions := &client.ListOptions{
-		Namespace: instance.Namespace,
-		LabelSelector: labels.SelectorFromSet(labels.Set{
-			metadata.NameLabelKey: instance.Name,
-		}),
-	}
-
-	jobList := &batchv1.JobList{}
-	if err := r.Client.List(ctx, jobList, listOptions); err != nil {
-		return nil, fmt.Errorf("failed to list PVCs: %w", err)
-	}
-
-	jobs := make([]*batchv1.Job, 0)
-	for _, job := range jobList.Items {
-		jobs = append(jobs, &job)
-	}
-	return jobs, nil
+	return listJobs(ctx, r.Client, instance.Namespace, instance.Name)
 }
 
 func (r *OSRMClusterReconciler) getChildResources(
@@ -845,37 +765,7 @@ func (r *OSRMClusterReconciler) GarbageCollection(ctx context.Context, instance 
 }
 
 func (r *OSRMClusterReconciler) cleanup(ctx context.Context, instance *osrmv1alpha1.OSRMCluster) error {
-	if controllerutil.ContainsFinalizer(instance, finalizerName) {
-		instance.Status.ObservedGeneration = instance.Generation
-		instance.Status.SetCondition(metav1.Condition{
-			Type:    status.ConditionAvailable,
-			Status:  metav1.ConditionFalse,
-			Reason:  "Cleanup",
-			Message: "Deleting OSRMCluster resources",
-		})
-		instance.Status.Phase = osrmv1alpha1.PhaseDeleting
-
-		err := r.Client.Status().Update(ctx, instance)
-		if err != nil {
-			return err
-		}
-
-		controllerutil.RemoveFinalizer(instance, finalizerName)
-
-		err = r.Client.Update(ctx, instance)
-		if err != nil {
-			return err
-		}
-	}
-
-	instance.Status.ObservedGeneration = instance.Generation
-	err := r.Client.Status().Update(ctx, instance)
-	if errors.IsConflict(err) || errors.IsNotFound(err) {
-		// These errors are ignored. They can happen if the CR was removed
-		// before the status update call is executed.
-		return nil
-	}
-	return err
+	return cleanupResource(ctx, r.Client, instance, finalizerName, "Deleting OSRMCluster resources")
 }
 
 // SetupWithManager sets up the controller with the Manager.

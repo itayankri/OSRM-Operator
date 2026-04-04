@@ -26,19 +26,32 @@ import (
 	"k8s.io/apimachinery/pkg/util/intstr"
 )
 
+// OSRMInstanceSpec defines the desired state of OSRMInstance
 type OSRMInstanceSpec struct {
-	PBFURL            string                       `json:"pbfUrl,omitempty"`
-	OSRMProfile       string                       `json:"osrmProfile"`
-	Replicas          *int32                       `json:"replicas,omitempty"`
-	MinReplicas       *int32                       `json:"minReplicas,omitempty"`
-	MaxReplicas       *int32                       `json:"maxReplicas,omitempty"`
-	Image             *string                      `json:"image,omitempty"`
-	Resources         *corev1.ResourceRequirements `json:"resources,omitempty"`
-	Service           ServiceSpec                  `json:"service,omitempty"`
-	Persistence       PersistenceSpec              `json:"persistence,omitempty"`
-	MapBuilder        MapBuilderSpec               `json:"mapBuilder,omitempty"`
-	SpeedUpdates      *SpeedUpdatesSpec            `json:"speedUpdates,omitempty"`
-	OSRMRoutedOptions *OSRMRoutedOptions           `json:"osrmRoutedOptions,omitempty"`
+	// PBFURL is the URL of the PBF map file to download and process
+	PBFURL string `json:"pbfUrl,omitempty"`
+	// OSRMProfile is the OSRM routing profile to use (e.g. car, foot, bicycle)
+	OSRMProfile string `json:"osrmProfile"`
+	// Replicas is the desired number of OSRM backend replicas
+	Replicas *int32 `json:"replicas,omitempty"`
+	// MinReplicas is the minimum number of replicas for HPA
+	MinReplicas *int32 `json:"minReplicas,omitempty"`
+	// MaxReplicas is the maximum number of replicas for HPA; enables HPA when set
+	MaxReplicas *int32 `json:"maxReplicas,omitempty"`
+	// Image is the OSRM backend container image
+	Image *string `json:"image,omitempty"`
+	// Resources sets CPU/memory requests and limits for OSRM backend pods
+	Resources *corev1.ResourceRequirements `json:"resources,omitempty"`
+	// Service configures the Kubernetes Service for this instance
+	Service ServiceSpec `json:"service,omitempty"`
+	// Persistence configures the PersistentVolumeClaim for map data
+	Persistence PersistenceSpec `json:"persistence,omitempty"`
+	// MapBuilder configures the map-building Job
+	MapBuilder MapBuilderSpec `json:"mapBuilder,omitempty"`
+	// SpeedUpdates configures the optional speed-update CronJob
+	SpeedUpdates *SpeedUpdatesSpec `json:"speedUpdates,omitempty"`
+	// OSRMRoutedOptions configures additional osrm-routed flags
+	OSRMRoutedOptions *OSRMRoutedOptions `json:"osrmRoutedOptions,omitempty"`
 }
 
 func (spec *OSRMInstanceSpec) GetImage() string {
@@ -71,6 +84,7 @@ func (spec *OSRMInstanceSpec) GetResources() *corev1.ResourceRequirements {
 	return spec.Resources
 }
 
+// OSRMInstanceStatus defines the observed state of OSRMInstance
 type OSRMInstanceStatus struct {
 	// Paused is true when the operator notices paused annotation.
 	Paused bool `json:"paused,omitempty"`
@@ -132,6 +146,7 @@ func (s *OSRMInstanceStatus) SetCondition(condition metav1.Condition) {
 //+kubebuilder:object:root=true
 //+kubebuilder:subresource:status
 
+// OSRMInstance is the Schema for the osrminstances API
 type OSRMInstance struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
@@ -152,6 +167,15 @@ func (instance *OSRMInstance) GetOsrmFileName() string          { return instanc
 func (instance *OSRMInstance) GetPersistence() *PersistenceSpec { return &instance.Spec.Persistence }
 func (instance *OSRMInstance) GetMapBuilder() *MapBuilderSpec   { return &instance.Spec.MapBuilder }
 func (instance *OSRMInstance) GetService() ServiceSpec          { return instance.Spec.Service }
+
+func (instance *OSRMInstance) SetCondition(cond metav1.Condition)       { instance.Status.SetCondition(cond) }
+func (instance *OSRMInstance) SetConditions(resources []runtime.Object) { instance.Status.SetConditions(resources) }
+func (instance *OSRMInstance) GetObservedGeneration() int64             { return instance.Status.ObservedGeneration }
+func (instance *OSRMInstance) SetObservedGeneration(g int64)            { instance.Status.ObservedGeneration = g }
+func (instance *OSRMInstance) GetPhase() Phase                          { return instance.Status.Phase }
+func (instance *OSRMInstance) SetPhase(p Phase)                         { instance.Status.Phase = p }
+func (instance *OSRMInstance) GetPaused() bool                          { return instance.Status.Paused }
+func (instance *OSRMInstance) SetPaused(paused bool)                    { instance.Status.Paused = paused }
 
 //+kubebuilder:object:root=true
 

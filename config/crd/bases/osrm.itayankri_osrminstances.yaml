@@ -519,18 +519,28 @@ spec:
                 description: OSRMRoutedOptions configures additional osrm-routed flags
                 properties:
                   maxMatchingSize:
+                    description: MaxMatchingSize is the maximum number of locations
+                      supported in a map matching query. Defaults to 100.
                     format: int32
                     type: integer
                   maxNearestSize:
+                    description: MaxNearestSize is the maximum number of results supported
+                      in a nearest query. Defaults to 100.
                     format: int32
                     type: integer
                   maxTableSize:
+                    description: MaxTableSize is the maximum number of locations supported
+                      in a distance table query. Defaults to 100.
                     format: int32
                     type: integer
                   maxTripSize:
+                    description: MaxTripSize is the maximum number of locations supported
+                      in a trip query. Defaults to 100.
                     format: int32
                     type: integer
                   maxViaRouteSize:
+                    description: MaxViaRouteSize is the maximum number of locations
+                      supported in a viaroute query. Defaults to 500.
                     format: int32
                     type: integer
                 type: object
