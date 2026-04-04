@@ -311,7 +311,7 @@ func generateE2EOSRMInstance(name string) *osrmv1alpha1.OSRMInstance {
 		},
 		Spec: osrmv1alpha1.OSRMInstanceSpec{
 			PBFURL:      "https://download.geofabrik.de/australia-oceania/marshall-islands-210101.osm.pbf",
-			OSRMProfile: "car",
+			Profile:     "car",
 			MinReplicas: &minReplicas,
 			MaxReplicas: &maxReplicas,
 			Persistence: osrmv1alpha1.PersistenceSpec{

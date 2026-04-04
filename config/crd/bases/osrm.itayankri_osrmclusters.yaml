@@ -533,8 +533,6 @@ spec:
                       type: integer
                     name:
                       type: string
-                    osrmProfile:
-                      type: string
                     osrmRoutedOptions:
                       description: OSRMRoutedOptions configures the osrm-routed process
                         flags for this profile.
@@ -565,6 +563,8 @@ spec:
                           format: int32
                           type: integer
                       type: object
+                    profile:
+                      type: string
                     replicas:
                       format: int32
                       type: integer

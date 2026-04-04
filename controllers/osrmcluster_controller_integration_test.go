@@ -311,7 +311,7 @@ var _ = Describe("OSRMClusterController Integration Tests", func() {
 		})
 
 		It("should add new profile to existing cluster", func() {
-			osrmProfile := "foot"
+			profile := "foot"
 			internalEndpoint := "walking"
 			minReplicas := int32(1)
 			maxReplicas := int32(2)
@@ -319,7 +319,7 @@ var _ = Describe("OSRMClusterController Integration Tests", func() {
 				Name:             "walking",
 				EndpointName:     "walking-endpoint",
 				InternalEndpoint: &internalEndpoint,
-				OSRMProfile:      &osrmProfile,
+				Profile:          &profile,
 				MinReplicas:      &minReplicas,
 				MaxReplicas:      &maxReplicas,
 			}
@@ -634,7 +634,7 @@ var _ = Describe("OSRMClusterController Integration Tests", func() {
 			}, gatewayDeployment)).To(Succeed())
 			gatewayConfigVersionAnnotation := gatewayDeployment.Spec.Template.ObjectMeta.Annotations[osrmResource.GatewayConfigVersion]
 
-			osrmProfile := "foot"
+			profile := "foot"
 			internalEndpoint := "walking"
 			minReplicas := int32(1)
 			maxReplicas := int32(2)
@@ -642,7 +642,7 @@ var _ = Describe("OSRMClusterController Integration Tests", func() {
 				Name:             "new-profile",
 				EndpointName:     "custom-endpoint",
 				InternalEndpoint: &internalEndpoint,
-				OSRMProfile:      &osrmProfile,
+				Profile:          &profile,
 				MinReplicas:      &minReplicas,
 				MaxReplicas:      &maxReplicas,
 			}
@@ -916,13 +916,13 @@ var _ = Describe("OSRMClusterController Integration Tests", func() {
 
 			By("Creating cluster with multiple profiles")
 			// Add second profile
-			osrmProfile := "foot"
+			profile := "foot"
 			minReplicas := int32(1)
 			maxReplicas := int32(2)
 			walkingProfile := &osrmv1alpha1.ProfileSpec{
 				Name:         "walking",
 				EndpointName: "walking-endpoint",
-				OSRMProfile:  &osrmProfile,
+				Profile:      &profile,
 				MinReplicas:  &minReplicas,
 				MaxReplicas:  &maxReplicas,
 				Resources: &corev1.ResourceRequirements{
@@ -1038,16 +1038,16 @@ func generateMultiProfileOSRMCluster(name string) *osrmv1alpha1.OSRMCluster {
 	cluster := generateOSRMCluster(name)
 
 	// Add second profile
-	osrmProfile := "foot"
+	profile := "foot"
 	internalEndpoint := "walking"
 	minReplicas := int32(1)
 	maxReplicas := int32(2)
 
 	walkingProfile := &osrmv1alpha1.ProfileSpec{
-		Name:             osrmProfile,
+		Name:             profile,
 		EndpointName:     "walking-endpoint",
 		InternalEndpoint: &internalEndpoint,
-		OSRMProfile:      &osrmProfile,
+		Profile:          &profile,
 		MinReplicas:      &minReplicas,
 		MaxReplicas:      &maxReplicas,
 		Resources: &corev1.ResourceRequirements{

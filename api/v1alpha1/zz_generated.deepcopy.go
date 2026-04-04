@@ -21,7 +21,7 @@ limitations under the License.
 package v1alpha1
 
 import (
-	"k8s.io/api/core/v1"
+	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 )
@@ -397,8 +397,8 @@ func (in *ProfileSpec) DeepCopyInto(out *ProfileSpec) {
 		*out = new(string)
 		**out = **in
 	}
-	if in.OSRMProfile != nil {
-		in, out := &in.OSRMProfile, &out.OSRMProfile
+	if in.Profile != nil {
+		in, out := &in.Profile, &out.Profile
 		*out = new(string)
 		**out = **in
 	}

@@ -48,8 +48,8 @@ var _ = Describe("OSRMInstanceController Unit Tests", func() {
 		BeforeEach(func() {
 			instance = generateTestOSRMInstance("test-instance")
 			oldSpec = &osrmv1alpha1.OSRMInstanceSpec{
-				PBFURL:      instance.Spec.PBFURL,
-				OSRMProfile: instance.Spec.OSRMProfile,
+				PBFURL:  instance.Spec.PBFURL,
+				Profile: instance.Spec.Profile,
 			}
 			pvcs = []*corev1.PersistentVolumeClaim{}
 			jobs = []*batchv1.Job{}
@@ -418,7 +418,7 @@ func generateTestOSRMInstance(name string) *osrmv1alpha1.OSRMInstance {
 		},
 		Spec: osrmv1alpha1.OSRMInstanceSpec{
 			PBFURL:      "https://download.geofabrik.de/australia-oceania/marshall-islands-210101.osm.pbf",
-			OSRMProfile: "car",
+			Profile:     "car",
 			MinReplicas: &minReplicas,
 			MaxReplicas: &maxReplicas,
 			Persistence: osrmv1alpha1.PersistenceSpec{

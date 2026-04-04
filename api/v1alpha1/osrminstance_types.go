@@ -30,8 +30,8 @@ import (
 type OSRMInstanceSpec struct {
 	// PBFURL is the URL of the PBF map file to download and process
 	PBFURL string `json:"pbfUrl,omitempty"`
-	// OSRMProfile is the OSRM routing profile to use (e.g. car, foot, bicycle)
-	OSRMProfile string `json:"osrmProfile"`
+	// Profile is the OSRM routing profile to use (e.g. car, foot, bicycle)
+	Profile string `json:"profile"`
 	// Replicas is the desired number of OSRM backend replicas
 	Replicas *int32 `json:"replicas,omitempty"`
 	// MinReplicas is the minimum number of replicas for HPA

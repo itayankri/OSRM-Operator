@@ -46,7 +46,7 @@ func NewOSRMInstanceResourceBuilder(
 func (b *OSRMInstanceResourceBuilder) toProfileSpec() *osrmv1alpha1.ProfileSpec {
 	return &osrmv1alpha1.ProfileSpec{
 		Name:              "",
-		OSRMProfile:       &b.Instance.Spec.OSRMProfile,
+		Profile:           &b.Instance.Spec.Profile,
 		Replicas:          b.Instance.Spec.Replicas,
 		MinReplicas:       b.Instance.Spec.MinReplicas,
 		MaxReplicas:       b.Instance.Spec.MaxReplicas,

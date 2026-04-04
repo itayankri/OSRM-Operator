@@ -63,7 +63,7 @@ var _ = Describe("OSRMClusterController End-to-End Tests", func() {
 			}, MapBuildingTimeout).Should(Equal(osrmv1alpha1.PhaseWorkersDeployed))
 
 			By("Step 2: Adding new profile")
-			osrmProfile := "foot"
+			profile := "foot"
 			internalEndpoint := "walking"
 			minReplicas := int32(1)
 			maxReplicas := int32(2)
@@ -71,7 +71,7 @@ var _ = Describe("OSRMClusterController End-to-End Tests", func() {
 				Name:             "walking",
 				EndpointName:     "walking-endpoint",
 				InternalEndpoint: &internalEndpoint,
-				OSRMProfile:      &osrmProfile,
+				Profile:          &profile,
 				MinReplicas:      &minReplicas,
 				MaxReplicas:      &maxReplicas,
 				Resources: &corev1.ResourceRequirements{
@@ -218,7 +218,7 @@ var _ = Describe("OSRMClusterController End-to-End Tests", func() {
 			waitForDeployment(ctx, testInstance, k8sClient)
 
 			By("Making concurrent changes: adding profile and updating PBF")
-			osrmProfile := "foot"
+			profile := "foot"
 			internalEndpoint := "walking"
 			minReplicas := int32(1)
 			maxReplicas := int32(2)
@@ -226,7 +226,7 @@ var _ = Describe("OSRMClusterController End-to-End Tests", func() {
 				Name:             "walking",
 				EndpointName:     "walking-endpoint",
 				InternalEndpoint: &internalEndpoint,
-				OSRMProfile:      &osrmProfile,
+				Profile:          &profile,
 				MinReplicas:      &minReplicas,
 				MaxReplicas:      &maxReplicas,
 				Resources: &corev1.ResourceRequirements{
@@ -609,14 +609,14 @@ func generateLargeOSRMCluster(name string, profileCount int) *osrmv1alpha1.OSRMC
 }
 
 func createTestProfile(name, endpoint string) *osrmv1alpha1.ProfileSpec {
-	osrmProfile := "car"
+	profile := "car"
 	minReplicas := int32(1)
 	maxReplicas := int32(3)
 
 	return &osrmv1alpha1.ProfileSpec{
 		Name:         name,
 		EndpointName: endpoint,
-		OSRMProfile:  &osrmProfile,
+		Profile:      &profile,
 		MinReplicas:  &minReplicas,
 		MaxReplicas:  &maxReplicas,
 		Resources: &corev1.ResourceRequirements{

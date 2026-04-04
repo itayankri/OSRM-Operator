@@ -101,7 +101,7 @@ type ProfileSpec struct {
 	EndpointName      string                       `json:"endpointName,omitempty"`
 	Replicas          *int32                       `json:"replicas,omitempty"`
 	InternalEndpoint  *string                      `json:"internalEndpoint,omitempty"`
-	OSRMProfile       *string                      `json:"osrmProfile,omitempty"`
+	Profile           *string                      `json:"profile,omitempty"`
 	MinReplicas       *int32                       `json:"minReplicas,omitempty"`
 	MaxReplicas       *int32                       `json:"maxReplicas,omitempty"`
 	Resources         *corev1.ResourceRequirements `json:"resources,omitempty"`
@@ -132,10 +132,10 @@ func (spec *ProfileSpec) GetResources() *corev1.ResourceRequirements {
 }
 
 func (spec *ProfileSpec) GetProfile() string {
-	if spec.OSRMProfile == nil {
+	if spec.Profile == nil {
 		return spec.Name
 	}
-	return *spec.OSRMProfile
+	return *spec.Profile
 }
 
 func (spec *ProfileSpec) GetInternalEndpoint() string {

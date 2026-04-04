@@ -511,10 +511,6 @@ spec:
                 description: MinReplicas is the minimum number of replicas for HPA
                 format: int32
                 type: integer
-              osrmProfile:
-                description: OSRMProfile is the OSRM routing profile to use (e.g.
-                  car, foot, bicycle)
-                type: string
               osrmRoutedOptions:
                 description: OSRMRoutedOptions configures additional osrm-routed flags
                 properties:
@@ -563,6 +559,10 @@ spec:
                   storageClassName:
                     type: string
                 type: object
+              profile:
+                description: Profile is the OSRM routing profile to use (e.g. car,
+                  foot, bicycle)
+                type: string
               replicas:
                 description: Replicas is the desired number of OSRM backend replicas
                 format: int32
@@ -875,7 +875,7 @@ spec:
                     type: string
                 type: object
             required:
-            - osrmProfile
+            - profile
             type: object
           status:
             description: OSRMInstanceStatus defines the observed state of OSRMInstance
