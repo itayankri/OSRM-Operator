@@ -168,14 +168,18 @@ func (instance *OSRMInstance) GetPersistence() *PersistenceSpec { return &instan
 func (instance *OSRMInstance) GetMapBuilder() *MapBuilderSpec   { return &instance.Spec.MapBuilder }
 func (instance *OSRMInstance) GetService() ServiceSpec          { return instance.Spec.Service }
 
-func (instance *OSRMInstance) SetCondition(cond metav1.Condition)       { instance.Status.SetCondition(cond) }
-func (instance *OSRMInstance) SetConditions(resources []runtime.Object) { instance.Status.SetConditions(resources) }
-func (instance *OSRMInstance) GetObservedGeneration() int64             { return instance.Status.ObservedGeneration }
-func (instance *OSRMInstance) SetObservedGeneration(g int64)            { instance.Status.ObservedGeneration = g }
-func (instance *OSRMInstance) GetPhase() Phase                          { return instance.Status.Phase }
-func (instance *OSRMInstance) SetPhase(p Phase)                         { instance.Status.Phase = p }
-func (instance *OSRMInstance) GetPaused() bool                          { return instance.Status.Paused }
-func (instance *OSRMInstance) SetPaused(paused bool)                    { instance.Status.Paused = paused }
+func (instance *OSRMInstance) SetCondition(cond metav1.Condition) { instance.Status.SetCondition(cond) }
+func (instance *OSRMInstance) SetConditions(resources []runtime.Object) {
+	instance.Status.SetConditions(resources)
+}
+func (instance *OSRMInstance) GetObservedGeneration() int64 {
+	return instance.Status.ObservedGeneration
+}
+func (instance *OSRMInstance) SetObservedGeneration(g int64) { instance.Status.ObservedGeneration = g }
+func (instance *OSRMInstance) GetPhase() Phase               { return instance.Status.Phase }
+func (instance *OSRMInstance) SetPhase(p Phase)              { instance.Status.Phase = p }
+func (instance *OSRMInstance) GetPaused() bool               { return instance.Status.Paused }
+func (instance *OSRMInstance) SetPaused(paused bool)         { instance.Status.Paused = paused }
 
 //+kubebuilder:object:root=true
 

@@ -349,14 +349,14 @@ func (c *OSRMCluster) GetPersistence() *PersistenceSpec { return &c.Spec.Persist
 func (c *OSRMCluster) GetMapBuilder() *MapBuilderSpec   { return &c.Spec.MapBuilder }
 func (c *OSRMCluster) GetService() ServiceSpec          { return c.Spec.Service }
 
-func (c *OSRMCluster) SetCondition(cond metav1.Condition)           { c.Status.SetCondition(cond) }
-func (c *OSRMCluster) SetConditions(resources []runtime.Object)     { c.Status.SetConditions(resources) }
-func (c *OSRMCluster) GetObservedGeneration() int64                 { return c.Status.ObservedGeneration }
-func (c *OSRMCluster) SetObservedGeneration(g int64)                { c.Status.ObservedGeneration = g }
-func (c *OSRMCluster) GetPhase() Phase                              { return c.Status.Phase }
-func (c *OSRMCluster) SetPhase(p Phase)                             { c.Status.Phase = p }
-func (c *OSRMCluster) GetPaused() bool                              { return c.Status.Paused }
-func (c *OSRMCluster) SetPaused(paused bool)                        { c.Status.Paused = paused }
+func (c *OSRMCluster) SetCondition(cond metav1.Condition)       { c.Status.SetCondition(cond) }
+func (c *OSRMCluster) SetConditions(resources []runtime.Object) { c.Status.SetConditions(resources) }
+func (c *OSRMCluster) GetObservedGeneration() int64             { return c.Status.ObservedGeneration }
+func (c *OSRMCluster) SetObservedGeneration(g int64)            { c.Status.ObservedGeneration = g }
+func (c *OSRMCluster) GetPhase() Phase                          { return c.Status.Phase }
+func (c *OSRMCluster) SetPhase(p Phase)                         { c.Status.Phase = p }
+func (c *OSRMCluster) GetPaused() bool                          { return c.Status.Paused }
+func (c *OSRMCluster) SetPaused(paused bool)                    { c.Status.Paused = paused }
 
 //+kubebuilder:object:root=true
 
