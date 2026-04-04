@@ -3,6 +3,7 @@
 # It should be run by config/default
 resources:
 - bases/osrm.itayankri_osrmclusters.yaml
+- bases/osrm.itayankri_osrminstances.yaml
 #+kubebuilder:scaffold:crdkustomizeresource
 
 patchesStrategicMerge:

@@ -36,14 +36,8 @@ IMAGE_TAG_BASE ?= itayankri/osrm-operator
 BUNDLE_IMG ?= $(IMAGE_TAG_BASE)-bundle:v$(VERSION)
 
 # In this image the tag is the branch name.
-TEST_IMG ?= $(IMAGE_TAG_BASE):$(shell git rev-parse --short HEAD)
-
-# Image URL to use all building/pushing image targets
-ifeq ($(ENV), production)
-IMG ?= itayankri/osrm-operator:latest
-else
-IMG ?= $(TEST_IMG)
-endif
+IMG ?= $(IMAGE_TAG_BASE):$(shell git rev-parse --short HEAD)
+LATEST_IMG ?= $(IMAGE_TAG_BASE):latest
 
 # ENVTEST_K8S_VERSION refers to the version of kubebuilder assets to be downloaded by envtest binary.
 ENVTEST_K8S_VERSION = 1.33
@@ -131,7 +125,7 @@ run: manifests generate fmt vet ## Run a controller from your host.
 
 .PHONY: docker-build
 docker-build: ## Build docker image with the manager.
-	docker build -t ${IMG} .
+	docker build -t ${IMG} -t ${LATEST_IMG} .
 
 .PHONY: docker-push
 docker-push: ## Push docker image with the manager.

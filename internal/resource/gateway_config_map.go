@@ -31,7 +31,7 @@ func (builder *ConfigMapBuilder) Build() (client.Object, error) {
 	return &corev1.ConfigMap{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      builder.Instance.ChildResourceName(GatewaySuffix, ConfigMapSuffix),
-			Namespace: builder.Instance.Namespace,
+			Namespace: builder.Instance.GetNamespace(),
 			Labels:    metadata.GetLabels(builder.Instance, metadata.ComponentLabelGateway),
 		},
 	}, nil
@@ -48,7 +48,7 @@ func (builder *ConfigMapBuilder) Update(object client.Object, siblings []runtime
 	configMap.Data[nginxConfigurationTemplateName] = generateNginxConf(
 		builder.Instance,
 		builder.profiles,
-		builder.Instance.Spec.Service.ExposingServices,
+		builder.Instance.GetService().ExposingServices,
 	)
 
 	if err := controllerutil.SetControllerReference(builder.Instance, configMap, builder.Scheme); err != nil {
@@ -58,7 +58,7 @@ func (builder *ConfigMapBuilder) Update(object client.Object, siblings []runtime
 	return nil
 }
 
-func generateNginxConf(instance *osrmv1alpha1.OSRMCluster, profiles []*osrmv1alpha1.ProfileSpec, osrmServices []string) string {
+func generateNginxConf(instance OSRMResourceInstance, profiles []*osrmv1alpha1.ProfileSpec, osrmServices []string) string {
 	config := `
 	events {
 		worker_connections 2048;
@@ -76,7 +76,7 @@ func generateNginxConf(instance *osrmv1alpha1.OSRMCluster, profiles []*osrmv1alp
 	return fmt.Sprintf(config, locations)
 }
 
-func getNginxLocations(instance *osrmv1alpha1.OSRMCluster, profiles []*osrmv1alpha1.ProfileSpec, osrmServices []string) string {
+func getNginxLocations(instance OSRMResourceInstance, profiles []*osrmv1alpha1.ProfileSpec, osrmServices []string) string {
 	var locations strings.Builder
 	for _, profile := range profiles {
 		for _, service := range osrmServices {
@@ -88,7 +88,7 @@ func getNginxLocations(instance *osrmv1alpha1.OSRMCluster, profiles []*osrmv1alp
 	return locations.String()
 }
 
-func formatNginxLocation(instance *osrmv1alpha1.OSRMCluster, profile osrmv1alpha1.ProfileSpec, osrmService string) string {
+func formatNginxLocation(instance OSRMResourceInstance, profile osrmv1alpha1.ProfileSpec, osrmService string) string {
 	internalPath := fmt.Sprintf("%s/v1/%s", osrmService, profile.GetInternalEndpoint())
 	externalPath := fmt.Sprintf("%s/v1/%s", osrmService, profile.EndpointName)
 	serviceName := instance.ChildResourceName(profile.Name, "")

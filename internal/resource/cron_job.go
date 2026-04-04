@@ -31,7 +31,7 @@ func (builder *CronJobBuilder) Build() (client.Object, error) {
 	return &batchv1.CronJob{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      builder.Instance.ChildResourceName(builder.profile.Name, CronJobSuffix),
-			Namespace: builder.Instance.Namespace,
+			Namespace: builder.Instance.GetNamespace(),
 			Labels:    metadata.GetLabels(builder.Instance, metadata.ComponentLabelProfile),
 		},
 	}, nil
@@ -48,7 +48,7 @@ func (builder *CronJobBuilder) Update(object client.Object, siblings []runtime.O
 		JobTemplate: batchv1.JobTemplateSpec{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      builder.Instance.ChildResourceName(builder.profile.Name, CronJobSuffix),
-				Namespace: builder.Instance.Namespace,
+				Namespace: builder.Instance.GetNamespace(),
 			},
 			Spec: batchv1.JobSpec{
 				Template: corev1.PodTemplateSpec{
@@ -78,7 +78,7 @@ func (builder *CronJobBuilder) Update(object client.Object, siblings []runtime.O
 									},
 									{
 										Name:  "OSRM_FILE_NAME",
-										Value: builder.Instance.Spec.GetOsrmFileName(),
+										Value: builder.Instance.GetOsrmFileName(),
 									},
 								}...),
 								VolumeMounts: []corev1.VolumeMount{

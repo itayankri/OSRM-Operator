@@ -53,6 +53,16 @@ var updateWithRetry = func(v *osrmv1alpha1.OSRMCluster, callback func(v *osrmv1a
 	})
 }
 
+var updateOSRMInstanceWithRetry = func(v *osrmv1alpha1.OSRMInstance, callback func(v *osrmv1alpha1.OSRMInstance)) error {
+	return retry.RetryOnConflict(retry.DefaultRetry, func() error {
+		if err := k8sClient.Get(ctx, client.ObjectKeyFromObject(v), v); err != nil {
+			return err
+		}
+		callback(v)
+		return k8sClient.Update(ctx, v)
+	})
+}
+
 func TestAPIs(t *testing.T) {
 	RegisterFailHandler(Fail)
 	RunSpecs(t, "Controller Suite")

@@ -28,7 +28,7 @@ func (builder *PodDisruptionBudgetBuilder) Build() (client.Object, error) {
 	return &policyv1.PodDisruptionBudget{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      builder.Instance.ChildResourceName(builder.profile.Name, PodDisruptionBudgetSuffix),
-			Namespace: builder.Instance.Namespace,
+			Namespace: builder.Instance.GetNamespace(),
 			Labels:    metadata.GetLabels(builder.Instance, metadata.ComponentLabelProfile),
 		},
 	}, nil

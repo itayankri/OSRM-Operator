@@ -97,16 +97,16 @@ func (spec *OSRMClusterSpec) GetOsrmFileName() string {
 type ProfilesSpec []*ProfileSpec
 
 type ProfileSpec struct {
-	Name             string                       `json:"name,omitempty"`
-	EndpointName     string                       `json:"endpointName,omitempty"`
-	Replicas         *int32                       `json:"replicas,omitempty"`
-	InternalEndpoint *string                      `json:"internalEndpoint,omitempty"`
-	OSRMProfile      *string                      `json:"osrmProfile,omitempty"`
-	MinReplicas      *int32                       `json:"minReplicas,omitempty"`
-	MaxReplicas      *int32                       `json:"maxReplicas,omitempty"`
-	Resources        *corev1.ResourceRequirements `json:"resources,omitempty"`
-	SpeedUpdates 		 *SpeedUpdatesSpec 						`json:"speedUpdates,omitempty"`
-	OSRMRoutedOptions *OSRMRoutedOptions   				`json:"osrmRoutedOptions,omitempty"`
+	Name              string                       `json:"name,omitempty"`
+	EndpointName      string                       `json:"endpointName,omitempty"`
+	Replicas          *int32                       `json:"replicas,omitempty"`
+	InternalEndpoint  *string                      `json:"internalEndpoint,omitempty"`
+	OSRMProfile       *string                      `json:"osrmProfile,omitempty"`
+	MinReplicas       *int32                       `json:"minReplicas,omitempty"`
+	MaxReplicas       *int32                       `json:"maxReplicas,omitempty"`
+	Resources         *corev1.ResourceRequirements `json:"resources,omitempty"`
+	SpeedUpdates      *SpeedUpdatesSpec            `json:"speedUpdates,omitempty"`
+	OSRMRoutedOptions *OSRMRoutedOptions           `json:"osrmRoutedOptions,omitempty"`
 }
 
 func (spec *ProfileSpec) GetMinAvailable() *intstr.IntOrString {
@@ -145,12 +145,18 @@ func (spec *ProfileSpec) GetInternalEndpoint() string {
 	return *spec.InternalEndpoint
 }
 
+// OSRMRoutedOptions configures the osrm-routed process flags for this profile.
 type OSRMRoutedOptions struct {
-	MaxViaRouteSize *int32  `json:"maxViaRouteSize,omitempty"`
-	MaxTripSize     *int32  `json:"maxTripSize,omitempty"`
-	MaxTableSize    *int32  `json:"maxTableSize,omitempty"`
-	MaxMatchingSize *int32  `json:"maxMatchingSize,omitempty"`
-	MaxNearestSize  *int32  `json:"maxNearestSize,omitempty"`
+	// MaxViaRouteSize is the maximum number of locations supported in a viaroute query. Defaults to 500.
+	MaxViaRouteSize *int32 `json:"maxViaRouteSize,omitempty"`
+	// MaxTripSize is the maximum number of locations supported in a trip query. Defaults to 100.
+	MaxTripSize *int32 `json:"maxTripSize,omitempty"`
+	// MaxTableSize is the maximum number of locations supported in a distance table query. Defaults to 100.
+	MaxTableSize *int32 `json:"maxTableSize,omitempty"`
+	// MaxMatchingSize is the maximum number of locations supported in a map matching query. Defaults to 100.
+	MaxMatchingSize *int32 `json:"maxMatchingSize,omitempty"`
+	// MaxNearestSize is the maximum number of results supported in a nearest query. Defaults to 100.
+	MaxNearestSize *int32 `json:"maxNearestSize,omitempty"`
 }
 
 func formatInt(v *int32) string {
@@ -334,6 +340,23 @@ func (cluster *OSRMCluster) ChildResourceName(service string, suffix string) str
 	nameWithService := strings.TrimSuffix(strings.Join([]string{cluster.ObjectMeta.Name, service}, "-"), "-")
 	return strings.TrimSuffix(strings.Join([]string{nameWithService, suffix}, "-"), "-")
 }
+
+func (c *OSRMCluster) GetPbfURL() string                { return c.Spec.PBFURL }
+func (c *OSRMCluster) GetImage() string                 { return c.Spec.GetImage() }
+func (c *OSRMCluster) GetPbfFileName() string           { return c.Spec.GetPbfFileName() }
+func (c *OSRMCluster) GetOsrmFileName() string          { return c.Spec.GetOsrmFileName() }
+func (c *OSRMCluster) GetPersistence() *PersistenceSpec { return &c.Spec.Persistence }
+func (c *OSRMCluster) GetMapBuilder() *MapBuilderSpec   { return &c.Spec.MapBuilder }
+func (c *OSRMCluster) GetService() ServiceSpec          { return c.Spec.Service }
+
+func (c *OSRMCluster) SetCondition(cond metav1.Condition)       { c.Status.SetCondition(cond) }
+func (c *OSRMCluster) SetConditions(resources []runtime.Object) { c.Status.SetConditions(resources) }
+func (c *OSRMCluster) GetObservedGeneration() int64             { return c.Status.ObservedGeneration }
+func (c *OSRMCluster) SetObservedGeneration(g int64)            { c.Status.ObservedGeneration = g }
+func (c *OSRMCluster) GetPhase() Phase                          { return c.Status.Phase }
+func (c *OSRMCluster) SetPhase(p Phase)                         { c.Status.Phase = p }
+func (c *OSRMCluster) GetPaused() bool                          { return c.Status.Paused }
+func (c *OSRMCluster) SetPaused(paused bool)                    { c.Status.Paused = paused }
 
 //+kubebuilder:object:root=true
 

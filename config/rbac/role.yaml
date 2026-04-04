@@ -88,6 +88,7 @@ rules:
   - osrm.itayankri
   resources:
   - osrmclusters
+  - osrminstances
   verbs:
   - create
   - delete
@@ -100,12 +101,14 @@ rules:
   - osrm.itayankri
   resources:
   - osrmclusters/finalizers
+  - osrminstances/finalizers
   verbs:
   - update
 - apiGroups:
   - osrm.itayankri
   resources:
   - osrmclusters/status
+  - osrminstances/status
   verbs:
   - get
   - patch

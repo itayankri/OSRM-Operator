@@ -16,7 +16,7 @@ type ResourceBuilder interface {
 }
 
 type OSRMResourceBuilder struct {
-	Instance            *osrmv1alpha1.OSRMCluster
+	Instance            OSRMResourceInstance
 	Scheme              *runtime.Scheme
 	MapGeneration       string
 	FutureMapGeneration string
@@ -59,6 +59,10 @@ type ClusterScopedBuilder struct {
 	profiles []*osrmv1alpha1.ProfileSpec
 }
 
+func (builder *OSRMResourceBuilder) cluster() *osrmv1alpha1.OSRMCluster {
+	return builder.Instance.(*osrmv1alpha1.OSRMCluster)
+}
+
 func (builder *OSRMResourceBuilder) ResourceBuildersForPhase(phase osrmv1alpha1.Phase) []ResourceBuilder {
 	switch phase {
 	case osrmv1alpha1.PhaseBuildingMap:
@@ -79,7 +83,7 @@ func (builder *OSRMResourceBuilder) ResourceBuildersForPhase(phase osrmv1alpha1.
 func (builder *OSRMResourceBuilder) MapBuildingPhaseBuilders() []ResourceBuilder {
 	builders := []ResourceBuilder{}
 
-	for _, profile := range builder.Instance.Spec.Profiles {
+	for _, profile := range builder.cluster().Spec.Profiles {
 		builders = append(builders, []ResourceBuilder{
 			builder.PersistentVolumeClaim(profile, builder.MapGeneration),
 			builder.Job(profile, builder.MapGeneration),
@@ -94,7 +98,7 @@ func (builder *OSRMResourceBuilder) MapUpdatingResourceBuilders() []ResourceBuil
 
 	builders := []ResourceBuilder{}
 
-	for _, profile := range builder.Instance.Spec.Profiles {
+	for _, profile := range builder.cluster().Spec.Profiles {
 		builders = append(builders, []ResourceBuilder{
 			builder.PersistentVolumeClaim(profile, nextMapGeneration),
 			builder.Job(profile, nextMapGeneration),
@@ -107,7 +111,7 @@ func (builder *OSRMResourceBuilder) MapUpdatingResourceBuilders() []ResourceBuil
 func (builder *OSRMResourceBuilder) RedeployingWorkersPhaseBuilders() []ResourceBuilder {
 	builders := []ResourceBuilder{}
 
-	for _, profile := range builder.Instance.Spec.Profiles {
+	for _, profile := range builder.cluster().Spec.Profiles {
 		builders = append(builders, []ResourceBuilder{
 			builder.Deployment(profile, builder.FutureMapGeneration),
 		}...)
@@ -119,7 +123,7 @@ func (builder *OSRMResourceBuilder) RedeployingWorkersPhaseBuilders() []Resource
 func (builder *OSRMResourceBuilder) DeployingWorkersPhaseBuilders() []ResourceBuilder {
 	builders := []ResourceBuilder{}
 
-	for _, profile := range builder.Instance.Spec.Profiles {
+	for _, profile := range builder.cluster().Spec.Profiles {
 		builders = append(builders, []ResourceBuilder{
 			builder.Deployment(profile, builder.MapGeneration),
 			builder.Service(profile),
@@ -131,12 +135,10 @@ func (builder *OSRMResourceBuilder) DeployingWorkersPhaseBuilders() []ResourceBu
 	return builders
 }
 
-// WorkersDeployedPhaseBuilders returns builders for the workers deployed phase
 func (builder *OSRMResourceBuilder) WorkersDeployedPhaseBuilders() []ResourceBuilder {
 	builders := []ResourceBuilder{}
 
-	// Add CronJobs for speed updates if configured
-	for _, profile := range builder.Instance.Spec.Profiles {
+	for _, profile := range builder.cluster().Spec.Profiles {
 		builders = append(builders, builder.Service(profile))
 		builders = append(builders, builder.HorizontalPodAutoscaler(profile))
 		builders = append(builders, builder.PodDisruptionBudget(profile))
@@ -147,12 +149,11 @@ func (builder *OSRMResourceBuilder) WorkersDeployedPhaseBuilders() []ResourceBui
 		}
 	}
 
-	// Add gateway resources
-	if len(builder.Instance.Spec.Profiles) > 0 {
+	if len(builder.cluster().Spec.Profiles) > 0 {
 		builders = append(builders, []ResourceBuilder{
-			builder.ConfigMap(builder.Instance.Spec.Profiles),
-			builder.GatewayService(builder.Instance.Spec.Profiles),
-			builder.GatewayDeployment(builder.Instance.Spec.Profiles),
+			builder.ConfigMap(builder.cluster().Spec.Profiles),
+			builder.GatewayService(builder.cluster().Spec.Profiles),
+			builder.GatewayDeployment(builder.cluster().Spec.Profiles),
 		}...)
 	}
 
