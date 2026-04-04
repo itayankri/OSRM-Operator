@@ -74,9 +74,6 @@ var _ = Describe("OSRMInstanceController Integration Tests", func() {
 					Namespace: testInstance.Namespace,
 				}, service)
 			}, MapBuildingTimeout).Should(Succeed())
-
-			// OSRMInstance has no gateway — verified implicitly by the instance reaching
-			// PhaseWorkersDeployed with only a single deployment and service (no nginx/configmap).
 		})
 
 		It("should create HPA and PDB when min/maxReplicas are set", func() {
