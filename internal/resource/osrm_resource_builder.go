@@ -124,8 +124,10 @@ func (builder *OSRMResourceBuilder) DeployingWorkersPhaseBuilders() []ResourceBu
 			builder.Deployment(profile, builder.MapGeneration),
 			builder.Service(profile),
 			builder.PodDisruptionBudget(profile),
-			builder.HorizontalPodAutoscaler(profile),
 		}...)
+		if profile.MinReplicas != nil && profile.MaxReplicas != nil {
+			builders = append(builders, builder.HorizontalPodAutoscaler(profile))
+		}
 	}
 
 	return builders
@@ -138,9 +140,11 @@ func (builder *OSRMResourceBuilder) WorkersDeployedPhaseBuilders() []ResourceBui
 	// Add CronJobs for speed updates if configured
 	for _, profile := range builder.Instance.Spec.Profiles {
 		builders = append(builders, builder.Service(profile))
-		builders = append(builders, builder.HorizontalPodAutoscaler(profile))
 		builders = append(builders, builder.PodDisruptionBudget(profile))
 		builders = append(builders, builder.Deployment(profile, builder.MapGeneration))
+		if profile.MinReplicas != nil && profile.MaxReplicas != nil {
+			builders = append(builders, builder.HorizontalPodAutoscaler(profile))
+		}
 
 		if profile.SpeedUpdates != nil {
 			builders = append(builders, builder.CronJob(profile, builder.MapGeneration))
