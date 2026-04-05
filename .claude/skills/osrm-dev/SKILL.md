@@ -9,8 +9,7 @@ user-invocable: true
 - `gke_af-mapping_europe-west1_maps-prod`
 - `gke_af-mapping_asia-northeast1_maps-prod-jp`
 
-You must NEVER perform any write, edit, or delete operation on any of these clusters without explicit user permission. Only read operations are allowed by default (`kubectl get`, `describe`, `logs`, `events`). Always ask before running `kubectl apply`, `delete`, `patch`, `rollout restart`, `scale`, or any other mutating operation.
-
+You must NEVER perform any read, write, edit, or delete operation on any of these clusters without explicit user permission. Always ask the user for confirmation before executing any command that interacts with these clusters.
 ---
 
 ## Project Overview
@@ -130,7 +129,7 @@ app.kubernetes.io/component: gateway | <profile-name>
 
 ## GCP / Cluster Context
 
-**Production contexts — all require explicit permission before any write operation:**
+**Production contexts — all require explicit permission before any operation:**
 
 | Context | Region |
 |---------|--------|
