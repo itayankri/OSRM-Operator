@@ -1,7 +1,7 @@
 ---
 name: osrm-dev
-description: Develop, debug, and implement features in the OSRM-Operator Kubernetes operator (Go). Use when fixing bugs, adding features, understanding reconciliation logic, running tests, or deploying to GCP.
-allowed-tools: Read Grep Glob Bash(go *) Bash(kubectl *) Bash(make *) Bash(git *)
+description: Expert assistant for the OSRM-Operator Go Kubernetes operator. Use for any development task — bug fixes, new features, reconciliation logic, testing, or GCP deployment.
+user-invocable: true
 ---
 
 ⚠️ **PRODUCTION WARNING**: The following GCP clusters are all production environments:
