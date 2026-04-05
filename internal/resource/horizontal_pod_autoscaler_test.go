@@ -29,14 +29,7 @@ var _ = Describe("HorizontalPodAutoscaler builder", func() {
 			}
 		}
 
-		containsHPA := func(builders []resource.ResourceBuilder) bool {
-			for _, b := range builders {
-				if _, ok := b.(*resource.HorizontalPodAutoscalerBuilder); ok {
-					return true
-				}
-			}
-			return false
-		}
+		hpaType := BeAssignableToTypeOf(&resource.HorizontalPodAutoscalerBuilder{})
 
 		It("should include HPA when both minReplicas and maxReplicas are set", func() {
 			min, max := int32(1), int32(5)
@@ -44,11 +37,8 @@ var _ = Describe("HorizontalPodAutoscaler builder", func() {
 				{Name: "car", EndpointName: "driving", MinReplicas: &min, MaxReplicas: &max},
 			})
 
-			deployingBuilders := builder.DeployingWorkersPhaseBuilders()
-			deployedBuilders := builder.WorkersDeployedPhaseBuilders()
-
-			Expect(containsHPA(deployingBuilders)).To(BeTrue())
-			Expect(containsHPA(deployedBuilders)).To(BeTrue())
+			Expect(builder.DeployingWorkersPhaseBuilders()).To(ContainElement(hpaType))
+			Expect(builder.WorkersDeployedPhaseBuilders()).To(ContainElement(hpaType))
 		})
 
 		It("should not include HPA when maxReplicas is missing", func() {
@@ -57,11 +47,8 @@ var _ = Describe("HorizontalPodAutoscaler builder", func() {
 				{Name: "car", EndpointName: "driving", MinReplicas: &min},
 			})
 
-			deployingBuilders := builder.DeployingWorkersPhaseBuilders()
-			deployedBuilders := builder.WorkersDeployedPhaseBuilders()
-
-			Expect(containsHPA(deployingBuilders)).To(BeFalse())
-			Expect(containsHPA(deployedBuilders)).To(BeFalse())
+			Expect(builder.DeployingWorkersPhaseBuilders()).NotTo(ContainElement(hpaType))
+			Expect(builder.WorkersDeployedPhaseBuilders()).NotTo(ContainElement(hpaType))
 		})
 
 		It("should not include HPA when minReplicas is missing", func() {
@@ -70,11 +57,8 @@ var _ = Describe("HorizontalPodAutoscaler builder", func() {
 				{Name: "car", EndpointName: "driving", MaxReplicas: &max},
 			})
 
-			deployingBuilders := builder.DeployingWorkersPhaseBuilders()
-			deployedBuilders := builder.WorkersDeployedPhaseBuilders()
-
-			Expect(containsHPA(deployingBuilders)).To(BeFalse())
-			Expect(containsHPA(deployedBuilders)).To(BeFalse())
+			Expect(builder.DeployingWorkersPhaseBuilders()).NotTo(ContainElement(hpaType))
+			Expect(builder.WorkersDeployedPhaseBuilders()).NotTo(ContainElement(hpaType))
 		})
 
 		It("should not include HPA when neither minReplicas nor maxReplicas are set", func() {
@@ -82,11 +66,8 @@ var _ = Describe("HorizontalPodAutoscaler builder", func() {
 				{Name: "base", EndpointName: "base"},
 			})
 
-			deployingBuilders := builder.DeployingWorkersPhaseBuilders()
-			deployedBuilders := builder.WorkersDeployedPhaseBuilders()
-
-			Expect(containsHPA(deployingBuilders)).To(BeFalse())
-			Expect(containsHPA(deployedBuilders)).To(BeFalse())
+			Expect(builder.DeployingWorkersPhaseBuilders()).NotTo(ContainElement(hpaType))
+			Expect(builder.WorkersDeployedPhaseBuilders()).NotTo(ContainElement(hpaType))
 		})
 	})
 })
