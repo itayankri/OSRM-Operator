@@ -1,0 +1,51 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v[0-9]+.[0-9]+.[0-9]+'
+
+env:
+  GO_VERSION: 1.24.13
+  IMAGE_NAME: itayankri/osrm-operator
+
+jobs:
+  release:
+    name: Release
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Install Go
+      uses: actions/setup-go@v5
+      with:
+        go-version: ${{ env.GO_VERSION }}
+
+    - name: Login to Docker Hub
+      uses: docker/login-action@v2
+      with:
+        username: ${{ secrets.DOCKERHUB_USERNAME }}
+        password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+    - name: Tag and push Docker image
+      run: |
+        docker pull ${{ env.IMAGE_NAME }}:latest
+        docker tag  ${{ env.IMAGE_NAME }}:latest ${{ env.IMAGE_NAME }}:${{ github.ref_name }}
+        docker push ${{ env.IMAGE_NAME }}:${{ github.ref_name }}
+
+    - name: Install kustomize
+      run: make kustomize
+
+    - name: Generate manifest
+      run: |
+        cd config/manager && ../../bin/kustomize edit set image controller=${{ env.IMAGE_NAME }}:${{ github.ref_name }}
+        cd ../..
+        ./bin/kustomize build config/default > osrm-cluster-operator.yaml
+
+    - name: Create GitHub Release
+      uses: softprops/action-gh-release@v2
+      with:
+        name: ${{ github.ref_name }}
+        files: osrm-cluster-operator.yaml
