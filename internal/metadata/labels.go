@@ -1,7 +1,6 @@
 package metadata
 
 import (
-	"strconv"
 	"strings"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -17,14 +16,12 @@ const (
 const NameLabelKey = "app.kubernetes.io/name"
 const PartOfLabelKey = "app.kubernetes.io/part-of"
 const ComponentLabelKey = "app.kubernetes.io/component"
-const GenerationLabelKey = "osrmcluster.itayankri/cluster-generation"
 
 func GetLabels(instance metav1.Object, componentName ComponentLabelValue) map[string]string {
 	labels := map[string]string{
-		NameLabelKey:       instance.GetName(),
-		PartOfLabelKey:     "osrmcluster",
-		ComponentLabelKey:  string(componentName),
-		GenerationLabelKey: strconv.FormatInt(instance.GetGeneration(), 10),
+		NameLabelKey:      instance.GetName(),
+		PartOfLabelKey:    "osrmcluster",
+		ComponentLabelKey: string(componentName),
 	}
 
 	for label, value := range instance.GetLabels() {
