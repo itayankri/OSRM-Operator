@@ -123,6 +123,8 @@ build: generate fmt vet ## Build manager binary.
 run: manifests generate fmt vet ## Run a controller from your host.
 	go run ./main.go
 
+PLATFORMS ?= linux/amd64,linux/arm64
+
 .PHONY: docker-build
 docker-build: ## Build docker image with the manager.
 	docker build -t ${IMG} -t ${LATEST_IMG} .
@@ -131,6 +133,11 @@ docker-build: ## Build docker image with the manager.
 docker-push: ## Push docker image with the manager.
 	docker push ${IMG}
 	docker push ${LATEST_IMG}
+
+.PHONY: docker-buildx
+docker-buildx: ## Build and push multi-arch image using buildx.
+	docker buildx create --use --name osrm-builder --node osrm-builder0 || docker buildx use osrm-builder
+	docker buildx build --push --platform=$(PLATFORMS) -t ${IMG} -t ${LATEST_IMG} .
 
 ##@ Deployment
 
