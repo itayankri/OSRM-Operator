@@ -344,7 +344,10 @@ func (r *OSRMClusterReconciler) DeterminePhase(
 		return osrmv1alpha1.PhaseBuildingMap
 	}
 
-	if instance.Spec.PBFURL != oldSpec.PBFURL || IsMapBuildingInProgress(instance, pvcs, jobs, futureMapGeneration) {
+	if instance.Spec.PBFURL != oldSpec.PBFURL ||
+		instance.Spec.GetImage() != oldSpec.GetImage() ||
+		instance.Spec.MapBuilder.GetImage() != oldSpec.MapBuilder.GetImage() ||
+		IsMapBuildingInProgress(instance, pvcs, jobs, futureMapGeneration) {
 		return osrmv1alpha1.PhaseUpdatingMap
 	}
 
