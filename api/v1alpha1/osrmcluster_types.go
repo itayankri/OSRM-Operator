@@ -31,6 +31,8 @@ import (
 const defaultImage = "ghcr.io/project-osrm/osrm-backend:v5.27.1"
 const defaultSpeedUpdatesFetcherImage = "itayankri/osrm-speed-updates:osrm-v5.27.1"
 const defaultBuilderImage = "itayankri/osrm-builder:osrm-v5.27.1"
+const defaultGatewayMemoryRequest = "500Mi"
+const defaultGatewayCPURequest = "0.5"
 
 const OperatorPausedAnnotation = "osrm.itayankri/operator.paused"
 
@@ -76,6 +78,8 @@ type OSRMClusterSpec struct {
 	Image       *string         `json:"image,omitempty"`
 	Persistence PersistenceSpec `json:"persistence,omitempty"`
 	MapBuilder  MapBuilderSpec  `json:"mapBuilder,omitempty"`
+	// Gateway configures the nginx gateway Deployment that routes requests to the profiles.
+	Gateway *GatewaySpec `json:"gateway,omitempty"`
 }
 
 func (spec *OSRMClusterSpec) GetImage() string {
@@ -83,6 +87,18 @@ func (spec *OSRMClusterSpec) GetImage() string {
 		return *spec.Image
 	}
 	return defaultImage
+}
+
+func (spec *OSRMClusterSpec) GetGatewayResources() *corev1.ResourceRequirements {
+	if spec.Gateway != nil && spec.Gateway.Resources != nil {
+		return spec.Gateway.Resources
+	}
+	return &corev1.ResourceRequirements{
+		Requests: corev1.ResourceList{
+			corev1.ResourceMemory: resource.MustParse(defaultGatewayMemoryRequest),
+			corev1.ResourceCPU:    resource.MustParse(defaultGatewayCPURequest),
+		},
+	}
 }
 
 func (spec *OSRMClusterSpec) GetPbfFileName() string {
@@ -250,6 +266,12 @@ func (spec *SpeedUpdatesSpec) GetEnv() []corev1.EnvVar {
 		return []corev1.EnvVar{}
 	}
 	return spec.Env
+}
+
+// GatewaySpec defines the desired state of the gateway Deployment
+type GatewaySpec struct {
+	// Resources of the gateway container. Defaults to requests of 500Mi memory and 0.5 CPU, with no limits.
+	Resources *corev1.ResourceRequirements `json:"resources,omitempty"`
 }
 
 type PersistenceSpec struct {
