@@ -8,7 +8,6 @@ import (
 	"github.com/itayankri/OSRM-Operator/internal/metadata"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
-	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -68,12 +67,7 @@ func (builder *GatewayDeploymentBuilder) Update(object client.Object, siblings [
 								ContainerPort: 80,
 							},
 						},
-						Resources: corev1.ResourceRequirements{
-							Requests: map[corev1.ResourceName]resource.Quantity{
-								"memory": resource.MustParse("500Mi"),
-								"cpu":    resource.MustParse("0.5"),
-							},
-						},
+						Resources: *builder.cluster().Spec.GetGatewayResources(),
 						Command: []string{
 							"/bin/sh",
 							"-c",
